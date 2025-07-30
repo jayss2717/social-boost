@@ -11,6 +11,12 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
+  // Add connection pooling configuration
+  __internal: {
+    engine: {
+      connectionLimit: 1,
+    },
+  },
 });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma; 
