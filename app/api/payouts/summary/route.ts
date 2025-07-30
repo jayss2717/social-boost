@@ -1,0 +1,21 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { getPayoutSummary } from '@/utils/payouts';
+
+export async function GET(request: NextRequest) {
+  try {
+    const merchantId = request.headers.get('x-merchant-id');
+    
+    if (!merchantId) {
+      return createErrorResponse('Merchant ID required', 401);
+    }
+
+    const summary = await getPayoutSummary(merchantId);
+
+    return createSuccessResponse(summary);
+  } catch (error) {
+    console.error('Failed to fetch payout summary:', error);
+    return createErrorResponse('Failed to fetch payout summary', 500);
+  }
+} 

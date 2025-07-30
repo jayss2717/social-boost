@@ -1,0 +1,297 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id                String   @id @default(cuid())
+  shop             String   @unique
+  accessToken      String
+  scope            String
+  isActive         Boolean  @default(true)
+  
+  // Shopify data
+  shopifyShopId    String?  @unique
+  shopName          String?
+  shopEmail         String?
+  shopDomain        String?
+  shopCurrency      String?
+  shopTimezone      String?
+  shopLocale        String?
+  
+  // Onboarding
+  onboardingCompleted Boolean @default(false)
+  onboardingStep     Int     @default(0)
+  onboardingData     Json?   // Store partial onboarding progress
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  subscription     Subscription?
+  settings         MerchantSettings?
+  influencers      Influencer[]
+  ugcPosts        UgcPost[]
+  discountCodes   DiscountCode[]
+  payouts         Payout[]
+  socialMediaAccounts SocialMediaAccount[]
+  brandMentions   BrandMention[]
+  
+  @@map("merchants")
+}
+
+model Plan {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  priceCents      Int
+  ugcLimit        Int
+  influencerLimit Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  subscriptions   Subscription[]
+  
+  @@map("plans")
+}
+
+model Subscription {
+  id                String     @id @default(cuid())
+  merchantId        String     @unique
+  planId            String
+  stripeSubId       String?
+  status            SubStatus  @default(ACTIVE)
+  currentPeriodEnd  DateTime
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  
+  // Relations
+  merchant         Merchant   @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan             Plan       @relation(fields: [planId], references: [id])
+  
+  @@map("subscriptions")
+}
+
+enum SubStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Influencer {
+  id              String   @id @default(cuid())
+  merchantId      String
+  name            String
+  email           String?
+  instagramHandle String?
+  tiktokHandle    String?
+  stripeAccountId String?
+  commissionRate  Float    @default(0.1) // 10% default
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  ugcPosts        UgcPost[]
+  payouts         Payout[]
+  discountCodes   DiscountCode[]
+  
+  @@map("influencers")
+}
+
+model UgcPost {
+  id              String   @id @default(cuid())
+  merchantId      String
+  influencerId    String?
+  platform        Platform
+  postUrl         String
+  postId          String
+  content         String?
+  mediaUrls       String[] // JSON array of media URLs
+  engagement      Int      @default(0)
+  isApproved      Boolean  @default(false)
+  isRewarded      Boolean  @default(false)
+  rewardAmount    Int?     // in cents
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  merchant        Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  influencer      Influencer? @relation(fields: [influencerId], references: [id])
+  discountCodes   DiscountCode[]
+  
+  @@map("ugc_posts")
+}
+
+enum Platform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  TWITTER
+}
+
+model DiscountCode {
+  id              String   @id @default(cuid())
+  merchantId      String
+  influencerId    String?
+  ugcPostId       String?
+  brandMentionId  String?  // Link to brand mention for random people
+  code            String
+  uniqueLink      String?
+  discountType    DiscountType
+  discountValue   Float
+  usageLimit      Int?
+  usageCount      Int      @default(0)
+  isActive        Boolean  @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  merchant        Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  influencer      Influencer? @relation(fields: [influencerId], references: [id])
+  ugcPost         UgcPost? @relation(fields: [ugcPostId], references: [id])
+  brandMention    BrandMention? @relation(fields: [brandMentionId], references: [id])
+  
+  @@map("discount_codes")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+model Payout {
+  id              String   @id @default(cuid())
+  merchantId      String
+  influencerId    String
+  amount          Int      // in cents
+  stripeTransferId String?
+  status          PayoutStatus @default(PENDING)
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  merchant        Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  influencer      Influencer  @relation(fields: [influencerId], references: [id])
+  
+  @@map("payouts")
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model MerchantSettings {
+  id                String   @id @default(cuid())
+  merchantId        String   @unique
+  name              String
+  email             String
+  website           String?  // Store website URL
+  linkPattern       String   @default("/discount/{code}") // URL pattern for discount links
+  socialMedia       Json     // Instagram, TikTok, Twitter, YouTube handles
+  discountSettings  Json     // Default, min, max percentages, auto-approve
+  commissionSettings Json    // Default, min, max rates, auto-payout
+  ugcSettings       Json     // Auto-approve, min engagement, hashtags, timer settings
+  payoutSettings    Json     // Auto-payout, schedule, minimum amount
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  
+  @@map("merchant_settings")
+}
+
+// New model for social media account management
+model SocialMediaAccount {
+  id                String   @id @default(cuid())
+  merchantId        String
+  platform          Platform
+  accountId         String   // Platform-specific account ID
+  username          String   // @username
+  displayName       String?
+  accessToken       String   // Encrypted access token
+  refreshToken      String?  // Encrypted refresh token
+  expiresAt         DateTime?
+  isActive          Boolean  @default(true)
+  webhookUrl        String?  // Webhook endpoint URL
+  webhookSecret     String?  // Webhook verification secret
+  lastSyncAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  brandMentions     BrandMention[]
+  
+  @@unique([merchantId, platform])
+  @@map("social_media_accounts")
+}
+
+// New model for brand mention tracking
+model BrandMention {
+  id                String   @id @default(cuid())
+  merchantId        String
+  socialMediaAccountId String
+  platform          Platform
+  mentionId         String   // Platform-specific mention ID
+  username          String   // @username who mentioned
+  displayName       String?
+  profilePictureUrl String?
+  postId            String   // Platform-specific post ID
+  postUrl           String   // Direct link to post
+  content           String?  // Post content/caption
+  mediaUrls         String[] // JSON array of media URLs
+  engagement        Int      @default(0) // Likes + comments
+  isInfluencer      Boolean  @default(false) // True if registered influencer
+  isProcessed       Boolean  @default(false) // True if DM sent or UGC created
+  dmSent            Boolean  @default(false) // True if DM was sent
+  dmSentAt          DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  socialMediaAccount SocialMediaAccount @relation(fields: [socialMediaAccountId], references: [id], onDelete: Cascade)
+  discountCodes     DiscountCode[]
+  
+  @@unique([platform, mentionId])
+  @@map("brand_mentions")
+}
+
+model Job {
+  id              String   @id @default(cuid())
+  name            String
+  data            Json?
+  status          JobStatus @default(PENDING)
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(3)
+  error           String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("jobs")
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+} 

@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const shop = searchParams.get('shop');
+
+    if (!shop) {
+      return NextResponse.json({ error: 'Shop parameter required' }, { status: 400 });
+    }
+
+    const merchant = await prisma.merchant.findUnique({
+      where: { shop },
+      include: {
+        settings: true,
+      },
+    });
+
+    if (!merchant) {
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      id: merchant.id,
+      shop: merchant.shop,
+      shopName: merchant.shopName,
+      shopEmail: merchant.shopEmail,
+      shopDomain: merchant.shopDomain,
+      shopCurrency: merchant.shopCurrency,
+      shopTimezone: merchant.shopTimezone,
+      shopLocale: merchant.shopLocale,
+      onboardingCompleted: merchant.onboardingCompleted,
+      onboardingStep: merchant.onboardingStep,
+      settings: merchant.settings,
+    });
+  } catch (error) {
+    console.error('Failed to fetch merchant:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+} 

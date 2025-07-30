@@ -1,0 +1,26 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "4638bbbd1542925e067ab11f3eecdc1c"
+name = "socialboost"
+handle = "socialboost-2"
+application_url = "http://localhost:3000"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2024-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_orders,write_discounts,read_products,read_customers,write_products,read_inventory,write_inventory,read_analytics,read_marketing_events,write_marketing_events"
+
+[auth]
+redirect_urls = [
+  "http://localhost:3000/api/auth/shopify/callback",
+  "https://localhost:3000/api/auth/shopify/callback"
+]
+
+[pos]
+embedded = false
