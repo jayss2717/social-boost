@@ -185,7 +185,7 @@ export default function TestPage() {
                         </Text>
                         {influencers?.slice(0, 3).map((influencer: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
-                            {influencer.name} - {influencer.email}
+                            {String(influencer.name)} - {String(influencer.email)}
                           </Text>
                         ))}
                       </div>
@@ -206,7 +206,7 @@ export default function TestPage() {
                         </Text>
                         {ugcPosts?.slice(0, 3).map((post: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
-                            {post.platform} - {post.engagement} engagement
+                            {String(post.platform)} - {String(post.engagement)} engagement
                           </Text>
                         ))}
                       </div>
@@ -227,7 +227,7 @@ export default function TestPage() {
                         </Text>
                         {payouts?.slice(0, 3).map((payout: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
-                            ${(payout.amount || 0) / 100} - {payout.status}
+                            ${Number(payout.amount || 0) / 100} - {String(payout.status)}
                           </Text>
                         ))}
                       </div>

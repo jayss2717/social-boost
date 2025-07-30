@@ -136,7 +136,7 @@ export class TikTokAPI {
       // TikTok webhook structure would be different from Instagram
       // This is a simulation based on expected structure
       if (event.event_type === 'mention' || event.event_type === 'tag') {
-        await this.handleMentionEvent(event.data);
+        await this.handleMentionEvent(event.data as Record<string, unknown>);
       }
     } catch (error) {
       console.error('Failed to process TikTok webhook:', error);
@@ -163,8 +163,8 @@ export class TikTokAPI {
         where: {
           merchantId: merchant.id,
           OR: [
-            { tiktokHandle: mentionData.username },
-            { email: mentionData.email },
+            { tiktokHandle: mentionData.username as string },
+            { email: mentionData.email as string },
           ],
         },
       });
@@ -186,13 +186,13 @@ export class TikTokAPI {
     await prisma.ugcPost.create({
       data: {
         merchantId,
-        influencerId: influencer.id,
+        influencerId: influencer.id as string,
         platform: 'TIKTOK',
-        postUrl: mentionData.videoUrl,
-        postId: mentionData.videoId,
-        content: mentionData.description,
-        mediaUrls: mentionData.mediaUrls,
-        engagement: mentionData.engagement,
+        postUrl: mentionData.videoUrl as string,
+        postId: mentionData.videoId as string,
+        content: mentionData.description as string,
+        mediaUrls: mentionData.mediaUrls as string[],
+        engagement: mentionData.engagement as number,
         isApproved: false, // Require manual approval for influencers
         isRewarded: false,
       },
@@ -203,7 +203,7 @@ export class TikTokAPI {
 
   private async handleRandomPersonMention(merchantId: string, mentionData: Record<string, unknown>, settings: Record<string, unknown>): Promise<void> {
     // Check engagement threshold
-    if (mentionData.engagement < settings.minEngagement) {
+    if ((mentionData.engagement as number) < (settings.minEngagement as number)) {
       console.log(`Engagement too low for random mention: ${mentionData.engagement}`);
       return;
     }
@@ -221,31 +221,31 @@ export class TikTokAPI {
       },
     });
 
-    if (codesSentToday >= settings.maxCodesPerDay) {
+    if (codesSentToday >= (settings.maxCodesPerDay as number)) {
       console.log('Daily code limit reached for random mentions');
       return;
     }
 
     // Generate unique discount code
-    const code = this.generateRandomCode(mentionData.username, settings.discountValue);
+    const code = this.generateRandomCode(mentionData.username as string, settings.discountValue as number);
     
     // Create discount code
     await prisma.discountCode.create({
       data: {
         merchantId,
         code,
-        discountType: settings.discountType,
-        discountValue: settings.discountValue,
-        usageLimit: settings.discountUsageLimit,
+        discountType: settings.discountType as 'PERCENTAGE' | 'FIXED_AMOUNT',
+        discountValue: settings.discountValue as number,
+        usageLimit: settings.discountUsageLimit as number,
         isActive: true,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
 
     // Send DM with discount code
-    const message = this.createRandomPersonMessage(code, settings.discountValue);
+    const message = this.createRandomPersonMessage(code, settings.discountValue as number);
     const dmSent = await this.sendDM({
-      recipientId: mentionData.id,
+      recipientId: mentionData.id as string,
       message,
       code,
     });

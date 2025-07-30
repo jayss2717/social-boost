@@ -159,10 +159,11 @@ export class InstagramAPI {
   // Process webhook event
   async processWebhookEvent(event: Record<string, unknown>): Promise<void> {
     try {
-      if (event.entry && event.entry[0]?.changes) {
-        for (const change of event.entry[0].changes) {
+      const entryArr = event.entry as Array<{ changes: Array<{ field: string; value: unknown }> }>;
+      if (entryArr && entryArr[0]?.changes) {
+        for (const change of entryArr[0].changes) {
           if (change.field === 'mentions') {
-            await this.handleMentionEvent(change.value);
+            await this.handleMentionEvent(change.value as Record<string, unknown>);
           }
         }
       }
@@ -191,8 +192,8 @@ export class InstagramAPI {
         where: {
           merchantId: merchant.id,
           OR: [
-            { instagramHandle: mentionData.username },
-            { email: mentionData.email },
+            { instagramHandle: mentionData.username as string },
+            { email: mentionData.email as string },
           ],
         },
       });
@@ -214,13 +215,13 @@ export class InstagramAPI {
     await prisma.ugcPost.create({
       data: {
         merchantId,
-        influencerId: influencer.id,
+        influencerId: influencer.id as string,
         platform: 'INSTAGRAM',
-        postUrl: mentionData.postUrl,
-        postId: mentionData.postId,
-        content: mentionData.content,
-        mediaUrls: mentionData.mediaUrls,
-        engagement: mentionData.engagement,
+        postUrl: mentionData.postUrl as string,
+        postId: mentionData.postId as string,
+        content: mentionData.content as string,
+        mediaUrls: mentionData.mediaUrls as string[],
+        engagement: mentionData.engagement as number,
         isApproved: false, // Require manual approval for influencers
         isRewarded: false,
       },
@@ -231,7 +232,7 @@ export class InstagramAPI {
 
   private async handleRandomPersonMention(merchantId: string, mentionData: Record<string, unknown>, settings: Record<string, unknown>): Promise<void> {
     // Check engagement threshold
-    if (mentionData.engagement < settings.minEngagement) {
+    if ((mentionData.engagement as number) < (settings.minEngagement as number)) {
       console.log(`Engagement too low for random mention: ${mentionData.engagement}`);
       return;
     }
@@ -249,31 +250,31 @@ export class InstagramAPI {
       },
     });
 
-    if (codesSentToday >= settings.maxCodesPerDay) {
+    if (codesSentToday >= (settings.maxCodesPerDay as number)) {
       console.log('Daily code limit reached for random mentions');
       return;
     }
 
     // Generate unique discount code
-    const code = this.generateRandomCode(mentionData.username, settings.discountValue);
+    const code = this.generateRandomCode(mentionData.username as string, settings.discountValue as number);
     
     // Create discount code
     await prisma.discountCode.create({
       data: {
         merchantId,
         code,
-        discountType: settings.discountType,
-        discountValue: settings.discountValue,
-        usageLimit: settings.discountUsageLimit,
+        discountType: settings.discountType as 'PERCENTAGE' | 'FIXED_AMOUNT',
+        discountValue: settings.discountValue as number,
+        usageLimit: settings.discountUsageLimit as number,
         isActive: true,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
 
     // Send DM with discount code
-    const message = this.createRandomPersonMessage(code, settings.discountValue);
+    const message = this.createRandomPersonMessage(code, settings.discountValue as number);
     const dmSent = await this.sendDM({
-      recipientId: mentionData.id,
+      recipientId: mentionData.id as string,
       message,
       code,
     });

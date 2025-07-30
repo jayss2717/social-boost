@@ -123,13 +123,13 @@ export function PaywallModal({ open, onClose, usage, plans }: PaywallModalProps)
                   <div className="flex justify-between">
                     <Text variant="bodyMd" as="p">UGC Posts</Text>
                     <Text variant="bodyMd" as="p">
-                      {usage.ugcCount} / {usage.ugcLimit === -1 ? '∞' : usage.ugcLimit}
+                      {Number(usage.ugcCount)} / {Number(usage.ugcLimit) === -1 ? '∞' : Number(usage.ugcLimit)}
                     </Text>
                   </div>
                   <div className="flex justify-between">
                     <Text variant="bodyMd" as="p">Influencers</Text>
                     <Text variant="bodyMd" as="p">
-                      {usage.influencerCount} / {usage.influencerLimit === -1 ? '∞' : usage.influencerLimit}
+                      {Number(usage.influencerCount)} / {Number(usage.influencerLimit) === -1 ? '∞' : Number(usage.influencerLimit)}
                     </Text>
                   </div>
                 </div>

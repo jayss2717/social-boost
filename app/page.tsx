@@ -220,10 +220,10 @@ export default function Dashboard() {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                       <div>
                         <Text variant="bodyMd" as="p">
-                          {post.platform} - {post.influencerName}
+                          {String(post.platform)} - {String(post.influencerName)}
                         </Text>
                         <Text variant="bodySm" tone="subdued" as="p">
-                          {post.content}
+                          {String(post.content)}
                         </Text>
                       </div>
                       <Badge tone="success">

@@ -1,4 +1,4 @@
-import { Queue, Worker } from 'bullmq';
+import { Queue, Worker, Job } from 'bullmq';
 import redis from './redis';
 import { processBulkPayouts } from '@/utils/payouts';
 
@@ -10,7 +10,7 @@ export const payoutQueue = new Queue('payouts', {
 // Worker for processing payouts
 export const payoutWorker = new Worker(
   'payouts',
-  async (job: Record<string, unknown>) => {
+  async (job: Job<any>) => {
     const { merchantId } = job.data;
     return await processBulkPayouts(merchantId);
   },
@@ -35,10 +35,10 @@ export const schedulePayouts = async (merchantId: string) => {
 };
 
 // Error handling
-payoutWorker.on('failed', (job: Record<string, unknown>, err: unknown) => {
+payoutWorker.on('failed', (job: Job<any> | undefined, err: Error) => {
   console.error(`Job ${job?.id} failed:`, err);
 });
 
-payoutWorker.on('completed', (job: Record<string, unknown>) => {
+payoutWorker.on('completed', (job: Job<any>) => {
   console.log(`Job ${job.id} completed successfully`);
 }); 

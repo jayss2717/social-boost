@@ -136,7 +136,19 @@ export async function POST(request: NextRequest) {
       mediaUrls,
       engagement,
       isInfluencer,
-    } = body as Record<string, unknown>;
+    } = body as {
+      platform: string;
+      mentionId: string;
+      username: string;
+      displayName?: string;
+      profilePictureUrl?: string;
+      postId: string;
+      postUrl: string;
+      content?: string;
+      mediaUrls: string[];
+      engagement: number;
+      isInfluencer: boolean;
+    };
 
     // Get merchant
     const merchant = await prisma.merchant.findFirst({

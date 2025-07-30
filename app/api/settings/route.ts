@@ -68,11 +68,11 @@ export async function GET(request: NextRequest) {
         email: settings.email,
         website: settings.website || '',
         linkPattern: settings.linkPattern || '/discount/{{code}}',
-        socialMedia: settings.socialMedia as SocialMediaSettings,
-        discountSettings: settings.discountSettings as DiscountSettings,
-        commissionSettings: settings.commissionSettings as CommissionSettings,
-        ugcSettings: settings.ugcSettings as UgcSettings,
-        payoutSettings: settings.payoutSettings as PayoutSettings,
+        socialMedia: settings.socialMedia as unknown as SocialMediaSettings,
+        discountSettings: settings.discountSettings as unknown as DiscountSettings,
+        commissionSettings: settings.commissionSettings as unknown as CommissionSettings,
+        ugcSettings: settings.ugcSettings as unknown as UgcSettings,
+        payoutSettings: settings.payoutSettings as unknown as PayoutSettings,
       });
   } catch (error) {
     console.error('Failed to fetch settings:', error);
