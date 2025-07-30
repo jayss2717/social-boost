@@ -5,6 +5,8 @@ import { checkUsageLimit } from '@/utils/subscription';
 import { requireMerchantId } from '@/lib/auth';
 import { generateDiscountLink } from '@/utils/discount-links';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const merchantId = requireMerchantId(request);

@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { payoutSchema, createErrorResponse, createSuccessResponse } from '@/utils/validation';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const merchantId = request.headers.get('x-merchant-id');

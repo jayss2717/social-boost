@@ -4,6 +4,8 @@ import { ugcPostSchema, createErrorResponse, createSuccessResponse } from '@/uti
 import { checkUsageLimit } from '@/utils/subscription';
 import { requireMerchantId } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const merchantId = requireMerchantId(request);
