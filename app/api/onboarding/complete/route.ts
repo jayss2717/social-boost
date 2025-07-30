@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
         success: true, 
         message: 'Onboarding completed successfully',
         merchant: {
-          id: merchant.id,
-          shop: merchant.shop,
-          onboardingCompleted: merchant.onboardingCompleted,
+          id: testMerchant.id,
+          shop: testMerchant.shop,
+          onboardingCompleted: testMerchant.onboardingCompleted,
         }
       });
       }
@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
         success: true, 
         message: 'Onboarding completed successfully',
         merchant: {
-          id: testMerchant.id,
-          shop: testMerchant.shop,
-          onboardingCompleted: testMerchant.onboardingCompleted,
+          id: merchant.id,
+          shop: merchant.shop,
+          onboardingCompleted: merchant.onboardingCompleted,
         }
       });
     } catch (dbError) {
