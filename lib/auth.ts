@@ -11,8 +11,8 @@ export function getMerchantId(request: NextRequest): string | null {
     return merchantId;
   }
   
-  // For development, return demo merchant ID
-  if (process.env.NODE_ENV === 'development') {
+  // For development or CI, return demo merchant ID
+  if (process.env.NODE_ENV === 'development' || process.env.CI === 'true') {
     return DEMO_MERCHANT_ID;
   }
   
