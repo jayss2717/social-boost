@@ -47,6 +47,11 @@ export default function Dashboard() {
               } else {
                 console.log('Onboarding already completed, staying on dashboard');
               }
+            } else if (response.status === 404) {
+              // Merchant not found, redirect to onboarding
+              console.log('Merchant not found (404), redirecting to onboarding...');
+              window.location.href = `/onboarding?shop=${shop}`;
+              return;
             }
           } catch (error) {
             console.error('Failed to fetch merchant data:', error);
