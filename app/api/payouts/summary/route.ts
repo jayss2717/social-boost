@@ -44,6 +44,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Test database connection first
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection successful for payouts summary');
+    } catch (dbError) {
+      console.error('❌ Database connection failed for payouts summary:', dbError);
+      // Return mock data if database is unavailable
+      return createSuccessResponse({
+        totalPayouts: 0,
+        pendingPayouts: 0,
+        completedPayouts: 0,
+        totalAmount: 0,
+        pendingAmount: 0,
+        completedAmount: 0,
+        averagePayout: 0,
+        recentPayouts: [],
+        _note: 'Mock data - database connection failed',
+      });
+    }
+
     const summary = await getPayoutSummary(merchantId);
 
     return createSuccessResponse(summary);
