@@ -12,12 +12,6 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   },
   // Optimize for serverless environments
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  // Connection pooling for serverless
-  __internal: {
-    engine: {
-      connectionLimit: 1,
-    },
-  },
 });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma; 
