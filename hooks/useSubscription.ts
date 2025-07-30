@@ -1,17 +1,7 @@
 import useSWR from 'swr';
+import { apiFetch } from '@/utils/api';
 
-const fetcher = (url: string) => fetch(url).then(res => {
-  if (!res.ok) {
-    throw new Error(`HTTP error! status: ${res.status}`);
-  }
-  return res.json().then(data => {
-    // Handle API response format
-    if (data.success && data.data !== undefined) {
-      return data.data;
-    }
-    return data;
-  });
-});
+const fetcher = (url: string) => apiFetch(url);
 
 export function useSubscription() {
   const { data, error, isLoading, mutate } = useSWR('/api/subscription', fetcher);
@@ -25,24 +15,7 @@ export function useSubscription() {
 }
 
 export function useInfluencers() {
-  const { data, error, isLoading, mutate } = useSWR('/api/influencers', (url) => 
-    fetch(url, {
-      headers: {
-        'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5'
-      }
-    }).then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json().then(data => {
-        // Handle API response format
-        if (data.success && data.data !== undefined) {
-          return data.data;
-        }
-        return data;
-      });
-    })
-  );
+  const { data, error, isLoading, mutate } = useSWR('/api/influencers', fetcher);
 
   return {
     data,
