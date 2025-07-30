@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSubscriptionUsage } from '@/utils/subscription';
+import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { requireMerchantId } from '@/lib/auth';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {

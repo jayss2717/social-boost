@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server';
 import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
 import { getPayoutSummary } from '@/utils/payouts';
+import { requireMerchantId } from '@/lib/auth';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shop = searchParams.get('shop');
 
     if (!shop) {
-      return NextResponse.json({ error: 'Shop parameter required' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 });
     }
 
     const merchant = await prisma.merchant.findUnique({

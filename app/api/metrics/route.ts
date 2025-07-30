@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
 import { requireMerchantId } from '@/lib/auth';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const merchantId = requireMerchantId(request);
