@@ -7,10 +7,15 @@ export const payoutQueue = new Queue('payouts', {
   connection: redis,
 });
 
+// Define job data type
+interface PayoutJobData {
+  merchantId: string;
+}
+
 // Worker for processing payouts
 export const payoutWorker = new Worker(
   'payouts',
-  async (job: Job<any>) => {
+  async (job: Job<PayoutJobData>) => {
     const { merchantId } = job.data;
     return await processBulkPayouts(merchantId);
   },
@@ -35,10 +40,10 @@ export const schedulePayouts = async (merchantId: string) => {
 };
 
 // Error handling
-payoutWorker.on('failed', (job: Job<any> | undefined, err: Error) => {
+payoutWorker.on('failed', (job: Job<PayoutJobData> | undefined, err: Error) => {
   console.error(`Job ${job?.id} failed:`, err);
 });
 
-payoutWorker.on('completed', (job: Job<any>) => {
+payoutWorker.on('completed', (job: Job<PayoutJobData>) => {
   console.log(`Job ${job.id} completed successfully`);
 }); 
