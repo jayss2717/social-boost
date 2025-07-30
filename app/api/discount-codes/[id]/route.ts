@@ -13,29 +13,34 @@ export async function DELETE(
 
     const discountCodeId = params.id;
 
-    // Check if discount code exists and belongs to the merchant
-    const existingDiscountCode = await prisma.discountCode.findFirst({
-      where: {
-        id: discountCodeId,
-        merchantId,
-      },
-    });
+    try {
+      // Check if discount code exists and belongs to the merchant
+      const existingDiscountCode = await prisma.discountCode.findFirst({
+        where: {
+          id: discountCodeId,
+          merchantId,
+        },
+      });
 
-    if (!existingDiscountCode) {
-      return NextResponse.json({ error: 'Discount code not found' }, { status: 404 });
+      if (!existingDiscountCode) {
+        return NextResponse.json({ error: 'Discount code not found' }, { status: 404 });
+      }
+
+      // Delete the discount code
+      await prisma.discountCode.delete({
+        where: {
+          id: discountCodeId,
+        },
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Discount code deleted successfully' 
+      });
+    } catch (dbError) {
+      console.error('Database error in delete discount code:', dbError);
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 503 });
     }
-
-    // Delete the discount code
-    await prisma.discountCode.delete({
-      where: {
-        id: discountCodeId,
-      },
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Discount code deleted successfully' 
-    });
   } catch (error) {
     console.error('Delete discount code error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
