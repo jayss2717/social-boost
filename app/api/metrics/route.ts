@@ -42,6 +42,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Test database connection first
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection successful');
+    } catch (dbError) {
+      console.error('❌ Database connection failed:', dbError);
+      return createErrorResponse('Database connection failed', 500);
+    }
+
     // Get all metrics in parallel
     const [
       totalUgcPosts,
