@@ -37,12 +37,18 @@ jobs:
       run: npm run build
       
     - name: Start development server
-      run: npm run dev &
-      
-    - name: Wait for server to start
       run: |
+        # Start server in background and capture PID
+        npm run dev > server.log 2>&1 &
+        echo $! > server.pid
+        
         # Wait for server to be ready
         timeout 60 bash -c 'until curl -f http://localhost:3000/api/test; do sleep 2; done'
+        
+    - name: Verify server is running
+      run: |
+        # Double-check server is still running
+        curl -f http://localhost:3000/api/test || exit 1
         
     - name: Run app tests
       run: npm run test:app
@@ -52,8 +58,15 @@ jobs:
         # Test health endpoint
         curl -f http://localhost:3000/api/health || exit 1
         
-        # Stop server
-        pkill -f "npm run dev"
+    - name: Stop development server
+      run: |
+        # Stop server using PID
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) || true
+          rm server.pid
+        fi
+        # Also try to kill any remaining npm processes
+        pkill -f "npm run dev" || true
 
   deploy-preview:
     needs: test
