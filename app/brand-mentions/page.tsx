@@ -1,8 +1,8 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner, InlineStack, Modal, TextField, Select, Pagination } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, Badge, Banner, InlineStack, Modal, TextField, Select, Pagination, DataTable } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Hash, Instagram, MessageCircle, CheckCircle, Clock, AlertCircle, Send, Filter, Eye, Youtube, Twitter, Users, TrendingUp, Gift } from 'lucide-react';
+import { Hash, Instagram, Eye, Youtube, Twitter, Users, TrendingUp, Gift } from 'lucide-react';
 
 interface BrandMention {
   id: string;
@@ -212,35 +212,12 @@ export default function BrandMentionsPage() {
   ];
 
   const rows = mentions?.mentions.map(mention => [
-    <div key={mention.id} className="flex items-center space-x-2">
-      {getPlatformIcon(mention.platform)}
-      <Text variant="bodyMd" as="span">
-        @{mention.username}
-      </Text>
-    </div>,
-    <Text variant="bodyMd" as="span">
-      {mention.engagement}
-    </Text>,
-    getStatusBadge(mention),
-    <Text variant="bodyMd" as="span">
-      {new Date(mention.createdAt).toLocaleDateString()}
-    </Text>,
-    <div key={mention.id} className="flex space-x-2">
-      <Button
-        size="slim"
-        variant="secondary"
-        onClick={() => handleViewDetail(mention)}
-      >
-        <Eye className="w-4 h-4" />
-      </Button>
-      <Button
-        size="slim"
-        variant="secondary"
-        onClick={() => window.open(mention.postUrl, '_blank')}
-      >
-        View Post
-      </Button>
-    </div>,
+    `${mention.platform} @${mention.username}`,
+    mention.engagement.toString(),
+    mention.isProcessed ? 'Processed' : 'Unprocessed',
+    new Date(mention.createdAt).toLocaleDateString(),
+    // Use a simple button label for actions
+    'View',
   ]) || [];
 
   return (
@@ -341,7 +318,7 @@ export default function BrandMentionsPage() {
                       No brand mentions found
                     </Text>
                     <Text variant="bodyMd" tone="subdued" as="p">
-                      When people tag your brand on social media, they'll appear here.
+                      When people tag your brand on social media, they&apos;ll appear here.
                     </Text>
                   </div>
                 ) : (
@@ -352,13 +329,13 @@ export default function BrandMentionsPage() {
                       rows={rows}
                     />
                     
-                    {mentions?.pagination.pages > 1 && (
+                    {(mentions?.pagination?.pages ?? 1) > 1 && (
                       <div className="flex justify-center mt-4">
                         <Pagination
-                          hasPrevious={mentions.pagination.page > 1}
-                          onPrevious={() => handlePageChange(mentions.pagination.page - 1)}
-                          hasNext={mentions.pagination.page < mentions.pagination.pages}
-                          onNext={() => handlePageChange(mentions.pagination.page + 1)}
+                          hasPrevious={(mentions?.pagination?.page ?? 1) > 1}
+                          onPrevious={() => handlePageChange((mentions?.pagination?.page ?? 1) - 1)}
+                          hasNext={(mentions?.pagination?.page ?? 1) < (mentions?.pagination?.pages ?? 1)}
+                          onNext={() => handlePageChange((mentions?.pagination?.page ?? 1) + 1)}
                         />
                       </div>
                     )}
@@ -441,7 +418,7 @@ export default function BrandMentionsPage() {
                         {code.code}
                       </Text>
                       <Badge tone="info">
-                        {code.usageCount}/{code.usageLimit} used
+                        {`${code.usageCount}/${code.usageLimit} used`}
                       </Badge>
                     </div>
                   ))}

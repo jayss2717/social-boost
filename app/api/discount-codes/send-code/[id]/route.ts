@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: { id: string } }: { params: { id: string } }
 ) {
   try {
     const merchantId = request.headers.get('x-merchant-id');
+    // const { id } = params; // Use the id parameter - not needed for this endpoint
     if (!merchantId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

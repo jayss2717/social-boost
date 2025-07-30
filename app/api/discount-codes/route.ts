@@ -84,9 +84,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Add unique links to all discount codes using merchant settings
-    const discountCodesWithLinks = discountCodes.map(code => ({
+    const discountCodesWithLinks = discountCodes.map((code: any) => ({
       ...code,
-      uniqueLink: generateDiscountLink(code.code, merchantSettings || undefined),
+              uniqueLink: generateDiscountLink(code.code, merchantSettings ? {
+          website: merchantSettings.website || undefined,
+          linkPattern: merchantSettings.linkPattern
+        } : undefined),
     }));
 
     return NextResponse.json(discountCodesWithLinks);
@@ -149,7 +152,10 @@ export async function POST(request: NextRequest) {
     // Add unique link to the response using merchant settings
     const discountCodeWithLink = {
       ...discountCode,
-      uniqueLink: generateDiscountLink(code, merchantSettings || undefined),
+              uniqueLink: generateDiscountLink(code, merchantSettings ? {
+          website: merchantSettings.website || undefined,
+          linkPattern: merchantSettings.linkPattern
+        } : undefined),
     };
 
     return NextResponse.json(discountCodeWithLink);

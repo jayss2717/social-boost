@@ -50,7 +50,6 @@ const ONBOARDING_STEPS = [
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [merchantData, setMerchantData] = useState<any>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessType: 'ECOMMERCE',
@@ -99,7 +98,6 @@ export default function OnboardingPage() {
   };
 
   const completeOnboarding = async () => {
-    setIsLoading(true);
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
@@ -121,8 +119,6 @@ export default function OnboardingPage() {
       }
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -157,21 +153,25 @@ export default function OnboardingPage() {
                         label="Store Name"
                         value={merchantData.shopName || ''}
                         readOnly
+                        autoComplete="off"
                       />
                       <TextField
                         label="Store Email"
                         value={merchantData.shopEmail || ''}
                         readOnly
+                        autoComplete="off"
                       />
                       <TextField
                         label="Store Domain"
                         value={merchantData.shopDomain || ''}
                         readOnly
+                        autoComplete="off"
                       />
                       <TextField
                         label="Currency"
                         value={merchantData.shopCurrency || ''}
                         readOnly
+                        autoComplete="off"
                       />
                     </div>
                     
@@ -220,12 +220,13 @@ export default function OnboardingPage() {
                     label="Industry"
                     value={onboardingData.industry}
                     onChange={(value) => updateOnboardingData('industry', value)}
-                    placeholder="e.g., Fashion, Beauty, Tech"
+                    placeholder="e.g. Fashion, Beauty, Electronics"
+                    autoComplete="off"
                   />
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     What are your main goals?
                   </Text>
                   <div className="space-y-2">
@@ -272,9 +273,10 @@ export default function OnboardingPage() {
                     label="Default Commission Rate (%)"
                     type="number"
                     value={String(onboardingData.commissionRate)}
-                    onChange={(value) => updateOnboardingData('commissionRate', parseFloat(value))}
-                    min="1"
-                    max="50"
+                    onChange={(value) => updateOnboardingData('commissionRate', Number(value))}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
                   />
                   <Select
                     label="Auto-Approve Influencers"
@@ -320,6 +322,7 @@ export default function OnboardingPage() {
                     onChange={(value) => updateOnboardingData('minEngagement', parseInt(value))}
                     min="0"
                     helpText="Minimum likes/comments to approve UGC"
+                    autoComplete="off"
                   />
                   <Select
                     label="Auto-Approve UGC"
@@ -429,7 +432,6 @@ export default function OnboardingPage() {
 
               <Button
                 onClick={handleNext}
-                loading={isLoading}
                 icon={() => currentStep === ONBOARDING_STEPS.length ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               >
                 {currentStep === ONBOARDING_STEPS.length ? 'Complete Setup' : 'Next'}

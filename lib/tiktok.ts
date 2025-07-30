@@ -74,7 +74,7 @@ export class TikTokAPI {
         throw new Error(`TikTok API error: ${response.statusText}`);
       }
       
-      const data = await response.json();
+      await response.json(); // Response not used in this simulation
       const mentions: TikTokMention[] = [];
       
       // Note: TikTok API doesn't directly provide mentions like Instagram
@@ -230,7 +230,7 @@ export class TikTokAPI {
     const code = this.generateRandomCode(mentionData.username, settings.discountValue);
     
     // Create discount code
-    const discountCode = await prisma.discountCode.create({
+    await prisma.discountCode.create({
       data: {
         merchantId,
         code,

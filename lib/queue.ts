@@ -1,6 +1,6 @@
 import { Queue, Worker } from 'bullmq';
 import redis from './redis';
-import { processPayouts } from '@/utils/payouts';
+import { processBulkPayouts } from '@/utils/payouts';
 
 // Payout processing queue
 export const payoutQueue = new Queue('payouts', {
@@ -12,7 +12,7 @@ export const payoutWorker = new Worker(
   'payouts',
   async (job: any) => {
     const { merchantId } = job.data;
-    return await processPayouts(merchantId);
+    return await processBulkPayouts(merchantId);
   },
   {
     connection: redis,

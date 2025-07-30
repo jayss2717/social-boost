@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { influencerSchema, createErrorResponse, createSuccessResponse } from '@/utils/validation';
 import { checkUsageLimit } from '@/utils/subscription';
@@ -35,7 +35,10 @@ export async function GET(request: NextRequest) {
       ...influencer,
       discountCodes: influencer.discountCodes.map(code => ({
         ...code,
-        uniqueLink: generateDiscountLink(code.code, merchantSettings || undefined),
+        uniqueLink: generateDiscountLink(code.code, merchantSettings ? {
+          website: merchantSettings.website || undefined,
+          linkPattern: merchantSettings.linkPattern
+        } : undefined),
       })),
     }));
 

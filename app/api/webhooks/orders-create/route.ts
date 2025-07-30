@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id: orderId, line_items, discount_codes, total_price, subtotal_price } = body;
+    const { id: orderId, discount_codes } = body;
 
     if (!orderId) {
       return NextResponse.json({ error: 'Missing order ID' }, { status: 400 });

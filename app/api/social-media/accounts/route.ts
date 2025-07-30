@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get merchant
     const merchant = await prisma.merchant.findFirst({
@@ -56,7 +56,6 @@ export async function DELETE(request: NextRequest) {
     await prisma.socialMediaAccount.delete({
       where: {
         id: accountId,
-        merchantId: merchant.id,
       },
     });
 

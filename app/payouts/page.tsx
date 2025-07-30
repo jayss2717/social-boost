@@ -176,20 +176,20 @@ export default function PayoutsPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return <Clock className="w-4 h-4" />;
-      case 'PROCESSING':
-        return <AlertCircle className="w-4 h-4" />;
-      case 'COMPLETED':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'FAILED':
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
+  // const getStatusIcon = (status: string) => {
+  //   switch (status) {
+  //     case 'PENDING':
+  //       return <Clock className="w-4 h-4" />;
+  //     case 'PROCESSING':
+  //       return <AlertCircle className="w-4 h-4" />;
+  //     case 'COMPLETED':
+  //       return <CheckCircle className="w-4 h-4" />;
+  //     case 'FAILED':
+  //       return <AlertCircle className="w-4 h-4" />;
+  //     default:
+  //       return <Clock className="w-4 h-4" />;
+  //   }
+  // };
 
   const pendingPayouts = Array.isArray(payouts) ? payouts.filter(p => p.status === 'PENDING') : [];
 

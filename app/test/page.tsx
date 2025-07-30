@@ -104,7 +104,7 @@ export default function TestPage() {
           <Layout.Section>
             <Card>
               <div className="p-6 text-center">
-                <Text variant="headingLg">Loading test data...</Text>
+                <Text variant="headingLg" as="h2">Loading test data...</Text>
               </div>
             </Card>
           </Layout.Section>
@@ -120,7 +120,7 @@ export default function TestPage() {
           <Card>
             <div className="p-6">
               <BlockStack gap="400">
-                <Text variant="headingLg">Backend Integration Test Results</Text>
+                <Text variant="headingLg" as="h2">Backend Integration Test Results</Text>
                 
                 <Button onClick={runApiTests}>
                   Re-run Tests
@@ -129,20 +129,20 @@ export default function TestPage() {
                 <div className="space-y-4">
                   {/* Metrics Test */}
                   <div>
-                    <Text variant="headingMd">Metrics API</Text>
+                    <Text variant="headingMd" as="h3">Metrics API</Text>
                     {metricsError ? (
                       <Banner tone="critical">
                         Error: {metricsError.message}
                       </Banner>
                     ) : (
                       <div className="mt-2">
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Total UGC Posts: {metrics?.totalUgcPosts || 0}
                         </Text>
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Total Influencers: {metrics?.totalInfluencers || 0}
                         </Text>
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Total Revenue: ${(metrics?.totalRevenue || 0) / 100}
                         </Text>
                       </div>
@@ -151,20 +151,20 @@ export default function TestPage() {
 
                   {/* Subscription Test */}
                   <div>
-                    <Text variant="headingMd">Subscription API</Text>
+                    <Text variant="headingMd" as="h3">Subscription API</Text>
                     {subscriptionError ? (
                       <Banner tone="critical">
                         Error: {subscriptionError.message}
                       </Banner>
                     ) : (
                       <div className="mt-2">
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Plan: {subscription?.subscription?.plan?.name || 'Unknown'}
                         </Text>
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           UGC Count: {subscription?.usage?.ugcCount || 0} / {subscription?.usage?.ugcLimit || 0}
                         </Text>
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Influencer Count: {subscription?.usage?.influencerCount || 0} / {subscription?.usage?.influencerLimit || 0}
                         </Text>
                       </div>
@@ -173,18 +173,18 @@ export default function TestPage() {
 
                   {/* Influencers Test */}
                   <div>
-                    <Text variant="headingMd">Influencers API</Text>
+                    <Text variant="headingMd" as="h3">Influencers API</Text>
                     {influencersError ? (
                       <Banner tone="critical">
                         Error: {influencersError.message}
                       </Banner>
                     ) : (
                       <div className="mt-2">
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Count: {influencers?.length || 0}
                         </Text>
                         {influencers?.slice(0, 3).map((influencer: any, index: number) => (
-                          <Text key={index} variant="bodyMd">
+                          <Text key={index} variant="bodyMd" as="span">
                             {influencer.name} - {influencer.email}
                           </Text>
                         ))}
@@ -194,18 +194,18 @@ export default function TestPage() {
 
                   {/* UGC Posts Test */}
                   <div>
-                    <Text variant="headingMd">UGC Posts API</Text>
+                    <Text variant="headingMd" as="h3">UGC Posts API</Text>
                     {ugcPostsError ? (
                       <Banner tone="critical">
                         Error: {ugcPostsError.message}
                       </Banner>
                     ) : (
                       <div className="mt-2">
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Count: {ugcPosts?.length || 0}
                         </Text>
                         {ugcPosts?.slice(0, 3).map((post: any, index: number) => (
-                          <Text key={index} variant="bodyMd">
+                          <Text key={index} variant="bodyMd" as="span">
                             {post.platform} - {post.engagement} engagement
                           </Text>
                         ))}
@@ -215,18 +215,18 @@ export default function TestPage() {
 
                   {/* Payouts Test */}
                   <div>
-                    <Text variant="headingMd">Payouts API</Text>
+                    <Text variant="headingMd" as="h3">Payouts API</Text>
                     {payoutsError ? (
                       <Banner tone="critical">
                         Error: {payoutsError.message}
                       </Banner>
                     ) : (
                       <div className="mt-2">
-                        <Text variant="bodyMd">
+                        <Text variant="bodyMd" as="span">
                           Count: {payouts?.length || 0}
                         </Text>
                         {payouts?.slice(0, 3).map((payout: any, index: number) => (
-                          <Text key={index} variant="bodyMd">
+                          <Text key={index} variant="bodyMd" as="span">
                             ${(payout.amount || 0) / 100} - {payout.status}
                           </Text>
                         ))}
@@ -237,7 +237,7 @@ export default function TestPage() {
 
                 {/* Raw API Test Results */}
                 <div>
-                  <Text variant="headingMd">Raw API Test Results</Text>
+                  <Text variant="headingMd" as="h3">Raw API Test Results</Text>
                   <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto">
                     {JSON.stringify(testResults, null, 2)}
                   </pre>

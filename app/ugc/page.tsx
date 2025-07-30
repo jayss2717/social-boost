@@ -506,7 +506,7 @@ export default function UgcPage() {
                             variant="secondary"
                             onClick={() => window.open(url, '_blank')}
                           >
-                            View Media {index + 1}
+                            {`View Media ${index + 1}`}
                           </Button>
                         </div>
                       ))}

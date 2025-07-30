@@ -1,4 +1,4 @@
-import { shopifyApp } from '@shopify/shopify-app-express';
+// import { shopifyApp } from '@shopify/shopify-app-express'; // Not used in current implementation
 import { PrismaSessionStorage } from '@shopify/shopify-app-session-storage-prisma';
 import { prisma } from './prisma';
 

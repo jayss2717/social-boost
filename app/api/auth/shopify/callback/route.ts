@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const shop = searchParams.get('shop');
     const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    // const state = searchParams.get('state'); // Unused for now
 
     if (!shop || !code) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });

@@ -198,7 +198,7 @@ export default function Dashboard() {
                 Recent Activity
               </Text>
               {metrics?.recentActivity ? (
-                <Text variant="bodyMd">
+                <Text variant="bodyMd" as="span">
                   {metrics.recentActivity} new posts in the last 7 days
                 </Text>
               ) : (
@@ -229,7 +229,7 @@ export default function Dashboard() {
                         </Text>
                       </div>
                       <Badge tone="success">
-                        {post.engagement} engagement
+                        {`${post.engagement} engagement`}
                       </Badge>
                     </div>
                   ))}

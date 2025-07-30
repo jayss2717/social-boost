@@ -282,30 +282,30 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveSettings = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
-        },
-        body: JSON.stringify(formData),
-      });
+  // const handleSaveSettings = async () => {
+  //   setIsSaving(true);
+  //   try {
+  //     const response = await fetch('/api/settings', {
+  //       method: 'PUT',
+  //       headers: { 
+  //         'Content-Type': 'application/json',
+  //         'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+  //       },
+  //       body: JSON.stringify(formData),
+  //     });
 
-      if (response.ok) {
-        setSaveMessage('Settings saved successfully!');
-        setTimeout(() => setSaveMessage(''), 3000);
-      }
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      setSaveMessage('Failed to save settings');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  //     if (response.ok) {
+  //       setSaveMessage('Settings saved successfully!');
+  //       setTimeout(() => setSaveMessage(''), 3000);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to save settings:', error);
+  //       setSaveMessage('Failed to save settings');
+  //       setTimeout(() => setSaveMessage(''), 3000);
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
   const handleSaveMerchantSettings = async () => {
     setIsSaving(true);
@@ -692,7 +692,7 @@ export default function SettingsPage() {
                 </div>
                 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Basic Information
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -713,7 +713,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Website Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -803,7 +803,7 @@ export default function SettingsPage() {
                   
                   {/* Social Media Account Management */}
                   <div className="mt-4">
-                    <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                    <Text variant="bodyMd" as="p" fontWeight="bold">
                       Connected Accounts
                     </Text>
                     <div className="space-y-3">
@@ -845,7 +845,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Business Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -902,7 +902,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Payout Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -961,7 +961,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Notification Settings
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1032,7 +1032,7 @@ export default function SettingsPage() {
                 </div>
                 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Discount Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1076,7 +1076,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Commission Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1120,7 +1120,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Influencer Management
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1157,7 +1157,7 @@ export default function SettingsPage() {
                       })}
                       min="0"
                       max="100"
-                      step="0.1"
+                      step={0.1}
                       autoComplete="off"
                     />
                     <TextField
@@ -1182,7 +1182,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Payout Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1280,7 +1280,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     UGC Discount Code Settings
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1293,7 +1293,7 @@ export default function SettingsPage() {
                       value={formData.ugcSettings.discountType || 'PERCENTAGE'}
                       onChange={(value) => setFormData({
                         ...formData,
-                        ugcSettings: { ...formData.ugcSettings, discountType: value }
+                        ugcSettings: { ...formData.ugcSettings, discountType: value as 'PERCENTAGE' | 'FIXED_AMOUNT' }
                       })}
                     />
                     <TextField
@@ -1332,7 +1332,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Code Delivery Timer Settings
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1401,9 +1401,11 @@ export default function SettingsPage() {
                     {formData.ugcSettings.requiredHashtags.map((hashtag, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <TextField
+                          label="Hashtag"
                           value={hashtag}
                           onChange={(value) => updateHashtag(index, value)}
                           placeholder="#yourbrand"
+                          autoComplete="off"
                         />
                         <Button
                           size="slim"
@@ -1482,7 +1484,7 @@ export default function SettingsPage() {
                     {/* Current User */}
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <Avatar size="small" name="John Doe" />
+                        <Avatar size="sm" name="John Doe" />
                         <div>
                           <Text variant="bodyMd" fontWeight="semibold" as="p">
                             John Doe
@@ -1493,7 +1495,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Tag tone="success">Owner</Tag>
+                        <Tag>Owner</Tag>
                         <Text variant="bodySm" tone="subdued" as="p">
                           You
                         </Text>
@@ -1503,7 +1505,7 @@ export default function SettingsPage() {
                     {/* Team Member */}
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
-                        <Avatar size="small" name="Sarah Wilson" />
+                        <Avatar size="sm" name="Sarah Wilson" />
                         <div>
                           <Text variant="bodyMd" fontWeight="semibold" as="p">
                             Sarah Wilson
@@ -1515,7 +1517,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <Select
-                          size="slim"
+                          label="Role"
                           options={[
                             { label: 'Admin', value: 'ADMIN' },
                             { label: 'Manager', value: 'MANAGER' },
@@ -1538,7 +1540,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Role Permissions
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1629,7 +1631,6 @@ export default function SettingsPage() {
                   </Text>
                   <Button 
                     size="slim" 
-                    className="mt-2"
                     onClick={handleUpgradeToPro}
                   >
                     Upgrade Now
@@ -1673,7 +1674,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Domain Configuration
                   </Text>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1716,7 +1717,6 @@ export default function SettingsPage() {
                   </Text>
                   <Button 
                     size="slim" 
-                    className="mt-2"
                     onClick={handleUpgradeToPro}
                   >
                     Upgrade to Pro
@@ -1760,7 +1760,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Legal Documents
                   </Text>
                   <div className="space-y-4">
@@ -1770,10 +1770,11 @@ export default function SettingsPage() {
                       </Text>
                       <div className="flex items-center space-x-2 mt-2">
                         <TextField
+                          label="Terms of Service URL"
                           value={formData.legalSettings?.termsUrl || ''}
                           onChange={(value) => setFormData({
                             ...formData,
-                            legalSettings: { ...formData.legalSettings, termsUrl: value }
+                            legalSettings: { ...formData.legalSettings, termsUrl: value },
                           })}
                           placeholder="https://yourstore.com/terms"
                           autoComplete="off"
@@ -1794,10 +1795,11 @@ export default function SettingsPage() {
                       </Text>
                       <div className="flex items-center space-x-2 mt-2">
                         <TextField
+                          label="Privacy Policy URL"
                           value={formData.legalSettings?.privacyUrl || ''}
                           onChange={(value) => setFormData({
                             ...formData,
-                            legalSettings: { ...formData.legalSettings, privacyUrl: value }
+                            legalSettings: { ...formData.legalSettings, privacyUrl: value },
                           })}
                           placeholder="https://yourstore.com/privacy"
                           autoComplete="off"
@@ -1815,7 +1817,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Data Protection
                   </Text>
                   <div className="space-y-3">
@@ -1878,7 +1880,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Current Plan
                   </Text>
                   <div className="border rounded-lg p-4">
@@ -1891,7 +1893,7 @@ export default function SettingsPage() {
                           $29/month
                         </Text>
                       </div>
-                      <Tag tone="success">Active</Tag>
+                      <Tag>Active</Tag>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button 
@@ -1913,7 +1915,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold" className="mb-3">
+                  <Text variant="bodyMd" as="p" fontWeight="bold">
                     Payment Method
                   </Text>
                   <div className="border rounded-lg p-4">

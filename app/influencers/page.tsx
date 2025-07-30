@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, Modal, TextField, Select, Badge, Banner, InlineStack, DataTable } from '@shopify/polaris';
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Copy, ExternalLink, User, CreditCard, Gift, Search, Eye, Trash } from 'lucide-react';
+import { Plus, Copy, Gift, Search, Eye, Trash } from 'lucide-react';
 import { useInfluencers } from '@/hooks/useSubscription';
 
 interface Influencer {
@@ -31,7 +31,6 @@ interface DiscountCode {
 
 export default function InfluencersPage() {
   const { data: influencers, isLoading, error, mutate } = useInfluencers();
-  const [filteredInfluencers, setFilteredInfluencers] = useState<Influencer[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -483,7 +482,7 @@ export default function InfluencersPage() {
                 autoComplete="off"
                 min={0}
                 max={100}
-                step="0.1"
+                step={0.1}
                 helpText="Required: Percentage commission the influencer will earn (e.g., 10 for 10%)"
               />
             </BlockStack>
@@ -520,7 +519,7 @@ export default function InfluencersPage() {
               <TextField
                 label={discountFormData.discountType === 'PERCENTAGE' ? 'Discount Percentage' : 'Discount Amount ($)'}
                 type="number"
-                value={String(discountFormData.discountValue)}
+                value={discountFormData.discountValue.toString()}
                 onChange={(value) => {
                   const parsed = parseFloat(value);
                   if (!isNaN(parsed)) {
@@ -530,12 +529,12 @@ export default function InfluencersPage() {
                 autoComplete="off"
                 min={0}
                 max={discountFormData.discountType === 'PERCENTAGE' ? 100 : 1000}
-                step="0.1"
+                step={0.1}
               />
               <TextField
                 label="Usage Limit"
                 type="number"
-                value={String(discountFormData.usageLimit)}
+                value={discountFormData.usageLimit.toString()}
                 onChange={(value) => {
                   const parsed = parseInt(value);
                   if (!isNaN(parsed)) {
@@ -694,7 +693,7 @@ export default function InfluencersPage() {
                       <TextField
                         label="Commission Rate (%)"
                         type="number"
-                        value={String(editFormData.commissionRate * 100)}
+                        value={(editFormData.commissionRate * 100).toString()}
                         onChange={(value) => {
                           const parsed = parseFloat(value);
                           if (!isNaN(parsed)) {
@@ -707,7 +706,7 @@ export default function InfluencersPage() {
                         autoComplete="off"
                         min={0}
                         max={100}
-                        step="0.1"
+                        step={0.1}
                       />
                     ) : (
                       <div>

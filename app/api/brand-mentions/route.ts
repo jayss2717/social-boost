@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {
+    const where: Record<string, any> = {
       merchantId: merchant.id,
     };
 
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     const summary = {
       total: total,
-      byPlatform: {} as any,
+      byPlatform: {} as Record<string, number>,
       byType: {
         influencers: 0,
         randomPeople: 0,
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       mediaUrls,
       engagement,
       isInfluencer,
-    } = body;
+    } = body as Record<string, any>;
 
     // Get merchant
     const merchant = await prisma.merchant.findFirst({
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     const socialMediaAccount = await prisma.socialMediaAccount.findFirst({
       where: {
         merchantId: merchant.id,
-        platform: platform as any,
+        platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
       },
     });
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
       data: {
         merchantId: merchant.id,
         socialMediaAccountId: socialMediaAccount.id,
-        platform: platform as any,
+        platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
         mentionId,
         username,
         displayName,
