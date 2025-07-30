@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { DollarSign, CreditCard, TrendingUp, Clock, CheckCircle, AlertCircle, Send, Filter, Download, Eye } from 'lucide-react';
+import { DollarSign, CreditCard, Clock, CheckCircle, Filter, Download, Eye, Send } from 'lucide-react';
 
 interface Payout {
   id: string;

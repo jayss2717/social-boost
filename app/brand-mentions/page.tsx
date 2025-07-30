@@ -1,8 +1,8 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, Badge, Banner, InlineStack, Modal, TextField, Select, Pagination, DataTable } from '@shopify/polaris';
-import { useState, useEffect } from 'react';
-import { Hash, Instagram, Eye, Youtube, Twitter, Users, TrendingUp, Gift } from 'lucide-react';
+import { Page, Layout, Card, Text, Button, BlockStack, Badge, Banner, Modal, Select, Pagination, DataTable } from '@shopify/polaris';
+import { useState, useEffect, useCallback } from 'react';
+import { Hash, Instagram, Youtube, Twitter, Users, TrendingUp, Gift } from 'lucide-react';
 
 interface BrandMention {
   id: string;
@@ -62,14 +62,10 @@ export default function BrandMentionsPage() {
     status: '',
     page: 1,
   });
-  const [selectedMention, setSelectedMention] = useState<BrandMention | null>(null);
+  const [selectedMention] = useState<BrandMention | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  useEffect(() => {
-    fetchBrandMentions();
-  }, [filters]);
-
-  const fetchBrandMentions = async () => {
+  const fetchBrandMentions = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams({
@@ -91,7 +87,11 @@ export default function BrandMentionsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchBrandMentions();
+  }, [fetchBrandMentions]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -133,11 +133,6 @@ export default function BrandMentionsPage() {
     } else {
       return <Badge tone="attention">New</Badge>;
     }
-  };
-
-  const handleViewDetail = (mention: BrandMention) => {
-    setSelectedMention(mention);
-    setShowDetailModal(true);
   };
 
   if (isLoading) {

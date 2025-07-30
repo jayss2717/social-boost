@@ -1,6 +1,6 @@
 'use client';
 
-import { Banner, Button } from '@shopify/polaris';
+import { Banner } from '@shopify/polaris';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useState } from 'react';
 
@@ -10,7 +10,7 @@ export function SubscriptionBanner() {
 
   if (isLoading || !subscription) return null;
 
-  const { usage, plans } = subscription;
+  const { usage } = subscription;
   const isOverLimit = (usage.ugcCount >= usage.ugcLimit && usage.ugcLimit !== -1) ||
                      (usage.influencerCount >= usage.influencerLimit && usage.influencerLimit !== -1);
 
@@ -50,7 +50,7 @@ export function SubscriptionBanner() {
       }}
     >
       <p>
-        You've used {usage.ugcCount} of {usage.ugcLimit} UGC posts and {usage.influencerCount} of {usage.influencerLimit} influencers. 
+        You&apos;ve used {usage.ugcCount} of {usage.ugcLimit} UGC posts and {usage.influencerCount} of {usage.influencerLimit} influencers. 
         Upgrade to continue growing your influencer marketing program.
       </p>
     </Banner>

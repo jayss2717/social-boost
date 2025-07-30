@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(
-  request: NextRequest,
-  { params: { id: string } }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const merchantId = request.headers.get('x-merchant-id');
     // const { id } = params; // Use the id parameter - not needed for this endpoint

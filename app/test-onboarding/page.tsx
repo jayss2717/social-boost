@@ -84,10 +84,10 @@ export default function TestOnboardingPage() {
                   </Text>
                   <ul className="list-disc list-inside space-y-1 mt-2">
                     <li>Enter a shop domain (e.g., test-store.myshopify.com)</li>
-                    <li>Click "Simulate OAuth" to create a test merchant</li>
-                    <li>You'll be redirected to the onboarding flow</li>
+                    <li>Click &quot;Simulate OAuth&quot; to create a test merchant</li>
+                    <li>You&apos;ll be redirected to the onboarding flow</li>
                     <li>Complete the 5-step onboarding process</li>
-                    <li>You'll be redirected to the dashboard when done</li>
+                    <li>You&apos;ll be redirected to the main dashboard when done</li>
                   </ul>
                 </div>
               </BlockStack>

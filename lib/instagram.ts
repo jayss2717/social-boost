@@ -258,7 +258,7 @@ export class InstagramAPI {
     const code = this.generateRandomCode(mentionData.username, settings.discountValue);
     
     // Create discount code
-    const discountCode = await prisma.discountCode.create({
+    await prisma.discountCode.create({
       data: {
         merchantId,
         code,

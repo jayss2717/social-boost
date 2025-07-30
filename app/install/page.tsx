@@ -41,7 +41,7 @@ export default function InstallPage() {
 
                 <Banner tone="info">
                   <Text variant="bodyMd" as="p">
-                    <strong>What you'll get:</strong>
+                    <strong>What you&apos;ll get:</strong>
                   </Text>
                   <ul className="mt-2 space-y-1">
                     <li>• Influencer management with commission tracking</li>

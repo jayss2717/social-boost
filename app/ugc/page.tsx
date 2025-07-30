@@ -1,8 +1,8 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Hash, Instagram, MessageCircle, CheckCircle, Clock, AlertCircle, Send, Filter, Eye, Youtube, Twitter } from 'lucide-react';
+import { Hash, Instagram, Eye, CheckCircle, Send, Filter, Youtube, Twitter, MessageCircle } from 'lucide-react';
 
 interface UgcPost {
   id: string;

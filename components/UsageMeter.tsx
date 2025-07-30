@@ -9,7 +9,7 @@ interface UsageMeterProps {
   type: 'ugc' | 'influencer';
 }
 
-export function UsageMeter({ current, limit, label, type }: UsageMeterProps) {
+export function UsageMeter({ current, limit, label }: UsageMeterProps) {
   const percentage = limit === -1 ? 0 : Math.min((current / limit) * 100, 100);
   const isOverLimit = limit !== -1 && current >= limit;
 

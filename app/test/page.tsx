@@ -1,6 +1,6 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, Banner } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';

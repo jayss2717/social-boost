@@ -1,7 +1,6 @@
 'use client';
 
-import { Modal, Text, Button, BlockStack, List, Badge } from '@shopify/polaris';
-import { Check, X } from 'lucide-react';
+import { Modal, Text, Button, BlockStack, List } from '@shopify/polaris';
 import { useState } from 'react';
 
 interface PaywallModalProps {

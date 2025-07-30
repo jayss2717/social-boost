@@ -1,6 +1,6 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner, ProgressBar, InlineStack } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner, ProgressBar } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { Check, ArrowRight, ArrowLeft, Store, Users, Hash, DollarSign, Settings } from 'lucide-react';
 
@@ -142,7 +142,7 @@ export default function OnboardingPage() {
                     Store Verification
                   </Text>
                   <Text variant="bodyMd" tone="subdued" as="p">
-                    Let's verify your store details from Shopify
+                    Let&apos;s verify your store details from Shopify
                   </Text>
                 </div>
 

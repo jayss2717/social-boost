@@ -11,7 +11,6 @@ export default function Dashboard() {
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useMetrics();
   const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
-  const [onboardingStatus, setOnboardingStatus] = useState<any>(null);
 
   const isLoading = metricsLoading || subscriptionLoading;
 
@@ -27,7 +26,6 @@ export default function Dashboard() {
           const response = await fetch(`/api/merchant?shop=${shop}`);
           if (response.ok) {
             const data = await response.json();
-            setOnboardingStatus(data);
             
             // Redirect to onboarding if not completed
             if (!data.onboardingCompleted) {
@@ -175,7 +173,7 @@ export default function Dashboard() {
               <div className="p-6 text-center">
                 <Banner tone="warning">
                   <Text variant="headingLg" as="h2">
-                    You've reached your plan limits
+                    You&apos;ve reached your plan limits
                   </Text>
                   <Text variant="bodyMd" tone="subdued" as="p">
                     Upgrade your plan to continue growing your influencer marketing program

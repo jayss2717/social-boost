@@ -1,90 +1,14 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner, InlineStack, Divider, Badge, Avatar, Tag, Modal } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge, Banner, Avatar, Tag } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Settings, DollarSign, Gift, Instagram, Hash, MessageCircle, Save, RefreshCw, Users, UserPlus, Shield, Activity, Globe, FileText, CreditCard, Download } from 'lucide-react';
-
-interface MerchantSettings {
-  id: string;
-  name: string;
-  email: string;
-  website?: string;
-  linkPattern?: string;
-  socialMedia: {
-    instagram: string;
-    tiktok: string;
-    twitter: string;
-    youtube: string;
-  };
-  merchantSettings: {
-    businessType: string;
-    currency: string;
-    timezone: string;
-    language: string;
-    emailNotifications: string;
-    smsNotifications: boolean;
-  };
-  discountSettings: {
-    defaultPercentage: number;
-    maxPercentage: number;
-    minPercentage: number;
-    autoApprove: boolean;
-  };
-  commissionSettings: {
-    defaultRate: number;
-    maxRate: number;
-    minRate: number;
-    autoPayout: boolean;
-  };
-  influencerSettings: {
-    autoApprove: boolean;
-    minFollowers: number;
-    minEngagementRate: number;
-    maxInfluencers: number;
-    minPayoutAmount: number;
-  };
-  ugcSettings: {
-    autoApprove: boolean;
-    minEngagement: number;
-    requiredHashtags: string[];
-    excludedWords: string[];
-    codeDelayHours: number;
-    codeDelayMinutes: number;
-    maxCodesPerDay: number;
-    maxCodesPerInfluencer: number;
-    discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
-    discountValue: number;
-    discountUsageLimit: number;
-  };
-  payoutSettings: {
-    autoPayout: boolean;
-    payoutSchedule: 'WEEKLY' | 'MONTHLY' | 'MANUAL';
-    minimumPayout: number;
-    stripeAccountId: string;
-  };
-  domainSettings: {
-    customDomain: string;
-  };
-  legalSettings: {
-    termsUrl: string;
-    privacyUrl: string;
-  };
-  teamSettings: {
-    members: Array<{
-      id: string;
-      name: string;
-      email: string;
-      role: 'OWNER' | 'ADMIN' | 'MANAGER' | 'VIEWER';
-    }>;
-  };
-}
+import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<MerchantSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [socialMediaAccounts, setSocialMediaAccounts] = useState<any[]>([]);
+  const [socialMediaAccounts] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
   
   // Edit mode states
@@ -94,7 +18,6 @@ export default function SettingsPage() {
   const [teamEditMode, setTeamEditMode] = useState(false);
   const [domainEditMode, setDomainEditMode] = useState(false);
   const [legalEditMode, setLegalEditMode] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -191,9 +114,6 @@ export default function SettingsPage() {
         }
       });
       const data = await response.json();
-      setSettings(data);
-      
-      // Ensure all required fields exist with defaults
       setFormData({
         name: data.name || '',
         email: data.email || '',
@@ -730,14 +650,14 @@ export default function SettingsPage() {
                       value={formData.linkPattern}
                       onChange={(value) => setFormData({ ...formData, linkPattern: value })}
                       placeholder="/discount/{{code}}"
-                      helpText="URL pattern for discount links. Use {{code}} as placeholder"
+                      helpText="URL pattern for discount links. Use &#123;&#123;code&#125;&#125; as placeholder"
                       autoComplete="off"
                     />
                   </div>
                   <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <Text variant="bodySm" tone="subdued" as="p">
-                      <strong>Example:</strong> If your website is "www.mystore.com" and pattern is "/discount/&#123;&#123;code&#125;&#125;", 
-                      discount links will be generated as "www.mystore.com/discount/SAVE20OFF"
+                      <strong>Example:</strong> If your website is &quot;www.mystore.com&quot; and pattern is &quot;/discount/&#123;&#123;code&#125;&#125;&quot;, 
+                      discount links will be generated as &quot;www.mystore.com/discount/SAVE20OFF&quot;
                     </Text>
                   </div>
                 </div>
