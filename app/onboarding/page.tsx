@@ -79,21 +79,39 @@ export default function OnboardingPage() {
       
       if (!shop) return;
 
-      const response = await fetch(`/api/merchant?shop=${shop}`);
-      if (response.ok) {
-        const data = await response.json();
-        setMerchantData(data);
-      } else if (response.status === 404) {
-        // If merchant not found, create mock data from shop parameter
-        console.log('Merchant not found, using shop parameter for mock data');
-        const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        setMerchantData({
-          shopName: shopName,
-          shopEmail: `admin@${shop}`,
-          shopDomain: shop,
-          shopCurrency: 'USD',
-        });
+      // Try to fetch merchant data with retries (in case of timing issues)
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        const response = await fetch(`/api/merchant?shop=${shop}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Found merchant data:', data);
+          setMerchantData(data);
+          return; // Success, exit the function
+        } else if (response.status === 404) {
+          console.log(`Attempt ${attempts + 1}: Merchant not found, retrying...`);
+          attempts++;
+          if (attempts < maxAttempts) {
+            // Wait 1 second before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } else {
+          // Other error, don't retry
+          break;
+        }
       }
+      
+      // If all attempts failed, use fallback data
+      console.log('All attempts failed, using fallback data');
+      const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      setMerchantData({
+        shopName: shopName,
+        shopEmail: `admin@${shop}`,
+        shopDomain: shop,
+        shopCurrency: 'USD',
+      });
     } catch (error) {
       console.error('Failed to fetch merchant data:', error);
       // Fallback: create mock data from shop parameter

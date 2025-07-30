@@ -85,7 +85,15 @@ export async function GET(request: NextRequest) {
           onboardingStep: 0,
         },
       });
-      console.log('Merchant created/updated:', merchant.shop, 'onboardingCompleted:', merchant.onboardingCompleted);
+      console.log('Merchant created/updated:', {
+        shop: merchant.shop,
+        shopName: merchant.shopName,
+        shopEmail: merchant.shopEmail,
+        shopDomain: merchant.shopDomain,
+        shopCurrency: merchant.shopCurrency,
+        onboardingCompleted: merchant.onboardingCompleted,
+        id: merchant.id
+      });
     } catch (error) {
       console.error('Failed to create/update merchant:', error);
       // If database fails, still redirect to onboarding
