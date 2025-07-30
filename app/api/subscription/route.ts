@@ -37,6 +37,40 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Test database connection first
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ Database connection successful for subscription');
+    } catch (dbError) {
+      console.error('❌ Database connection failed for subscription:', dbError);
+      // Return demo data if database is unavailable
+      const demoUsage = {
+        ugcCount: 0,
+        influencerCount: 0,
+        ugcLimit: 20,
+        influencerLimit: 5,
+      };
+
+      const plans = [
+        { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
+        { name: 'Pro', price: 29, ugcLimit: 1000, influencerLimit: -1 },
+        { name: 'Scale', price: 99, ugcLimit: -1, influencerLimit: -1 },
+      ];
+
+      return NextResponse.json({
+        usage: demoUsage,
+        subscription: {
+          id: 'demo',
+          merchantId: merchantId || 'demo',
+          planId: 'free',
+          status: 'ACTIVE',
+          plan: { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
+        },
+        plans,
+        _note: 'Demo data - database connection failed',
+      });
+    }
+
     const [usage, subscription] = await Promise.all([
       getSubscriptionUsage(merchantId),
       prisma.subscription.findUnique({
