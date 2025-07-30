@@ -81,10 +81,15 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Onboarding completed successfully' 
-        });
+              return NextResponse.json({ 
+        success: true, 
+        message: 'Onboarding completed successfully',
+        merchant: {
+          id: merchant.id,
+          shop: merchant.shop,
+          onboardingCompleted: merchant.onboardingCompleted,
+        }
+      });
       }
 
       // Update existing merchant onboarding status
@@ -131,7 +136,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ 
         success: true, 
-        message: 'Onboarding completed successfully' 
+        message: 'Onboarding completed successfully',
+        merchant: {
+          id: testMerchant.id,
+          shop: testMerchant.shop,
+          onboardingCompleted: testMerchant.onboardingCompleted,
+        }
       });
     } catch (dbError) {
       console.error('Database error in onboarding completion:', dbError);

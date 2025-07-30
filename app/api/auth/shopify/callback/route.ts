@@ -187,8 +187,10 @@ export async function GET(request: NextRequest) {
     // Redirect to onboarding if not completed, otherwise to app
     // For new installations, always redirect to onboarding
     if (!merchant || !merchant.onboardingCompleted) {
-      // Use the tunnel URL if available, otherwise fall back to localhost
-      const baseUrl = process.env.HOST || 'http://localhost:3000';
+      // Use Vercel URL for production, localhost for development
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : (process.env.HOST || 'https://socialboost-blue.vercel.app');
       const onboardingUrl = `${baseUrl}/onboarding?shop=${shop}`;
       console.log('Redirecting to onboarding:', onboardingUrl);
       return NextResponse.redirect(onboardingUrl);
@@ -199,7 +201,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Fallback: if we get here, always redirect to onboarding
-    const baseUrl = process.env.HOST || 'http://localhost:3000';
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : (process.env.HOST || 'https://socialboost-blue.vercel.app');
     const onboardingUrl = `${baseUrl}/onboarding?shop=${shop}`;
     console.log('Fallback: redirecting to onboarding:', onboardingUrl);
     return NextResponse.redirect(onboardingUrl);

@@ -83,9 +83,31 @@ export default function OnboardingPage() {
       if (response.ok) {
         const data = await response.json();
         setMerchantData(data);
+      } else if (response.status === 404) {
+        // If merchant not found, create mock data from shop parameter
+        console.log('Merchant not found, using shop parameter for mock data');
+        const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        setMerchantData({
+          shopName: shopName,
+          shopEmail: `admin@${shop}`,
+          shopDomain: shop,
+          shopCurrency: 'USD',
+        });
       }
     } catch (error) {
       console.error('Failed to fetch merchant data:', error);
+      // Fallback: create mock data from shop parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop');
+      if (shop) {
+        const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        setMerchantData({
+          shopName: shopName,
+          shopEmail: `admin@${shop}`,
+          shopDomain: shop,
+          shopCurrency: 'USD',
+        });
+      }
     }
   };
 
@@ -120,8 +142,8 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        // Redirect to dashboard
-        window.location.href = '/';
+        // Redirect to dashboard with shop parameter
+        window.location.href = `/?shop=${shop}`;
       }
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
