@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Generate OAuth URL
     const nonce = Math.random().toString(36).substring(2, 15);
     const scopes = 'read_orders,write_discounts,read_products,read_customers,write_products,read_inventory,write_inventory,read_analytics,read_marketing_events,write_marketing_events';
-    const redirectUri = `${process.env.HOST}/api/auth/shopify/callback`;
+    const redirectUri = `https://socialboost-blue.vercel.app/api/auth/shopify/callback`;
     
     const authUrl = `https://${shop}/admin/oauth/authorize?` +
       `client_id=${process.env.SHOPIFY_API_KEY}&` +

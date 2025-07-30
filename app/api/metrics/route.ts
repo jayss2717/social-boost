@@ -1,14 +1,39 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
-import { requireMerchantId } from '@/lib/auth';
+import { getMerchantId } from '@/lib/auth';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const merchantId = requireMerchantId(request);
+    const merchantId = getMerchantId(request);
+
+    // If no merchant ID is provided, return mock data
+    if (!merchantId) {
+      console.log('🔄 No merchant ID provided, returning mock data');
+      return createSuccessResponse({
+        totalUgcPosts: 0,
+        totalInfluencers: 0,
+        approvedPosts: 0,
+        pendingApproval: 0,
+        pendingPayouts: 0,
+        completedPayouts: 0,
+        totalRevenue: 0,
+        averageEngagement: 0,
+        totalEngagement: 0,
+        engagementCount: 0,
+        recentActivity: 0,
+        topPosts: [],
+        platformDistribution: {
+          INSTAGRAM: 0,
+          TIKTOK: 0,
+          YOUTUBE: 0,
+        },
+        _note: 'Mock data - no merchant ID provided',
+      });
+    }
 
     // In CI environment, return mock data
     if (process.env.CI === 'true') {
@@ -101,90 +126,86 @@ export async function GET(request: NextRequest) {
         where: { merchantId, status: 'COMPLETED' },
         _sum: { amount: true },
       }),
-      
-      // Revenue (from completed payouts)
+      // Revenue
       prisma.payout.aggregate({
         where: { merchantId, status: 'COMPLETED' },
         _sum: { amount: true },
       }),
-      
-      // Recent activity (last 7 days)
+      // Recent Activity
       prisma.ugcPost.count({
         where: {
           merchantId,
           createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
           },
         },
       }),
     ]);
 
     // Calculate engagement metrics
-    const engagementStats = await prisma.ugcPost.aggregate({
+    const engagementData = await prisma.ugcPost.aggregate({
       where: { merchantId },
-      _avg: { engagement: true },
       _sum: { engagement: true },
       _count: { engagement: true },
     });
 
-    // Get top performing posts
+    const totalEngagement = engagementData._sum.engagement || 0;
+    const engagementCount = engagementData._count.engagement || 0;
+    const averageEngagement = engagementCount > 0 ? totalEngagement / engagementCount : 0;
+
+    // Get top posts
     const topPosts = await prisma.ugcPost.findMany({
       where: { merchantId },
-      include: { influencer: true },
       orderBy: { engagement: 'desc' },
       take: 5,
+      include: {
+        influencer: {
+          select: { name: true },
+        },
+      },
     });
 
     // Get platform distribution
-    const platformStats = await prisma.ugcPost.groupBy({
+    const platformDistribution = await prisma.ugcPost.groupBy({
       by: ['platform'],
       where: { merchantId },
       _count: { platform: true },
     });
 
-    const metrics = {
-      // Basic counts
+    const platformData = {
+      INSTAGRAM: 0,
+      TIKTOK: 0,
+      YOUTUBE: 0,
+    };
+
+    platformDistribution.forEach((item) => {
+      platformData[item.platform as keyof typeof platformData] = item._count.platform;
+    });
+
+    return createSuccessResponse({
       totalUgcPosts,
       totalInfluencers,
       approvedPosts,
       pendingApproval,
-      
-      // Financial metrics (in cents)
       pendingPayouts: pendingPayouts._sum.amount || 0,
       completedPayouts: completedPayouts._sum.amount || 0,
       totalRevenue: totalRevenue._sum.amount || 0,
-      
-      // Engagement metrics
-      averageEngagement: Math.round(engagementStats._avg.engagement || 0),
-      totalEngagement: engagementStats._sum.engagement || 0,
-      engagementCount: engagementStats._count.engagement || 0,
-      
-      // Activity metrics
+      averageEngagement,
+      totalEngagement,
+      engagementCount,
       recentActivity,
-      
-      // Top performing content
-      topPosts: topPosts.map(post => ({
+      topPosts: topPosts.map((post) => ({
         id: post.id,
         platform: post.platform,
         engagement: post.engagement,
-        content: post.content?.substring(0, 100) + '...',
-        influencerName: post.influencer?.name,
-        createdAt: post.createdAt,
+        content: post.content,
+        influencerName: post.influencer?.name || 'Unknown',
+        createdAt: post.createdAt.toISOString(),
       })),
-      
-      // Platform distribution
-      platformDistribution: platformStats.reduce((acc, stat) => {
-        acc[stat.platform] = stat._count.platform;
-        return acc;
-      }, {} as Record<string, number>),
-    };
-
-    return createSuccessResponse(metrics);
+      platformDistribution: platformData,
+    });
   } catch (error) {
-    console.error('Metrics API error:', error);
-    if (error instanceof Error && error.message === 'Merchant ID required') {
-      return createErrorResponse('Merchant ID required', 401);
-    }
-    return createErrorResponse('Failed to fetch metrics', 500);
+    console.error('Failed to fetch metrics:', error);
+    return createErrorResponse('Failed to fetch metrics');
   }
 } 

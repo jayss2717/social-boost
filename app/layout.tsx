@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { PolarisProvider } from '@/components/PolarisProvider';
 import { AppFrame } from '@/components/AppFrame';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
+import { ShopifyProvider } from '@/components/ShopifyProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,12 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PolarisProvider>
-          <AppFrame>
-            <SubscriptionBanner />
-            {children}
-          </AppFrame>
-        </PolarisProvider>
+        <ShopifyProvider>
+          <PolarisProvider>
+            <AppFrame>
+              <SubscriptionBanner />
+              {children}
+            </AppFrame>
+          </PolarisProvider>
+        </ShopifyProvider>
       </body>
     </html>
   );

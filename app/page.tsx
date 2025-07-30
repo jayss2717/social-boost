@@ -11,8 +11,9 @@ export default function Dashboard() {
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useMetrics();
   const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
-  const isLoading = metricsLoading || subscriptionLoading;
+  const isLoading = metricsLoading || subscriptionLoading || isCheckingOnboarding;
 
   // Check onboarding status
   useEffect(() => {
@@ -22,19 +23,65 @@ export default function Dashboard() {
         const urlParams = new URLSearchParams(window.location.search);
         const shop = urlParams.get('shop') || localStorage.getItem('shop');
         
+        console.log('Checking onboarding for shop:', shop);
+        
+        // For testing purposes, always redirect to onboarding if no shop is provided
+        if (!shop) {
+          console.log('No shop provided, redirecting to test onboarding...');
+          window.location.href = '/test-onboarding';
+          return;
+        }
+        
         if (shop) {
-          const response = await fetch(`/api/merchant?shop=${shop}`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Redirect to onboarding if not completed
-            if (!data.onboardingCompleted) {
-              window.location.href = `/onboarding?shop=${shop}`;
+          try {
+            const response = await fetch(`/api/merchant?shop=${shop}`);
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Merchant data:', data);
+              
+              // Redirect to onboarding if not completed
+              if (!data.onboardingCompleted) {
+                console.log('Redirecting to onboarding...');
+                window.location.href = `/onboarding?shop=${shop}`;
+                return; // Don't set isCheckingOnboarding to false if redirecting
+              } else {
+                console.log('Onboarding already completed, staying on dashboard');
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch merchant data:', error);
+            // If database is not available, try test API
+            console.log('Database not available, trying test API...');
+            try {
+              const testResponse = await fetch(`/api/test/onboarding-check?shop=${shop}`);
+              if (testResponse.ok) {
+                const testData = await testResponse.json();
+                console.log('Test merchant data:', testData);
+                
+                if (!testData.onboardingCompleted) {
+                  console.log('Redirecting to test onboarding...');
+                  window.location.href = '/test-onboarding';
+                  return;
+                }
+              }
+            } catch (testError) {
+              console.error('Test API also failed:', testError);
+              // Final fallback
+              console.log('All APIs failed, redirecting to test onboarding...');
+              window.location.href = '/test-onboarding';
+              return;
             }
           }
         }
+        
+        // Only set to false if we're not redirecting
+        setIsCheckingOnboarding(false);
       } catch (error) {
         console.error('Failed to check onboarding status:', error);
+        // If there's an error, redirect to test onboarding as fallback
+        console.log('Error occurred, redirecting to test onboarding...');
+        window.location.href = '/test-onboarding';
+        return;
       }
     };
 
@@ -48,7 +95,14 @@ export default function Dashboard() {
           <Layout.Section>
             <Card>
               <div className="flex justify-center items-center h-64">
-                <Spinner size="large" />
+                <div className="text-center">
+                  <Spinner size="large" />
+                  <div className="mt-4">
+                    <Text variant="bodyMd" as="p">
+                      Checking onboarding status...
+                    </Text>
+                  </div>
+                </div>
               </div>
             </Card>
           </Layout.Section>

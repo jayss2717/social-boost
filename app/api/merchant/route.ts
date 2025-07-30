@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
+    const response = {
       id: merchant.id,
       shop: merchant.shop,
       shopName: merchant.shopName,
@@ -36,7 +36,10 @@ export async function GET(request: NextRequest) {
       onboardingCompleted: merchant.onboardingCompleted,
       onboardingStep: merchant.onboardingStep,
       settings: merchant.settings,
-    });
+    };
+    
+    console.log('Merchant API response:', response);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch merchant:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

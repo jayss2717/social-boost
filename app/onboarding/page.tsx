@@ -68,6 +68,7 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    console.log('Onboarding page loaded');
     fetchMerchantData();
   }, []);
 
