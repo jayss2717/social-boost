@@ -36,20 +36,24 @@ jobs:
     - name: Build application
       run: npm run build
       
+    - name: Start development server
+      run: npm run dev &
+      
+    - name: Wait for server to start
+      run: |
+        # Wait for server to be ready
+        timeout 60 bash -c 'until curl -f http://localhost:3000/api/test; do sleep 2; done'
+        
     - name: Run app tests
       run: npm run test:app
       
     - name: Check health endpoint
       run: |
-        # Start server in background
-        npm start &
-        sleep 30
-        
         # Test health endpoint
         curl -f http://localhost:3000/api/health || exit 1
         
         # Stop server
-        pkill -f "npm start"
+        pkill -f "npm run dev"
 
   deploy-preview:
     needs: test
