@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: Record<string, any> = {
+    const where: Record<string, unknown> = {
       merchantId: merchant.id,
     };
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       mediaUrls,
       engagement,
       isInfluencer,
-    } = body as Record<string, any>;
+    } = body as Record<string, unknown>;
 
     // Get merchant
     const merchant = await prisma.merchant.findFirst({

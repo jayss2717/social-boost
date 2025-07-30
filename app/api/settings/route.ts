@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { settingsSchema, createErrorResponse, createSuccessResponse } from '@/utils/validation';
-import { requireMerchantId } from '@/lib/auth';
+import { SocialMediaSettings, DiscountSettings, CommissionSettings, UgcSettings, PayoutSettings } from '@/types';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -61,19 +61,19 @@ export async function GET(request: NextRequest) {
       return createSuccessResponse(defaultSettings);
     }
 
-    return createSuccessResponse({
-      id: settings.id,
-      merchantId: settings.merchantId,
-      name: settings.name,
-      email: settings.email,
-      website: settings.website || '',
-      linkPattern: settings.linkPattern || '/discount/{{code}}',
-      socialMedia: settings.socialMedia as any,
-      discountSettings: settings.discountSettings as any,
-      commissionSettings: settings.commissionSettings as any,
-      ugcSettings: settings.ugcSettings as any,
-      payoutSettings: settings.payoutSettings as any,
-    });
+          return createSuccessResponse({
+        id: settings.id,
+        merchantId: settings.merchantId,
+        name: settings.name,
+        email: settings.email,
+        website: settings.website || '',
+        linkPattern: settings.linkPattern || '/discount/{{code}}',
+        socialMedia: settings.socialMedia as SocialMediaSettings,
+        discountSettings: settings.discountSettings as DiscountSettings,
+        commissionSettings: settings.commissionSettings as CommissionSettings,
+        ugcSettings: settings.ugcSettings as UgcSettings,
+        payoutSettings: settings.payoutSettings as PayoutSettings,
+      });
   } catch (error) {
     console.error('Failed to fetch settings:', error);
     return createErrorResponse('Failed to fetch settings', 500);

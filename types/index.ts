@@ -89,4 +89,52 @@ export interface Metrics {
   pendingPayouts: number;
   approvedPosts: number;
   pendingApproval: number;
+}
+
+export interface SocialMediaSettings {
+  instagram: string;
+  tiktok: string;
+  twitter: string;
+  youtube: string;
+}
+
+export interface DiscountSettings {
+  defaultPercentage: number;
+  maxPercentage: number;
+  minPercentage: number;
+  autoApprove: boolean;
+}
+
+export interface CommissionSettings {
+  defaultRate: number;
+  maxRate: number;
+  minRate: number;
+  autoPayout: boolean;
+}
+
+export interface UgcSettings {
+  autoApprove: boolean;
+  minEngagement: number;
+  requiredHashtags: string[];
+  excludedWords: string[];
+}
+
+export interface PayoutSettings {
+  autoPayout: boolean;
+  payoutSchedule: 'WEEKLY' | 'MONTHLY';
+  minimumPayout: number;
+}
+
+export interface MerchantSettings {
+  id: string | null;
+  merchantId: string;
+  name: string;
+  email: string;
+  website: string;
+  linkPattern: string;
+  socialMedia: SocialMediaSettings;
+  discountSettings: DiscountSettings;
+  commissionSettings: CommissionSettings;
+  ugcSettings: UgcSettings;
+  payoutSettings: PayoutSettings;
 } 

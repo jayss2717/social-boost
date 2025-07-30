@@ -5,7 +5,13 @@ import { useState, useEffect } from 'react';
 import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [socialMediaAccounts] = useState<any[]>([]);
+  const [socialMediaAccounts] = useState<Array<{
+    id: string;
+    platform: string;
+    username: string;
+    displayName?: string;
+    isActive: boolean;
+  }>>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSaving, setIsSaving] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

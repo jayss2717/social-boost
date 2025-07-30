@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       where: {
         merchantId_platform: {
           merchantId: merchant.id,
-          platform: platform as any,
+          platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
         },
       },
       update: {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       },
       create: {
         merchantId: merchant.id,
-        platform: platform as any,
+        platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
         accountId,
         username,
         displayName: displayName || accountInfo?.name,

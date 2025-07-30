@@ -16,7 +16,7 @@ export class Monitoring {
   }
 
   // Track API errors
-  async trackError(error: Error, context?: any) {
+  async trackError(error: Error, context?: Record<string, unknown>) {
     if (!this.config.enabled) return;
 
     const errorData = {
@@ -39,7 +39,7 @@ export class Monitoring {
   }
 
   // Track API performance
-  async trackPerformance(operation: string, duration: number, metadata?: any) {
+  async trackPerformance(operation: string, duration: number, metadata?: Record<string, unknown>) {
     if (!this.config.enabled) return;
 
     const perfData = {
@@ -54,7 +54,7 @@ export class Monitoring {
   }
 
   // Track business events
-  async trackEvent(event: string, properties?: any) {
+  async trackEvent(event: string, properties?: Record<string, unknown>) {
     if (!this.config.enabled) return;
 
     const eventData = {
@@ -68,12 +68,12 @@ export class Monitoring {
   }
 
   // Track webhook delivery
-  async trackWebhook(topic: string, shop: string, success: boolean, error?: any) {
+  async trackWebhook(topic: string, shop: string, success: boolean, error?: unknown) {
     await this.trackEvent('webhook_delivery', {
       topic,
       shop,
       success,
-      error: error?.message,
+      error: error && typeof error === 'object' && 'message' in error ? (error as Error).message : undefined,
     });
   }
 

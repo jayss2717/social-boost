@@ -41,7 +41,7 @@ interface BrandMentionsData {
   };
   summary: {
     total: number;
-    byPlatform: any;
+    byPlatform: Record<string, number>;
     byType: {
       influencers: number;
       randomPeople: number;

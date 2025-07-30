@@ -15,10 +15,10 @@ export default function TestPage() {
   const { data: ugcPosts, isLoading: ugcPostsLoading, error: ugcPostsError } = useUgcPosts();
   const { data: payouts, isLoading: payoutsLoading, error: payoutsError } = usePayouts();
 
-  const [testResults, setTestResults] = useState<any>({});
+  const [testResults, setTestResults] = useState<Record<string, unknown>>({});
 
   const runApiTests = async () => {
-    const results: any = {};
+    const results: Record<string, unknown> = {};
 
     // Test metrics API
     try {
@@ -28,8 +28,8 @@ export default function TestPage() {
         ok: metricsResponse.ok,
         data: await metricsResponse.json(),
       };
-    } catch (error: any) {
-      results.metrics = { error: error.message };
+    } catch (error: unknown) {
+      results.metrics = { error: (error as Error).message };
     }
 
     // Test subscription API
@@ -44,8 +44,8 @@ export default function TestPage() {
         ok: subscriptionResponse.ok,
         data: await subscriptionResponse.json(),
       };
-    } catch (error: any) {
-      results.subscription = { error: error.message };
+    } catch (error: unknown) {
+      results.subscription = { error: (error as Error).message };
     }
 
     // Test influencers API
@@ -56,8 +56,8 @@ export default function TestPage() {
         ok: influencersResponse.ok,
         data: await influencersResponse.json(),
       };
-    } catch (error: any) {
-      results.influencers = { error: error.message };
+    } catch (error: unknown) {
+      results.influencers = { error: (error as Error).message };
     }
 
     // Test UGC posts API
@@ -68,8 +68,8 @@ export default function TestPage() {
         ok: ugcResponse.ok,
         data: await ugcResponse.json(),
       };
-    } catch (error: any) {
-      results.ugcPosts = { error: error.message };
+    } catch (error: unknown) {
+      results.ugcPosts = { error: (error as Error).message };
     }
 
     // Test payouts API
@@ -84,8 +84,8 @@ export default function TestPage() {
         ok: payoutsResponse.ok,
         data: await payoutsResponse.json(),
       };
-    } catch (error: any) {
-      results.payouts = { error: error.message };
+    } catch (error: unknown) {
+      results.payouts = { error: (error as Error).message };
     }
 
     setTestResults(results);
@@ -183,7 +183,7 @@ export default function TestPage() {
                         <Text variant="bodyMd" as="span">
                           Count: {influencers?.length || 0}
                         </Text>
-                        {influencers?.slice(0, 3).map((influencer: any, index: number) => (
+                        {influencers?.slice(0, 3).map((influencer: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
                             {influencer.name} - {influencer.email}
                           </Text>
@@ -204,7 +204,7 @@ export default function TestPage() {
                         <Text variant="bodyMd" as="span">
                           Count: {ugcPosts?.length || 0}
                         </Text>
-                        {ugcPosts?.slice(0, 3).map((post: any, index: number) => (
+                        {ugcPosts?.slice(0, 3).map((post: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
                             {post.platform} - {post.engagement} engagement
                           </Text>
@@ -225,7 +225,7 @@ export default function TestPage() {
                         <Text variant="bodyMd" as="span">
                           Count: {payouts?.length || 0}
                         </Text>
-                        {payouts?.slice(0, 3).map((payout: any, index: number) => (
+                        {payouts?.slice(0, 3).map((payout: Record<string, unknown>, index: number) => (
                           <Text key={index} variant="bodyMd" as="span">
                             ${(payout.amount || 0) / 100} - {payout.status}
                           </Text>

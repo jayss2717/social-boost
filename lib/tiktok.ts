@@ -131,7 +131,7 @@ export class TikTokAPI {
   }
 
   // Process webhook event
-  async processWebhookEvent(event: any): Promise<void> {
+  async processWebhookEvent(event: Record<string, unknown>): Promise<void> {
     try {
       // TikTok webhook structure would be different from Instagram
       // This is a simulation based on expected structure
@@ -143,7 +143,7 @@ export class TikTokAPI {
     }
   }
 
-  private async handleMentionEvent(mentionData: any): Promise<void> {
+  private async handleMentionEvent(mentionData: Record<string, unknown>): Promise<void> {
     try {
       // Get merchant settings
       const merchant = await prisma.merchant.findFirst({
@@ -156,7 +156,7 @@ export class TikTokAPI {
         return;
       }
 
-      const settings = merchant.settings.ugcSettings as any;
+      const settings = merchant.settings.ugcSettings as Record<string, unknown>;
       
       // Check if this is a random person (not a registered influencer)
       const influencer = await prisma.influencer.findFirst({
@@ -181,7 +181,7 @@ export class TikTokAPI {
     }
   }
 
-  private async handleInfluencerMention(merchantId: string, mentionData: any, influencer: any): Promise<void> {
+  private async handleInfluencerMention(merchantId: string, mentionData: Record<string, unknown>, influencer: Record<string, unknown>): Promise<void> {
     // Create UGC post for registered influencer
     await prisma.ugcPost.create({
       data: {
@@ -201,7 +201,7 @@ export class TikTokAPI {
     console.log(`Created UGC post for influencer ${influencer.name}`);
   }
 
-  private async handleRandomPersonMention(merchantId: string, mentionData: any, settings: any): Promise<void> {
+  private async handleRandomPersonMention(merchantId: string, mentionData: Record<string, unknown>, settings: Record<string, unknown>): Promise<void> {
     // Check engagement threshold
     if (mentionData.engagement < settings.minEngagement) {
       console.log(`Engagement too low for random mention: ${mentionData.engagement}`);

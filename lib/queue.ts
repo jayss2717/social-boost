@@ -10,7 +10,7 @@ export const payoutQueue = new Queue('payouts', {
 // Worker for processing payouts
 export const payoutWorker = new Worker(
   'payouts',
-  async (job: any) => {
+  async (job: Record<string, unknown>) => {
     const { merchantId } = job.data;
     return await processBulkPayouts(merchantId);
   },
@@ -35,10 +35,10 @@ export const schedulePayouts = async (merchantId: string) => {
 };
 
 // Error handling
-payoutWorker.on('failed', (job: any, err: any) => {
+payoutWorker.on('failed', (job: Record<string, unknown>, err: unknown) => {
   console.error(`Job ${job?.id} failed:`, err);
 });
 
-payoutWorker.on('completed', (job: any) => {
+payoutWorker.on('completed', (job: Record<string, unknown>) => {
   console.log(`Job ${job.id} completed successfully`);
 }); 

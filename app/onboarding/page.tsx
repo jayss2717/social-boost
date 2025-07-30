@@ -50,7 +50,12 @@ const ONBOARDING_STEPS = [
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [merchantData, setMerchantData] = useState<any>(null);
+  const [merchantData, setMerchantData] = useState<{
+    shopName?: string;
+    shopEmail?: string;
+    shopDomain?: string;
+    shopCurrency?: string;
+  } | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessType: 'ECOMMERCE',
     industry: '',
@@ -122,7 +127,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const updateOnboardingData = (field: keyof OnboardingData, value: any) => {
+  const updateOnboardingData = (field: keyof OnboardingData, value: unknown) => {
     setOnboardingData(prev => ({
       ...prev,
       [field]: value,

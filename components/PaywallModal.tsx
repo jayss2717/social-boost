@@ -6,8 +6,13 @@ import { useState } from 'react';
 interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
-  usage?: any;
-  plans?: any[];
+  usage?: Record<string, unknown>;
+  plans?: Array<{
+    name: string;
+    price: number;
+    ugcLimit: number;
+    influencerLimit: number;
+  }>;
 }
 
 export function PaywallModal({ open, onClose, usage, plans }: PaywallModalProps) {

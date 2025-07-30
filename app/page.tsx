@@ -216,7 +216,7 @@ export default function Dashboard() {
                   Top Performing Posts
                 </Text>
                 <div className="mt-4 space-y-2">
-                  {metrics.topPosts.slice(0, 3).map((post: any, index: number) => (
+                  {metrics.topPosts.slice(0, 3).map((post: Record<string, unknown>, index: number) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                       <div>
                         <Text variant="bodyMd" as="p">

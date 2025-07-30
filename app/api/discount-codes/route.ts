@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       ]);
     }
 
-    const where: any = { merchantId };
+    const where: Record<string, unknown> = { merchantId };
     if (influencerId) {
       where.influencerId = influencerId;
     }
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Add unique links to all discount codes using merchant settings
-    const discountCodesWithLinks = discountCodes.map((code: any) => ({
+    const discountCodesWithLinks = discountCodes.map((code: Record<string, unknown>) => ({
       ...code,
               uniqueLink: generateDiscountLink(code.code, merchantSettings ? {
           website: merchantSettings.website || undefined,

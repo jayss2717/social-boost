@@ -71,7 +71,7 @@ export default function InfluencersPage() {
   const handleAddInfluencer = async () => {
     try {
       // Clean up form data - convert empty strings to undefined for optional fields
-      const cleanedFormData: any = {
+      const cleanedFormData: Record<string, unknown> = {
         name: formData.name,
         commissionRate: formData.commissionRate,
       };
@@ -248,7 +248,7 @@ export default function InfluencersPage() {
 
     try {
       // Clean up edit form data - convert empty strings to undefined for optional fields
-      const cleanedEditFormData: any = {
+      const cleanedEditFormData: Record<string, unknown> = {
         name: editFormData.name,
         commissionRate: editFormData.commissionRate,
       };

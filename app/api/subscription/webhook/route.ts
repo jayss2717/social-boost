@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object as any;
+        const session = event.data.object as Record<string, unknown>;
         const { merchantId, plan } = session.metadata;
 
         const planMap = {
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as any;
+        const subscription = event.data.object as Record<string, unknown>;
         
         await prisma.subscription.updateMany({
           where: { stripeSubId: subscription.id },

@@ -40,7 +40,7 @@ export async function GET() {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Database test error:', error);
     return NextResponse.json({
       status: 'error',

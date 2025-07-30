@@ -157,7 +157,7 @@ export class InstagramAPI {
   }
 
   // Process webhook event
-  async processWebhookEvent(event: any): Promise<void> {
+  async processWebhookEvent(event: Record<string, unknown>): Promise<void> {
     try {
       if (event.entry && event.entry[0]?.changes) {
         for (const change of event.entry[0].changes) {
@@ -171,7 +171,7 @@ export class InstagramAPI {
     }
   }
 
-  private async handleMentionEvent(mentionData: any): Promise<void> {
+  private async handleMentionEvent(mentionData: Record<string, unknown>): Promise<void> {
     try {
       // Get merchant settings
       const merchant = await prisma.merchant.findFirst({
@@ -184,7 +184,7 @@ export class InstagramAPI {
         return;
       }
 
-      const settings = merchant.settings.ugcSettings as any;
+      const settings = merchant.settings.ugcSettings as Record<string, unknown>;
       
       // Check if this is a random person (not a registered influencer)
       const influencer = await prisma.influencer.findFirst({
@@ -209,7 +209,7 @@ export class InstagramAPI {
     }
   }
 
-  private async handleInfluencerMention(merchantId: string, mentionData: any, influencer: any): Promise<void> {
+  private async handleInfluencerMention(merchantId: string, mentionData: Record<string, unknown>, influencer: Record<string, unknown>): Promise<void> {
     // Create UGC post for registered influencer
     await prisma.ugcPost.create({
       data: {
@@ -229,7 +229,7 @@ export class InstagramAPI {
     console.log(`Created UGC post for influencer ${influencer.name}`);
   }
 
-  private async handleRandomPersonMention(merchantId: string, mentionData: any, settings: any): Promise<void> {
+  private async handleRandomPersonMention(merchantId: string, mentionData: Record<string, unknown>, settings: Record<string, unknown>): Promise<void> {
     // Check engagement threshold
     if (mentionData.engagement < settings.minEngagement) {
       console.log(`Engagement too low for random mention: ${mentionData.engagement}`);
