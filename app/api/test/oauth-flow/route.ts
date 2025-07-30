@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         scope: 'read_products,write_products',
         isActive: true,
         shopifyShopId: '123456789',
-        shopName: shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        shopName: shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
         shopEmail: `admin@${shop}`,
         shopDomain: shop,
         shopCurrency: 'USD',
