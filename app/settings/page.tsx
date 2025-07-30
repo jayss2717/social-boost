@@ -6,7 +6,9 @@ import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus
 
 export default function SettingsPage() {
   const [socialMediaAccounts] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSaving, setIsSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
