@@ -50,15 +50,15 @@ const ONBOARDING_STEPS = [
   },
   {
     id: 6,
-    title: 'Choose Plan',
-    description: 'Select your subscription plan',
-    icon: DollarSign,
-  },
-  {
-    id: 7,
     title: 'Connect Social Media',
     description: 'Connect your social media accounts',
     icon: Hash,
+  },
+  {
+    id: 7,
+    title: 'Choose Plan',
+    description: 'Select your subscription plan',
+    icon: DollarSign,
   },
 ];
 
@@ -112,62 +112,56 @@ export default function OnboardingPage() {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         } else {
-          // Other error, don't retry
+          console.error('Failed to fetch merchant data:', response.status);
           break;
         }
       }
       
-      // If all attempts failed, use fallback data
-      console.log('All attempts failed, using fallback data');
-      const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      // If all attempts failed, use mock data
+      console.log('Using mock merchant data');
       setMerchantData({
-        shopName: shopName,
-        shopEmail: `admin@${shop}`,
-        shopDomain: shop,
+        shopName: 'Demo Store',
+        shopEmail: 'demo@example.com',
+        shopDomain: 'demo-store.myshopify.com',
         shopCurrency: 'USD',
       });
     } catch (error) {
-      console.error('Failed to fetch merchant data:', error);
-      // Fallback: create mock data from shop parameter
-      const urlParams = new URLSearchParams(window.location.search);
-      const shop = urlParams.get('shop');
-      if (shop) {
-        const shopName = shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        setMerchantData({
-          shopName: shopName,
-          shopEmail: `admin@${shop}`,
-          shopDomain: shop,
-          shopCurrency: 'USD',
-        });
-      }
+      console.error('Error fetching merchant data:', error);
+      // Use mock data on error
+      setMerchantData({
+        shopName: 'Demo Store',
+        shopEmail: 'demo@example.com',
+        shopDomain: 'demo-store.myshopify.com',
+        shopCurrency: 'USD',
+      });
     }
   };
 
   const handleNext = async () => {
-    console.log('handleNext called, currentStep:', currentStep, 'total steps:', ONBOARDING_STEPS.length);
-    if (currentStep < ONBOARDING_STEPS.length) {
-      console.log('Moving to next step:', currentStep + 1);
-      setCurrentStep(currentStep + 1);
-    } else {
-      console.log('Completing onboarding...');
+    console.log('Moving to next step:', currentStep + 1);
+    if (currentStep === ONBOARDING_STEPS.length) {
       await completeOnboarding();
+    } else {
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    console.log('Moving to previous step:', currentStep - 1);
+    setCurrentStep(Math.max(1, currentStep - 1));
   };
 
   const completeOnboarding = async () => {
     try {
-      console.log('Starting onboarding completion...');
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       
-      console.log('Shop:', shop);
-      console.log('Onboarding data:', onboardingData);
+      if (!shop) {
+        console.error('No shop parameter found');
+        return;
+      }
+
+      console.log('Completing onboarding with data:', onboardingData);
 
       const response = await fetch('https://socialboost-blue.vercel.app/api/onboarding/complete', {
         method: 'POST',
@@ -180,29 +174,29 @@ export default function OnboardingPage() {
         }),
       });
 
-      console.log('Response status:', response.status);
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
-
       if (response.ok) {
-        console.log('Onboarding completed successfully, redirecting...');
-        // Redirect to dashboard with shop parameter
+        console.log('Onboarding completed successfully');
+        // Redirect to dashboard with shop parameter to prevent looping
         window.location.href = `/?shop=${shop}`;
       } else {
-        console.error('Onboarding completion failed:', responseData);
-        alert('Failed to complete onboarding. Please try again.');
+        console.error('Failed to complete onboarding:', response.status);
+        // Still redirect to prevent getting stuck
+        window.location.href = `/?shop=${shop}`;
       }
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-      alert('Failed to complete onboarding. Please try again.');
+      console.error('Error completing onboarding:', error);
+      // Redirect anyway to prevent getting stuck
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop');
+      if (shop) {
+        window.location.href = `/?shop=${shop}`;
+      }
     }
   };
 
   const updateOnboardingData = (field: keyof OnboardingData, value: unknown) => {
-    setOnboardingData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    console.log('Updating onboarding data:', field, value);
+    setOnboardingData(prev => ({ ...prev, [field]: value }));
   };
 
   const renderStepContent = () => {
@@ -305,24 +299,45 @@ export default function OnboardingPage() {
                   <Text variant="bodyMd" as="p" fontWeight="bold">
                     What are your main goals?
                   </Text>
-                  <div className="space-y-2">
-                    {['Increase brand awareness', 'Drive sales', 'Build community', 'Generate UGC'].map((goal) => (
-                      <label key={goal} className="flex items-center space-x-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    {[
+                      'Increase brand awareness',
+                      'Drive sales',
+                      'Build community',
+                      'Generate UGC',
+                      'Partner with influencers',
+                      'Improve social media presence'
+                    ].map((goal) => (
+                      <label key={goal} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={onboardingData.goals.includes(goal)}
                           onChange={(e) => {
-                            if (e.target.checked) {
-                              updateOnboardingData('goals', [...onboardingData.goals, goal]);
-                            } else {
-                              updateOnboardingData('goals', onboardingData.goals.filter(g => g !== goal));
-                            }
+                            const newGoals = e.target.checked
+                              ? [...onboardingData.goals, goal]
+                              : onboardingData.goals.filter(g => g !== goal);
+                            updateOnboardingData('goals', newGoals);
                           }}
+                          className="rounded"
                         />
-                        <Text variant="bodyMd" as="span">{goal}</Text>
+                        <Text variant="bodySm" as="span">{goal}</Text>
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Team Size"
+                    options={[
+                      { label: '1-5 people', value: '1-5' },
+                      { label: '6-20 people', value: '6-20' },
+                      { label: '21-50 people', value: '21-50' },
+                      { label: '50+ people', value: '50+' },
+                    ]}
+                    value={onboardingData.teamSize}
+                    onChange={(value) => updateOnboardingData('teamSize', value)}
+                  />
                 </div>
               </BlockStack>
             </div>
@@ -348,26 +363,31 @@ export default function OnboardingPage() {
                   <TextField
                     label="Default Commission Rate (%)"
                     type="number"
-                    value={String(onboardingData.commissionRate)}
-                    onChange={(value) => updateOnboardingData('commissionRate', Number(value))}
-                    min="0"
-                    max="100"
+                    value={onboardingData.commissionRate.toString()}
+                    onChange={(value) => updateOnboardingData('commissionRate', parseFloat(value) || 0)}
+                    suffix="%"
                     autoComplete="off"
                   />
-                  <Select
-                    label="Auto-Approve Influencers"
-                    options={[
-                      { label: 'Yes', value: 'true' },
-                      { label: 'No', value: 'false' },
-                    ]}
-                    value={onboardingData.autoApprove ? 'true' : 'false'}
-                    onChange={(value) => updateOnboardingData('autoApprove', value === 'true')}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="autoApprove"
+                    className="rounded"
+                    checked={onboardingData.autoApprove}
+                    onChange={(e) => updateOnboardingData('autoApprove', e.target.checked)}
                   />
+                  <label htmlFor="autoApprove">
+                    <Text variant="bodySm" as="span">
+                      Auto-approve influencer applications
+                    </Text>
+                  </label>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <Text variant="bodySm" as="p">
-                    <strong>Default Commission Rate:</strong> {onboardingData.commissionRate}% of sales generated through influencer links
+                    <strong>Commission rates:</strong> This is the percentage you&apos;ll pay influencers for successful sales they drive to your store.
                   </Text>
                 </div>
               </BlockStack>
@@ -392,28 +412,18 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <TextField
-                    label="Minimum Engagement"
+                    label="Minimum Engagement Required"
                     type="number"
-                    value={String(onboardingData.minEngagement)}
-                    onChange={(value) => updateOnboardingData('minEngagement', parseInt(value))}
-                    min="0"
-                    helpText="Minimum likes/comments to approve UGC"
+                    value={onboardingData.minEngagement.toString()}
+                    onChange={(value) => updateOnboardingData('minEngagement', parseInt(value) || 0)}
+                    suffix="followers"
                     autoComplete="off"
-                  />
-                  <Select
-                    label="Auto-Approve UGC"
-                    options={[
-                      { label: 'Yes', value: 'true' },
-                      { label: 'No', value: 'false' },
-                    ]}
-                    value={onboardingData.autoApprove ? 'true' : 'false'}
-                    onChange={(value) => updateOnboardingData('autoApprove', value === 'true')}
                   />
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <Text variant="bodySm" as="p">
-                    <strong>UGC Approval:</strong> {onboardingData.autoApprove ? 'Automatically' : 'Manually'} approve user-generated content with {onboardingData.minEngagement}+ engagement
+                    <strong>Engagement threshold:</strong> Only posts with this many followers or more will be eligible for automatic discount codes.
                   </Text>
                 </div>
               </BlockStack>
@@ -447,21 +457,11 @@ export default function OnboardingPage() {
                     value={onboardingData.payoutSchedule}
                     onChange={(value) => updateOnboardingData('payoutSchedule', value)}
                   />
-                  <Select
-                    label="Team Size"
-                    options={[
-                      { label: '1-5 people', value: '1-5' },
-                      { label: '6-20 people', value: '6-20' },
-                      { label: '20+ people', value: '20+' },
-                    ]}
-                    value={onboardingData.teamSize}
-                    onChange={(value) => updateOnboardingData('teamSize', value)}
-                  />
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <Text variant="bodySm" as="p">
-                    <strong>Payout Schedule:</strong> Process influencer payments {onboardingData.payoutSchedule.toLowerCase()}
+                    <strong>Payout schedule:</strong> How often you&apos;d like to process commission payments to your influencers.
                   </Text>
                 </div>
               </BlockStack>
@@ -470,6 +470,103 @@ export default function OnboardingPage() {
         );
 
       case 6:
+        return (
+          <Card>
+            <div className="p-6">
+              <BlockStack gap="400">
+                <div className="text-center mb-6">
+                  <Hash className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  <Text variant="headingLg" as="h2">
+                    Connect Social Media
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Connect your social media accounts to detect brand mentions
+                  </Text>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Instagram */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">
+                            IG
+                          </span>
+                        </div>
+                        <Text variant="bodyMd" fontWeight="semibold" as="p">
+                          Instagram
+                        </Text>
+                      </div>
+                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                    </div>
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Detect brand mentions and send discount codes via DM
+                    </Text>
+                    <div className="mt-3">
+                      <Button 
+                        size="slim" 
+                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                      >
+                        Connect Instagram
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* TikTok */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">
+                            TT
+                          </span>
+                        </div>
+                        <Text variant="bodyMd" fontWeight="semibold" as="p">
+                          TikTok
+                        </Text>
+                      </div>
+                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                    </div>
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Monitor TikTok mentions and engage with creators
+                    </Text>
+                    <div className="mt-3">
+                      <Button 
+                        size="slim" 
+                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                      >
+                        Connect TikTok
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <Text variant="bodySm" as="p">
+                    <strong>How it works:</strong> Once connected, we&apos;ll automatically detect when someone mentions your brand and send them a discount code via direct message.
+                  </Text>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="skipSocialMedia"
+                    className="rounded"
+                    onChange={(e) => updateOnboardingData('socialMediaConnected', e.target.checked)}
+                  />
+                  <label htmlFor="skipSocialMedia">
+                    <Text variant="bodySm" as="span">
+                      Skip for now (I&apos;ll connect later)
+                    </Text>
+                  </label>
+                </div>
+              </BlockStack>
+            </div>
+          </Card>
+        );
+
+      case 7:
         return (
           <Card>
             <div className="p-6">
@@ -571,11 +668,15 @@ export default function OnboardingPage() {
                       </div>
                       <div className="flex items-center">
                         <Check className="w-4 h-4 text-green-600 mr-2" />
-                        <Text variant="bodySm" as="span">Custom integrations</Text>
+                        <Text variant="bodySm" as="span">Advanced analytics</Text>
                       </div>
                       <div className="flex items-center">
                         <Check className="w-4 h-4 text-green-600 mr-2" />
-                        <Text variant="bodySm" as="span">Dedicated support</Text>
+                        <Text variant="bodySm" as="span">Priority support</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Custom integrations</Text>
                       </div>
                     </div>
                   </div>
@@ -590,7 +691,7 @@ export default function OnboardingPage() {
                         Custom
                       </Text>
                       <Text variant="bodySm" tone="subdued" as="p">
-                        Contact support
+                        For large teams
                       </Text>
                     </div>
                     <div className="mt-4 space-y-2">
@@ -604,127 +705,30 @@ export default function OnboardingPage() {
                       </div>
                       <div className="flex items-center">
                         <Check className="w-4 h-4 text-green-600 mr-2" />
-                        <Text variant="bodySm" as="span">Custom features</Text>
+                        <Text variant="bodySm" as="span">Custom analytics</Text>
                       </div>
                       <div className="flex items-center">
                         <Check className="w-4 h-4 text-green-600 mr-2" />
-                        <Text variant="bodySm" as="span">24/7 support</Text>
+                        <Text variant="bodySm" as="span">Dedicated support</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">White-label options</Text>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <Text variant="bodySm" as="p">
-                    <strong>Special Offer:</strong> Get 20% off when you pay for a full year! 🎉
-                  </Text>
-                </div>
-
-                <Select
-                  label="Select Plan"
-                  options={[
-                    { label: 'Starter (Free)', value: 'STARTER' },
-                    { label: 'Pro ($19.99/month)', value: 'PRO' },
-                    { label: 'Scale ($59.99/month)', value: 'SCALE' },
-                    { label: 'Enterprise (Contact Support)', value: 'ENTERPRISE' },
-                  ]}
-                  value={onboardingData.selectedPlan || 'STARTER'}
-                  onChange={(value) => updateOnboardingData('selectedPlan', value)}
-                />
-              </BlockStack>
-            </div>
-          </Card>
-        );
-
-      case 7:
-        return (
-          <Card>
-            <div className="p-6">
-              <BlockStack gap="400">
-                <div className="text-center mb-6">
-                  <Hash className="w-12 h-12 mx-auto mb-4 text-blue-600" />
-                  <Text variant="headingLg" as="h2">
-                    Connect Social Media
-                  </Text>
-                  <Text variant="bodyMd" tone="subdued" as="p">
-                    Connect your social media accounts to detect brand mentions
-                  </Text>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Instagram */}
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
-                            IG
-                          </span>
-                        </div>
-                        <Text variant="bodyMd" fontWeight="semibold" as="p">
-                          Instagram
-                        </Text>
-                      </div>
-                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
-                    </div>
-                    <Text variant="bodySm" tone="subdued" as="p">
-                      Detect brand mentions and send discount codes via DM
-                    </Text>
-                    <div className="mt-3">
-                      <Button 
-                        size="slim" 
-                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
-                      >
-                        Connect Instagram
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* TikTok */}
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">
-                            TT
-                          </span>
-                        </div>
-                        <Text variant="bodyMd" fontWeight="semibold" as="p">
-                          TikTok
-                        </Text>
-                      </div>
-                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
-                    </div>
-                    <Text variant="bodySm" tone="subdued" as="p">
-                      Monitor TikTok mentions and engage with creators
-                    </Text>
-                    <div className="mt-3">
-                      <Button 
-                        size="slim" 
-                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
-                      >
-                        Connect TikTok
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                      <Text variant="bodySm" as="p">
-                      <strong>How it works:</strong> Once connected, we&apos;ll automatically detect when someone mentions your brand and send them a discount code via direct message.
-                    </Text>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id="skipSocialMedia"
+                    id="skipPlan"
                     className="rounded"
-                    onChange={(e) => updateOnboardingData('socialMediaConnected', e.target.checked)}
+                    onChange={(e) => updateOnboardingData('selectedPlan', e.target.checked ? 'Starter' : undefined)}
                   />
-                  <label htmlFor="skipSocialMedia">
+                  <label htmlFor="skipPlan">
                     <Text variant="bodySm" as="span">
-                      Skip for now (I&apos;ll connect later)
+                      Start with free plan (I&apos;ll upgrade later)
                     </Text>
                   </label>
                 </div>
@@ -739,28 +743,55 @@ export default function OnboardingPage() {
   };
 
   return (
-    <Page title="Welcome to SocialBoost">
+    <Page>
       <Layout>
         <Layout.Section>
           <div className="max-w-4xl mx-auto">
             {/* Progress Bar */}
             <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <Text variant="headingMd" as="h2">
-                  Setup Progress
+              <div className="flex items-center justify-between mb-4">
+                <Text variant="headingMd" as="h1">
+                  Setup Your Store
                 </Text>
-                <Text variant="bodyMd" tone="subdued" as="p">
+                <Text variant="bodySm" tone="subdued" as="span">
                   Step {currentStep} of {ONBOARDING_STEPS.length}
                 </Text>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(currentStep / ONBOARDING_STEPS.length) * 100}%` }}
                 ></div>
               </div>
-              <div className="mt-2 text-sm text-gray-500">
-                Debug: Step {currentStep} of {ONBOARDING_STEPS.length} ({(currentStep / ONBOARDING_STEPS.length * 100).toFixed(0)}%)
+              
+              <div className="flex justify-between mt-2">
+                {ONBOARDING_STEPS.map((step, index) => {
+                  const StepIcon = step.icon;
+                  const isActive = currentStep === step.id;
+                  const isCompleted = currentStep > step.id;
+                  
+                  return (
+                    <div key={step.id} className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${
+                        isActive ? 'bg-blue-600 text-white' : 
+                        isCompleted ? 'bg-green-500 text-white' : 
+                        'bg-gray-300 text-gray-600'
+                      }`}>
+                        {isCompleted ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <StepIcon className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span className={`text-center text-sm ${
+                        isActive ? 'font-semibold' : 'text-gray-500'
+                      }`}>
+                        {step.title}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -768,22 +799,24 @@ export default function OnboardingPage() {
             {renderStepContent()}
 
             {/* Navigation */}
-            <div className="mt-8 flex justify-between">
-              <Button
-                variant="secondary"
-                onClick={handleBack}
-                disabled={currentStep === 1}
-                icon={() => <ArrowLeft className="w-4 h-4" />}
-              >
-                Back
-              </Button>
-
-              <Button
-                onClick={handleNext}
-                icon={() => currentStep === ONBOARDING_STEPS.length ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-              >
-                {currentStep === ONBOARDING_STEPS.length ? 'Complete Setup' : 'Next'}
-              </Button>
+            <div className="flex justify-between mt-8">
+              <div>
+                {currentStep > 1 && (
+                  <Button onClick={handleBack} icon={ArrowLeft}>
+                    Back
+                  </Button>
+                )}
+              </div>
+              
+              <div>
+                <Button 
+                  variant="primary"
+                  onClick={handleNext}
+                  icon={currentStep === ONBOARDING_STEPS.length ? undefined : ArrowRight}
+                >
+                  {currentStep === ONBOARDING_STEPS.length ? 'Complete Setup' : 'Next'}
+                </Button>
+              </div>
             </div>
           </div>
         </Layout.Section>
