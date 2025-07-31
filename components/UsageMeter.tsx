@@ -2,7 +2,7 @@
 
 import { Card, Text, ProgressBar, Button, Badge } from '@shopify/polaris';
 import { AlertTriangle, Users, MessageCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PaywallModal from './PaywallModal';
 
 interface UsageMeterProps {
@@ -26,9 +26,9 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
 
   useEffect(() => {
     fetchUsage();
-  }, [merchantId]);
+  }, [merchantId, fetchUsage]);
 
-  const fetchUsage = async () => {
+  const fetchUsage = useCallback(async () => {
     try {
       const response = await fetch('/api/subscription', {
         headers: {
@@ -45,7 +45,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [merchantId]);
 
   const handleUpgrade = (planId: string, billingCycle: 'monthly' | 'yearly') => {
     // Handle subscription upgrade
@@ -139,7 +139,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
           {isAtLimit && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <Text variant="bodySm" as="p" tone="critical">
-                You've reached your current plan limits. Upgrade to continue adding influencers and sending discount codes.
+                You&apos;ve reached your current plan limits. Upgrade to continue adding influencers and sending discount codes.
               </Text>
               <Button
                 size="slim"
@@ -154,7 +154,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
           {!isAtLimit && (influencerPercentage >= 80 || dmPercentage >= 80) && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <Text variant="bodySm" as="p" tone="subdued">
-                You're approaching your plan limits. Consider upgrading for more capacity.
+                You&apos;re approaching your plan limits. Consider upgrading for more capacity.
               </Text>
               <Button
                 size="slim"

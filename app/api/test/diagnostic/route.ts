@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   const results: {
-    environment: any;
-    database: any;
-    schema: any;
-    permissions: any;
+    environment: unknown;
+    database: unknown;
+    schema: unknown;
+    permissions: unknown;
     errors: string[];
   } = {
     environment: {},

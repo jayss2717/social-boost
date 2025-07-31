@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Text, Button, BlockStack, Card, Badge } from '@shopify/polaris';
+import { Modal, Text, BlockStack, Card, Badge } from '@shopify/polaris';
 import { Check, X, Star } from 'lucide-react';
 import { useState } from 'react';
 
@@ -81,7 +81,7 @@ const plans = [
   }
 ];
 
-export default function PaywallModal({ open, onClose, onSubscribe, currentPlan, usage }: PaywallModalProps) {
+export default function PaywallModal({ open, onClose, onSubscribe, usage }: PaywallModalProps) {
   const [selectedPlan, setSelectedPlan] = useState('PRO');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
@@ -125,7 +125,7 @@ export default function PaywallModal({ open, onClose, onSubscribe, currentPlan, 
                 <div className="flex items-center space-x-2 mb-2">
                   <X className="w-5 h-5 text-red-600" />
                   <Text variant="bodyMd" fontWeight="semibold" as="p" tone="critical">
-                    You've reached your current plan limits
+                    You&apos;ve reached your current plan limits
                   </Text>
                 </div>
                 <Text variant="bodySm" as="p" tone="subdued">

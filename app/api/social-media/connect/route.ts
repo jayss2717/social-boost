@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       where: {
         merchantId_platform: {
           merchantId,
-          platform: platform as any,
+          platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
         },
       },
     });
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       const newAccount = await prisma.socialMediaAccount.create({
         data: {
           merchantId,
-          platform: platform as any,
+          platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
           accountId,
           username,
           displayName,

@@ -708,9 +708,9 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <Text variant="bodySm" as="p">
-                    <strong>How it works:</strong> Once connected, we'll automatically detect when someone mentions your brand and send them a discount code via direct message.
-                  </Text>
+                                      <Text variant="bodySm" as="p">
+                      <strong>How it works:</strong> Once connected, we&apos;ll automatically detect when someone mentions your brand and send them a discount code via direct message.
+                    </Text>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -722,7 +722,7 @@ export default function OnboardingPage() {
                   />
                   <label htmlFor="skipSocialMedia">
                     <Text variant="bodySm" as="span">
-                      Skip for now (I'll connect later)
+                      Skip for now (I&apos;ll connect later)
                     </Text>
                   </label>
                 </div>
