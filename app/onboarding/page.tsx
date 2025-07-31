@@ -155,7 +155,7 @@ export default function OnboardingPage() {
       console.log('Shop:', shop);
       console.log('Onboarding data:', onboardingData);
 
-      const response = await fetch('/api/onboarding/complete', {
+      const response = await fetch('https://socialboost-blue.vercel.app/api/onboarding/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -475,7 +475,12 @@ export default function OnboardingPage() {
                   Step {currentStep} of {ONBOARDING_STEPS.length}
                 </Text>
               </div>
-              <ProgressBar progress={currentStep / ONBOARDING_STEPS.length} />
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                  style={{ width: `${(currentStep / ONBOARDING_STEPS.length) * 100}%` }}
+                ></div>
+              </div>
               <div className="mt-2 text-sm text-gray-500">
                 Debug: Step {currentStep} of {ONBOARDING_STEPS.length} ({(currentStep / ONBOARDING_STEPS.length * 100).toFixed(0)}%)
               </div>
