@@ -5,6 +5,12 @@ import { headers } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Stripe is configured
+    if (!stripe) {
+      console.error('Stripe not configured for webhook');
+      return NextResponse.json({ error: 'Payment processing not configured' }, { status: 503 });
+    }
+
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get('stripe-signature');

@@ -15,9 +15,8 @@ export const calculateCommission = (
   commissionRate: number,
   discountAmount: number = 0
 ): number => {
-  // Commission is calculated on the discounted amount
-  const commissionableAmount = salesAmount - discountAmount;
-  return Math.round(commissionableAmount * commissionRate * 100); // Convert to cents
+  const netSales = salesAmount - discountAmount;
+  return Math.round(netSales * (commissionRate / 100));
 };
 
 export const createPayoutRecord = async (
@@ -32,19 +31,24 @@ export const createPayoutRecord = async (
       status: 'PENDING',
       periodStart: calculation.periodStart,
       periodEnd: calculation.periodEnd,
-      stripeTransferId: null,
     },
+    include: { influencer: true },
   });
 };
 
 export const processPayoutViaStripe = async (payoutId: string) => {
+  // Check if Stripe is configured
+  if (!stripe) {
+    throw new Error('Stripe not configured for payout processing');
+  }
+
   const payout = await prisma.payout.findUnique({
     where: { id: payoutId },
     include: { influencer: true },
   });
 
-  if (!payout || !payout.influencer) {
-    throw new Error('Payout or influencer not found');
+  if (!payout) {
+    throw new Error('Payout not found');
   }
 
   if (!payout.influencer.stripeAccountId) {
@@ -143,21 +147,23 @@ export const getPayoutSummary = async (merchantId: string) => {
 };
 
 export const createStripeConnectAccount = async (email: string) => {
+  if (!stripe) {
+    throw new Error('Stripe not configured');
+  }
+
   return await stripe.accounts.create({
     type: 'express',
     email,
     capabilities: {
       transfers: { requested: true },
     },
-    business_type: 'individual',
   });
 };
 
 export const generateConnectAccountLink = async (accountId: string) => {
-  return await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${process.env.HOST}/influencer/connect/refresh`,
-    return_url: `${process.env.HOST}/influencer/connect/success`,
-    type: 'account_onboarding',
-  });
+  if (!stripe) {
+    throw new Error('Stripe not configured');
+  }
+
+  return await stripe.accounts.createLoginLink(accountId);
 }; 
