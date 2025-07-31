@@ -670,13 +670,14 @@ export default function OnboardingPage() {
                     <Text variant="bodySm" tone="subdued" as="p">
                       Detect brand mentions and send discount codes via DM
                     </Text>
-                    <Button 
-                      size="slim" 
-                      className="mt-3"
-                      onClick={() => updateOnboardingData('socialMediaConnected', true)}
-                    >
-                      Connect Instagram
-                    </Button>
+                    <div className="mt-3">
+                      <Button 
+                        size="slim" 
+                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                      >
+                        Connect Instagram
+                      </Button>
+                    </div>
                   </div>
 
                   {/* TikTok */}
@@ -697,13 +698,14 @@ export default function OnboardingPage() {
                     <Text variant="bodySm" tone="subdued" as="p">
                       Monitor TikTok mentions and engage with creators
                     </Text>
-                    <Button 
-                      size="slim" 
-                      className="mt-3"
-                      onClick={() => updateOnboardingData('socialMediaConnected', true)}
-                    >
-                      Connect TikTok
-                    </Button>
+                    <div className="mt-3">
+                      <Button 
+                        size="slim" 
+                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                      >
+                        Connect TikTok
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
