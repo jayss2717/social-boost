@@ -1,35 +1,180 @@
 'use client';
 
-import { ProgressBar, Text, BlockStack } from '@shopify/polaris';
+import { Card, Text, ProgressBar, Button, Badge } from '@shopify/polaris';
+import { AlertTriangle, Users, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import PaywallModal from './PaywallModal';
 
 interface UsageMeterProps {
-  current: number;
-  limit: number;
-  label: string;
-  type: 'ugc' | 'influencer';
+  merchantId: string;
+  onUpgrade?: () => void;
 }
 
-export function UsageMeter({ current, limit, label }: UsageMeterProps) {
-  const percentage = limit === -1 ? 0 : Math.min((current / limit) * 100, 100);
-  const isOverLimit = limit !== -1 && current >= limit;
+interface UsageData {
+  influencers: number;
+  dmsSent: number;
+  limit: {
+    influencers: number;
+    dmsPerMonth: number;
+  };
+}
+
+export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
+  const [usage, setUsage] = useState<UsageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    fetchUsage();
+  }, [merchantId]);
+
+  const fetchUsage = async () => {
+    try {
+      const response = await fetch('/api/subscription', {
+        headers: {
+          'x-merchant-id': merchantId,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUsage(data.usage);
+      }
+    } catch (error) {
+      console.error('Failed to fetch usage:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpgrade = (planId: string, billingCycle: 'monthly' | 'yearly') => {
+    // Handle subscription upgrade
+    console.log('Upgrading to:', planId, billingCycle);
+    setShowPaywall(false);
+    if (onUpgrade) {
+      onUpgrade();
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <div className="p-4">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+            <div className="h-2 bg-gray-200 rounded w-full mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!usage) {
+    return null;
+  }
+
+  const influencerPercentage = (usage.influencers / usage.limit.influencers) * 100;
+  const dmPercentage = (usage.dmsSent / usage.limit.dmsPerMonth) * 100;
+  const isAtLimit = influencerPercentage >= 100 || dmPercentage >= 100;
 
   return (
-    <BlockStack gap="200">
-      <div className="flex justify-between items-center">
-        <Text variant="bodyMd" as="p">{label}</Text>
-        <Text variant="bodyMd" tone="subdued" as="p">
-          {current} / {limit === -1 ? '∞' : limit}
-        </Text>
-      </div>
-      <ProgressBar
-        progress={percentage / 100}
-        size="small"
+    <>
+      <Card>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <Text variant="headingMd" as="h3">
+              Usage This Month
+            </Text>
+            {isAtLimit && (
+              <Badge tone="critical">
+                <AlertTriangle className="w-4 h-4 mr-1" />
+                At Limit
+              </Badge>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {/* Influencers Usage */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <Text variant="bodyMd" as="span">
+                    Influencers
+                  </Text>
+                </div>
+                <Text variant="bodyMd" as="span">
+                  {usage.influencers} / {usage.limit.influencers === -1 ? '∞' : usage.limit.influencers}
+                </Text>
+              </div>
+              <ProgressBar
+                progress={Math.min(influencerPercentage, 100)}
+                tone={influencerPercentage >= 90 ? 'critical' : 'success'}
+                size="small"
+              />
+            </div>
+
+            {/* DMs Usage */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-4 h-4 text-green-600" />
+                  <Text variant="bodyMd" as="span">
+                    DMs Sent
+                  </Text>
+                </div>
+                <Text variant="bodyMd" as="span">
+                  {usage.dmsSent} / {usage.limit.dmsPerMonth === -1 ? '∞' : usage.limit.dmsPerMonth}
+                </Text>
+              </div>
+              <ProgressBar
+                progress={Math.min(dmPercentage, 100)}
+                tone={dmPercentage >= 90 ? 'critical' : 'success'}
+                size="small"
+              />
+            </div>
+          </div>
+
+          {isAtLimit && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <Text variant="bodySm" as="p" tone="critical">
+                You've reached your current plan limits. Upgrade to continue adding influencers and sending discount codes.
+              </Text>
+              <Button
+                size="slim"
+                className="mt-2"
+                onClick={() => setShowPaywall(true)}
+              >
+                Upgrade Plan
+              </Button>
+            </div>
+          )}
+
+          {!isAtLimit && (influencerPercentage >= 80 || dmPercentage >= 80) && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <Text variant="bodySm" as="p" tone="subdued">
+                You're approaching your plan limits. Consider upgrading for more capacity.
+              </Text>
+              <Button
+                size="slim"
+                variant="secondary"
+                className="mt-2"
+                onClick={() => setShowPaywall(true)}
+              >
+                View Plans
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onSubscribe={handleUpgrade}
+        usage={usage}
       />
-      {isOverLimit && (
-        <Text variant="bodySm" tone="critical" as="p">
-          Limit reached. Upgrade your plan to continue.
-        </Text>
-      )}
-    </BlockStack>
+    </>
   );
 } 
