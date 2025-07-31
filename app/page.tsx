@@ -302,7 +302,6 @@ export default function Dashboard() {
           open={showPaywall}
           onClose={() => setShowPaywall(false)}
           usage={usage}
-          plans={subscription?.plans}
         />
       )}
     </Page>
