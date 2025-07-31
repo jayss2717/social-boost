@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   const results: {
-    environment: unknown;
-    database: unknown;
-    schema: unknown;
-    permissions: unknown;
+    environment: Record<string, unknown>;
+    database: Record<string, unknown>;
+    schema: Record<string, unknown>;
+    permissions: Record<string, unknown>;
     errors: string[];
   } = {
     environment: {},

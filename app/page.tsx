@@ -4,7 +4,7 @@ import { Page, Layout, Card, Text, Badge, Button, Grid, Spinner, BlockStack, Ban
 import { Users, Hash, Gift, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';
-import { PaywallModal } from '@/components/PaywallModal';
+import PaywallModal from '@/components/PaywallModal';
 import { useState, useEffect } from 'react';
 
 export default function Dashboard() {
