@@ -21,6 +21,7 @@
 15. **ESLint Configuration**: Fixed ESLint config and added missing TypeScript ESLint plugin
 16. **Fresh Installation**: Fixed merchant API to handle new store installations automatically
 17. **TypeScript Errors**: Fixed nullable field handling in merchant API
+18. **Client-Side Errors**: Comprehensive fix for fresh installation crashes
 
 ### ✅ APIs Working
 
@@ -77,7 +78,7 @@ The application has been successfully deployed to all platforms:
 
 #### ✅ Shopify App Store
 - **Status**: ✅ Successfully deployed
-- **Version**: socialboost-13 (active)
+- **Version**: socialboost-14 (active)
 - **App ID**: 270578352129
 - **Partner Dashboard**: https://partners.shopify.com/4415443/apps/270578352129/versions
 - **Client ID**: 4638bbbd1542925e067ab11f3eecdc1c
@@ -121,16 +122,20 @@ For production deployment, ensure these environment variables are set:
 - **ESLint configuration**: Fixed config and added TypeScript ESLint plugin
 - **Fresh installation**: Fixed merchant API to handle new store installations automatically
 - **TypeScript errors**: Fixed nullable field handling in merchant API
+- **Client-side errors**: Comprehensive fix for fresh installation crashes
 
-### 🆕 Latest Fix: TypeScript Error Resolution
+### 🆕 Latest Fix: Client-Side Error Prevention
 
-**Problem**: TypeScript compilation failed due to nullable fields in merchant API.
+**Problem**: Fresh Shopify app installations were causing client-side crashes due to missing data and API errors.
 
 **Solution**: 
-- ✅ Fixed nullable field handling for `shopName` and `shopEmail`
-- ✅ Added fallback values for optional fields
-- ✅ Ensured type safety in merchant creation
-- ✅ All TypeScript errors resolved
+- ✅ Enhanced error handling in dashboard component
+- ✅ Updated apiFetch to handle missing merchant ID gracefully
+- ✅ Store merchant ID in localStorage for API calls
+- ✅ Return null instead of throwing errors to prevent crashes
+- ✅ Added onboarding error state handling
+- ✅ Better loading states and error messages
+- ✅ Graceful fallbacks for all API failures
 
 ---
 
