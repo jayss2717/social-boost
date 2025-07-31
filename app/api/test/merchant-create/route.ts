@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
         shop: `test-${Date.now()}.myshopify.com`,
         accessToken: 'test-token',
         scope: 'read_products,write_products',
-        shopifyShopId: '123456789',
+        shopifyShopId: `create-${Date.now()}`,
         shopName: 'Test Store',
         shopEmail: 'test@store.com',
         shopDomain: `test-${Date.now()}.myshopify.com`,

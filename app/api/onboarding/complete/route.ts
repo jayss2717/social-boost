@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
           shop,
           accessToken: 'test-token',
           scope: 'read_products,write_products',
-          shopifyShopId: '123456789',
+          shopifyShopId: `shop-${Date.now()}`,
           shopName: shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
           shopEmail: `admin@${shop}`,
           shopDomain: shop,
