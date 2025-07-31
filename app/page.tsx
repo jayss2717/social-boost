@@ -84,7 +84,9 @@ export default function Dashboard() {
               // Store merchant ID in localStorage for API calls
               if (data.id) {
                 localStorage.setItem('merchantId', data.id);
+                localStorage.setItem('shop', shop);
                 console.log('Stored merchant ID:', data.id);
+                console.log('Stored shop:', shop);
               } else {
                 console.error('No merchant ID in response:', data);
                 setOnboardingError('Invalid merchant data received');

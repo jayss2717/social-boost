@@ -1,7 +1,23 @@
 import useSWR from 'swr';
 import { apiFetch } from '@/utils/api';
 
-const fetcher = (url: string) => apiFetch(url);
+const fetcher = async (url: string) => {
+  const result = await apiFetch(url);
+  if (result === null) {
+    // Return default subscription structure to prevent React errors
+    return {
+      subscription: null,
+      usage: {
+        influencerCount: 0,
+        ugcCount: 0,
+        influencerLimit: 5,
+        ugcLimit: 20,
+      },
+      plans: [],
+    };
+  }
+  return result;
+};
 
 export function useSubscription() {
   const { data, error, isLoading, mutate } = useSWR('/api/subscription', fetcher);

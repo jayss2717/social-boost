@@ -7,8 +7,18 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     : null;
 
   if (!merchantId) {
-    console.error('No merchant ID available for API call');
-    return null;
+    console.warn('No merchant ID available for API call to:', url);
+    // Return a mock response structure to prevent React errors
+    return {
+      subscription: null,
+      usage: {
+        influencerCount: 0,
+        ugcCount: 0,
+        influencerLimit: 5,
+        ugcLimit: 20,
+      },
+      plans: [],
+    };
   }
 
   const headers = {

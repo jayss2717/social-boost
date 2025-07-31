@@ -62,8 +62,51 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
       
       document.head.appendChild(script);
     } else {
-      console.log('Not in Shopify admin context, skipping App Bridge initialization');
-      setIsLoaded(true);
+      // Check if we're in an iframe (Shopify admin context)
+      const isInIframe = window !== window.top;
+      if (isInIframe) {
+        console.log('Detected iframe context, attempting App Bridge initialization');
+        // Try to initialize anyway for iframe contexts
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.9/dist/index.umd.js';
+        script.async = true;
+        
+        script.onload = () => {
+          try {
+            // @ts-ignore
+            if (typeof window.createApp === 'function') {
+              const host = new URLSearchParams(window.location.search).get('host');
+              const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
+              
+              if (host) {
+                // @ts-ignore
+                const app = window.createApp({
+                  apiKey,
+                  host,
+                  forceRedirect: false,
+                });
+                
+                // @ts-ignore
+                window.shopifyApp = app;
+                console.log('Shopify App Bridge initialized in iframe context');
+              }
+            }
+          } catch (error) {
+            console.error('Failed to initialize App Bridge in iframe:', error);
+          }
+          setIsLoaded(true);
+        };
+        
+        script.onerror = () => {
+          console.warn('Failed to load App Bridge script in iframe');
+          setIsLoaded(true);
+        };
+        
+        document.head.appendChild(script);
+      } else {
+        console.log('Not in Shopify admin context, skipping App Bridge initialization');
+        setIsLoaded(true);
+      }
     }
   }, []);
 
