@@ -155,7 +155,7 @@ export default function OnboardingPage() {
       console.log('Shop:', shop);
       console.log('Onboarding data:', onboardingData);
 
-      const response = await fetch('/api/test/onboarding-complete', {
+      const response = await fetch('https://socialboost-blue.vercel.app/api/onboarding/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
