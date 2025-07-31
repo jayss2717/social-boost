@@ -1,86 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { TikTokAPI } from '@/lib/tiktok';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const mode = searchParams.get('hub.mode');
-    const token = searchParams.get('hub.verify_token');
-    const challenge = searchParams.get('hub.challenge');
-
-    // Get merchant settings for webhook verification
-    const merchant = await prisma.merchant.findFirst({
-      where: { isActive: true },
-      include: { socialMediaAccounts: true },
-    });
-
-    if (!merchant) {
-      return NextResponse.json({ error: 'No active merchant found' }, { status: 404 });
-    }
-
-    const tiktokAccount = merchant.socialMediaAccounts.find(
-      account => account.platform === 'TIKTOK'
-    );
-
-    if (!tiktokAccount) {
-      return NextResponse.json({ error: 'No TikTok account connected' }, { status: 404 });
-    }
-
-    // Verify webhook
-    if (mode === 'subscribe' && token === tiktokAccount.webhookSecret) {
-      console.log('TikTok webhook verified successfully');
-      return new NextResponse(challenge, { status: 200 });
-    }
-
-    return NextResponse.json({ error: 'Invalid verification token' }, { status: 403 });
-  } catch (error) {
-    console.error('TikTok webhook verification error:', error);
-    return NextResponse.json({ error: 'Webhook verification failed' }, { status: 500 });
-  }
-}
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    console.log('TikTok webhook received:', JSON.stringify(body, null, 2));
+    const body = await request.text();
+    const headers = request.headers;
+    
+    console.log('TikTok webhook received:', {
+      headers: Object.fromEntries(headers.entries()),
+      bodyLength: body.length,
+    });
 
-    // Get merchant and TikTok account
-    const merchant = await prisma.merchant.findFirst({
-      where: { isActive: true },
-      include: { 
-        socialMediaAccounts: true,
-        settings: true,
+    // Parse the webhook data
+    let webhookData;
+    try {
+      webhookData = JSON.parse(body);
+    } catch (error) {
+      console.error('Failed to parse TikTok webhook body:', error);
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+
+    console.log('TikTok webhook data:', webhookData);
+
+    // Handle different webhook event types
+    switch (webhookData.event_type) {
+      case 'user_info_update':
+        // Handle user profile updates
+        console.log('User info update received:', webhookData.data);
+        break;
+
+      case 'video_upload':
+        // Handle new video uploads
+        console.log('Video upload received:', webhookData.data);
+        break;
+
+      case 'comment_create':
+        // Handle new comments
+        console.log('Comment created:', webhookData.data);
+        break;
+
+      case 'like_create':
+        // Handle new likes
+        console.log('Like created:', webhookData.data);
+        break;
+
+      default:
+        console.log('Unhandled webhook event type:', webhookData.event_type);
+    }
+
+    // Store webhook event in database for tracking
+    await prisma.webhookEvent.create({
+      data: {
+        platform: 'TIKTOK',
+        eventType: webhookData.event_type || 'unknown',
+        eventData: webhookData,
+        processed: false,
       },
     });
 
-    if (!merchant) {
-      console.log('No active merchant found for TikTok webhook');
-      return NextResponse.json({ success: true });
-    }
-
-    const tiktokAccount = merchant.socialMediaAccounts.find(
-      account => account.platform === 'TIKTOK'
-    );
-
-    if (!tiktokAccount) {
-      console.log('No TikTok account connected for webhook');
-      return NextResponse.json({ success: true });
-    }
-
-    // Initialize TikTok API
-    const tiktokAPI = new TikTokAPI({
-      accessToken: tiktokAccount.accessToken,
-      businessAccountId: tiktokAccount.accountId,
-      webhookVerifyToken: tiktokAccount.webhookSecret || '',
-    });
-
-    // Process webhook event
-    await tiktokAPI.processWebhookEvent(body);
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('TikTok webhook processing error:', error);
+    console.error('TikTok webhook error:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
+}
+
+export async function GET(request: NextRequest) {
+  // Webhook verification endpoint
+  const { searchParams } = new URL(request.url);
+  const challenge = searchParams.get('challenge');
+  
+  if (challenge) {
+    console.log('TikTok webhook verification challenge:', challenge);
+    return new NextResponse(challenge, {
+      headers: { 'Content-Type': 'text/plain' },
+    });
+  }
+
+  return NextResponse.json({ message: 'TikTok webhook endpoint is active' });
+} 
 } 
