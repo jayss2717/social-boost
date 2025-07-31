@@ -20,6 +20,7 @@
 14. **Package Lock Sync**: Updated package-lock.json to match package.json dependencies
 15. **ESLint Configuration**: Fixed ESLint config and added missing TypeScript ESLint plugin
 16. **Fresh Installation**: Fixed merchant API to handle new store installations automatically
+17. **TypeScript Errors**: Fixed nullable field handling in merchant API
 
 ### ✅ APIs Working
 
@@ -54,7 +55,7 @@
 
 ### 📊 Performance
 
-- **First Load JS**: 86.9 kB (shared)
+- **First Load JS**: 87 kB (shared)
 - **Main Dashboard**: 152 kB
 - **Build Time**: ~30 seconds
 - **Bundle Size**: Optimized
@@ -76,7 +77,7 @@ The application has been successfully deployed to all platforms:
 
 #### ✅ Shopify App Store
 - **Status**: ✅ Successfully deployed
-- **Version**: socialboost-12 (active)
+- **Version**: socialboost-13 (active)
 - **App ID**: 270578352129
 - **Partner Dashboard**: https://partners.shopify.com/4415443/apps/270578352129/versions
 - **Client ID**: 4638bbbd1542925e067ab11f3eecdc1c
@@ -119,17 +120,17 @@ For production deployment, ensure these environment variables are set:
 - **Package lock sync**: Updated package-lock.json to match package.json
 - **ESLint configuration**: Fixed config and added TypeScript ESLint plugin
 - **Fresh installation**: Fixed merchant API to handle new store installations automatically
+- **TypeScript errors**: Fixed nullable field handling in merchant API
 
-### 🆕 Latest Fix: Fresh Installation Support
+### 🆕 Latest Fix: TypeScript Error Resolution
 
-**Problem**: When a fresh Shopify store installs the app, the database is empty and causes client-side errors.
+**Problem**: TypeScript compilation failed due to nullable fields in merchant API.
 
 **Solution**: 
-- ✅ Updated merchant API to automatically create new merchant for fresh installations
-- ✅ Creates default subscription with Starter plan
-- ✅ Creates default merchant settings
-- ✅ Handles onboarding flow for new merchants
-- ✅ Prevents client-side errors during fresh app installation
+- ✅ Fixed nullable field handling for `shopName` and `shopEmail`
+- ✅ Added fallback values for optional fields
+- ✅ Ensured type safety in merchant creation
+- ✅ All TypeScript errors resolved
 
 ---
 
