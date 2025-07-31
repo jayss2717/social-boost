@@ -84,7 +84,7 @@ export default function OnboardingPage() {
       const maxAttempts = 3;
       
       while (attempts < maxAttempts) {
-        const response = await fetch(`/api/merchant?shop=${shop}`);
+        const response = await fetch(`https://socialboost-blue.vercel.app/api/merchant?shop=${shop}`);
         if (response.ok) {
           const data = await response.json();
           console.log('Found merchant data:', data);

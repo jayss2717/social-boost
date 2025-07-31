@@ -14,197 +14,43 @@ export async function POST(request: NextRequest) {
     console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
     try {
-      // Check if merchant exists first
-      const existingMerchant = await prisma.merchant.findUnique({
+      // Simple approach: just update or create merchant without complex settings
+      const merchant = await prisma.merchant.upsert({
         where: { shop },
+        update: {
+          onboardingCompleted: true,
+          onboardingStep: 5,
+          onboardingData: onboardingData,
+        },
+        create: {
+          shop,
+          accessToken: 'test-token',
+          scope: 'read_products,write_products',
+          shopifyShopId: '123456789',
+          shopName: shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+          shopEmail: `admin@${shop}`,
+          shopDomain: shop,
+          shopCurrency: 'USD',
+          shopTimezone: 'UTC',
+          shopLocale: 'en',
+          onboardingCompleted: true,
+          onboardingStep: 5,
+          onboardingData: onboardingData,
+        },
       });
 
-      console.log('Existing merchant found:', !!existingMerchant);
+      console.log('Merchant created/updated successfully:', merchant.id);
 
-      if (!existingMerchant) {
-        console.log('Merchant not found, creating test merchant for onboarding completion');
-        // Create a test merchant for onboarding completion
-        const testMerchant = await prisma.merchant.create({
-          data: {
-            shop,
-            accessToken: 'test-token',
-            scope: 'read_products,write_products',
-            shopifyShopId: '123456789',
-            shopName: shop.replace('.myshopify.com', '').replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
-            shopEmail: `admin@${shop}`,
-            shopDomain: shop,
-            shopCurrency: 'USD',
-            shopTimezone: 'UTC',
-            shopLocale: 'en',
-            onboardingCompleted: true,
-            onboardingStep: 5,
-            onboardingData: onboardingData,
-          },
-        });
-
-        console.log('Test merchant created successfully:', testMerchant.id);
-        
-        // Create merchant settings (simplified)
-        try {
-          await prisma.merchantSettings.create({
-            data: {
-              merchantId: testMerchant.id,
-              name: testMerchant.shopName || 'Test Store',
-              email: testMerchant.shopEmail || `admin@${shop}`,
-              website: `https://${shop}`,
-              linkPattern: '/discount/{{code}}',
-              socialMedia: {
-                instagram: '',
-                tiktok: '',
-                twitter: '',
-                youtube: '',
-              },
-              discountSettings: {
-                defaultPercentage: 20,
-                maxPercentage: 50,
-                minPercentage: 5,
-                autoApprove: false,
-              },
-              commissionSettings: {
-                defaultRate: onboardingData.commissionRate || 10,
-                maxRate: (onboardingData.commissionRate || 10) * 1.5,
-                minRate: (onboardingData.commissionRate || 10) * 0.5,
-                autoPayout: onboardingData.autoApprove || false,
-              },
-              ugcSettings: {
-                autoApprove: onboardingData.autoApprove || false,
-                minEngagement: onboardingData.minEngagement || 100,
-                requiredHashtags: [],
-                excludedWords: [],
-                codeDelayHours: 2,
-                codeDelayMinutes: 0,
-                maxCodesPerDay: 50,
-                maxCodesPerInfluencer: 1,
-                discountType: 'PERCENTAGE',
-                discountValue: 20,
-                discountUsageLimit: 100,
-              },
-              payoutSettings: {
-                autoPayout: onboardingData.autoApprove || false,
-                payoutSchedule: onboardingData.payoutSchedule || 'WEEKLY',
-                minimumPayout: 50,
-                stripeAccountId: '',
-              },
-            },
-          });
-          console.log('Merchant settings created successfully');
-        } catch (settingsError) {
-          console.error('Failed to create merchant settings:', settingsError);
-          // Continue anyway - merchant was created successfully
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Onboarding completed successfully',
+        merchant: {
+          id: merchant.id,
+          shop: merchant.shop,
+          onboardingCompleted: merchant.onboardingCompleted,
         }
+      });
 
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Onboarding completed successfully',
-          merchant: {
-            id: testMerchant.id,
-            shop: testMerchant.shop,
-            onboardingCompleted: testMerchant.onboardingCompleted,
-          }
-        });
-      } else {
-        console.log('Merchant found, updating onboarding status');
-        // Update existing merchant onboarding status
-        const merchant = await prisma.merchant.update({
-          where: { shop },
-          data: {
-            onboardingCompleted: true,
-            onboardingStep: 5,
-            onboardingData: onboardingData,
-          },
-        });
-
-        // Update merchant settings with onboarding data
-        await prisma.merchantSettings.upsert({
-          where: { merchantId: merchant.id },
-          update: {
-            commissionSettings: {
-              defaultRate: onboardingData.commissionRate,
-              maxRate: onboardingData.commissionRate * 1.5,
-              minRate: onboardingData.commissionRate * 0.5,
-              autoPayout: onboardingData.autoApprove,
-            },
-            ugcSettings: {
-              autoApprove: onboardingData.autoApprove,
-              minEngagement: onboardingData.minEngagement,
-              requiredHashtags: [],
-              excludedWords: [],
-              codeDelayHours: 2,
-              codeDelayMinutes: 0,
-              maxCodesPerDay: 50,
-              maxCodesPerInfluencer: 1,
-              discountType: 'PERCENTAGE',
-              discountValue: 20,
-              discountUsageLimit: 100,
-            },
-            payoutSettings: {
-              autoPayout: onboardingData.autoApprove,
-              payoutSchedule: onboardingData.payoutSchedule,
-              minimumPayout: 50,
-              stripeAccountId: '',
-            },
-          },
-          create: {
-            merchantId: merchant.id,
-            name: merchant.shopName || 'Test Store',
-            email: merchant.shopEmail || `admin@${shop}`,
-            website: `https://${shop}`,
-            linkPattern: '/discount/{{code}}',
-            socialMedia: {
-              instagram: '',
-              tiktok: '',
-              twitter: '',
-              youtube: '',
-            },
-            discountSettings: {
-              defaultPercentage: 20,
-              maxPercentage: 50,
-              minPercentage: 5,
-              autoApprove: false,
-            },
-            commissionSettings: {
-              defaultRate: onboardingData.commissionRate,
-              maxRate: onboardingData.commissionRate * 1.5,
-              minRate: onboardingData.commissionRate * 0.5,
-              autoPayout: onboardingData.autoApprove,
-            },
-            ugcSettings: {
-              autoApprove: onboardingData.autoApprove,
-              minEngagement: onboardingData.minEngagement,
-              requiredHashtags: [],
-              excludedWords: [],
-              codeDelayHours: 2,
-              codeDelayMinutes: 0,
-              maxCodesPerDay: 50,
-              maxCodesPerInfluencer: 1,
-              discountType: 'PERCENTAGE',
-              discountValue: 20,
-              discountUsageLimit: 100,
-            },
-            payoutSettings: {
-              autoPayout: onboardingData.autoApprove,
-              payoutSchedule: onboardingData.payoutSchedule,
-              minimumPayout: 50,
-              stripeAccountId: '',
-            },
-          },
-        });
-
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Onboarding completed successfully',
-          merchant: {
-            id: merchant.id,
-            shop: merchant.shop,
-            onboardingCompleted: merchant.onboardingCompleted,
-          }
-        });
-      }
     } catch (dbError) {
       console.error('Database error in onboarding completion:', dbError);
       
