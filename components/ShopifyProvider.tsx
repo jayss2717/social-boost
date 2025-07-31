@@ -124,4 +124,4 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
   }
 
   return <>{children}</>;
-} 
+}

@@ -75,4 +75,4 @@ export async function apiDelete(url: string) {
   return apiFetch(url, {
     method: 'DELETE',
   });
-} 
+}
