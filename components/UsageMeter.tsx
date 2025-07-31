@@ -11,12 +11,10 @@ interface UsageMeterProps {
 }
 
 interface UsageData {
-  influencers: number;
-  dmsSent: number;
-  limit: {
-    influencers: number;
-    dmsPerMonth: number;
-  };
+  influencerCount: number;
+  ugcCount: number;
+  influencerLimit: number;
+  ugcLimit: number;
 }
 
 export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
@@ -75,9 +73,9 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
     return null;
   }
 
-  const influencerPercentage = (usage.influencers / usage.limit.influencers) * 100;
-  const dmPercentage = (usage.dmsSent / usage.limit.dmsPerMonth) * 100;
-  const isAtLimit = influencerPercentage >= 100 || dmPercentage >= 100;
+  const influencerPercentage = (usage.influencerCount / usage.influencerLimit) * 100;
+  const ugcPercentage = (usage.ugcCount / usage.ugcLimit) * 100;
+  const isAtLimit = influencerPercentage >= 100 || ugcPercentage >= 100;
 
   return (
     <>
@@ -106,7 +104,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
                   </Text>
                 </div>
                 <Text variant="bodyMd" as="span">
-                  {usage.influencers} / {usage.limit.influencers === -1 ? '∞' : usage.limit.influencers}
+                  {usage.influencerCount} / {usage.influencerLimit === -1 ? '∞' : usage.influencerLimit}
                 </Text>
               </div>
               <ProgressBar
@@ -116,22 +114,22 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
               />
             </div>
 
-            {/* DMs Usage */}
+            {/* UGC Posts Usage */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <MessageCircle className="w-4 h-4 text-green-600" />
                   <Text variant="bodyMd" as="span">
-                    DMs Sent
+                    UGC Posts
                   </Text>
                 </div>
                 <Text variant="bodyMd" as="span">
-                  {usage.dmsSent} / {usage.limit.dmsPerMonth === -1 ? '∞' : usage.limit.dmsPerMonth}
+                  {usage.ugcCount} / {usage.ugcLimit === -1 ? '∞' : usage.ugcLimit}
                 </Text>
               </div>
               <ProgressBar
-                progress={Math.min(dmPercentage, 100)}
-                tone={dmPercentage >= 90 ? 'critical' : 'success'}
+                progress={Math.min(ugcPercentage, 100)}
+                tone={ugcPercentage >= 90 ? 'critical' : 'success'}
                 size="small"
               />
             </div>
@@ -153,7 +151,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
             </div>
           )}
 
-          {!isAtLimit && (influencerPercentage >= 80 || dmPercentage >= 80) && (
+          {!isAtLimit && (influencerPercentage >= 80 || ugcPercentage >= 80) && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <Text variant="bodySm" as="p" tone="subdued">
                 You&apos;re approaching your plan limits. Consider upgrading for more capacity.

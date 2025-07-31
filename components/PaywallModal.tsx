@@ -1,97 +1,91 @@
 'use client';
 
-import { Modal, Text, BlockStack, Card, Badge } from '@shopify/polaris';
-import { Check, X, Star } from 'lucide-react';
+import { Modal, Text, Button, BlockStack, InlineStack, Badge, Divider } from '@shopify/polaris';
 import { useState } from 'react';
 
 interface PaywallModalProps {
   open: boolean;
   onClose: () => void;
   onSubscribe: (planId: string, billingCycle: 'monthly' | 'yearly') => void;
-  currentPlan?: string;
-  usage?: {
-    influencers: number;
-    dmsSent: number;
-    limit: {
-      influencers: number;
-      dmsPerMonth: number;
-    };
+  usage: {
+    ugcCount: number;
+    influencerCount: number;
+    ugcLimit: number;
+    influencerLimit: number;
   };
 }
 
-const plans = [
+interface Plan {
+  id: string;
+  name: string;
+  priceCents: number;
+  ugcLimit: number;
+  influencerLimit: number;
+  features: string[];
+}
+
+const PLANS: Plan[] = [
   {
-    id: 'STARTER',
+    id: 'starter',
     name: 'Starter',
-    price: 0,
-    priceYearly: 0,
-    influencerLimit: 1,
-    dmLimit: 5,
+    priceCents: 2900,
+    ugcLimit: 20,
+    influencerLimit: 5,
     features: [
-      '1 Influencer',
-      '5 DMs per month',
-      'Basic UGC detection',
-      'Email support'
-    ]
+      'Up to 20 UGC posts per month',
+      'Up to 5 active influencers',
+      'Basic analytics',
+      'Email support',
+    ],
   },
   {
-    id: 'PRO',
-    name: 'Pro',
-    price: 19.99,
-    priceYearly: 191.90, // 20% off
-    influencerLimit: 10,
-    dmLimit: 300,
+    id: 'professional',
+    name: 'Professional',
+    priceCents: 7900,
+    ugcLimit: 100,
+    influencerLimit: 20,
     features: [
-      '10 Influencers',
-      '300 DMs per month',
+      'Up to 100 UGC posts per month',
+      'Up to 20 active influencers',
       'Advanced analytics',
       'Priority support',
-      'Custom discount codes'
-    ]
+      'Custom branding',
+    ],
   },
   {
-    id: 'SCALE',
-    name: 'Scale',
-    price: 59.99,
-    priceYearly: 575.90, // 20% off
-    influencerLimit: 50,
-    dmLimit: 1000,
-    features: [
-      '50 Influencers',
-      '1000 DMs per month',
-      'Custom integrations',
-      'Dedicated support',
-      'Advanced reporting'
-    ]
-  },
-  {
-    id: 'ENTERPRISE',
+    id: 'enterprise',
     name: 'Enterprise',
-    price: null,
-    priceYearly: null,
-    influencerLimit: -1, // unlimited
-    dmLimit: -1, // unlimited
+    priceCents: 19900,
+    ugcLimit: -1,
+    influencerLimit: -1,
     features: [
-      'Unlimited Influencers',
-      'Unlimited DMs',
-      'Custom features',
-      '24/7 support',
-      'White-label options'
-    ]
-  }
+      'Unlimited UGC posts',
+      'Unlimited influencers',
+      'Advanced analytics',
+      'Dedicated support',
+      'Custom branding',
+      'API access',
+    ],
+  },
 ];
 
 export default function PaywallModal({ open, onClose, onSubscribe, usage }: PaywallModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState('PRO');
+  const [selectedPlan, setSelectedPlan] = useState<string>('professional');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  const getPlan = (planId: string) => plans.find(p => p.id === planId);
-  const selectedPlanData = getPlan(selectedPlan);
+  const selectedPlanData = PLANS.find(plan => plan.id === selectedPlan);
 
-  const isAtLimit = usage && (
-    usage.influencers >= usage.limit.influencers ||
-    usage.dmsSent >= usage.limit.dmsPerMonth
-  );
+  const getPrice = (plan: Plan) => {
+    const basePrice = plan.priceCents / 100;
+    if (billingCycle === 'yearly') {
+      return basePrice * 12 * 0.8; // 20% discount for yearly
+    }
+    return basePrice;
+  };
+
+  const handleSubscribe = () => {
+    onSubscribe(selectedPlan, billingCycle);
+  };
 
   return (
     <Modal
@@ -99,164 +93,132 @@ export default function PaywallModal({ open, onClose, onSubscribe, usage }: Payw
       onClose={onClose}
       title="Upgrade Your Plan"
       primaryAction={{
-        content: selectedPlanData?.id === 'ENTERPRISE' ? 'Contact Support' : 'Subscribe Now',
-        onAction: () => {
-          if (selectedPlanData?.id === 'ENTERPRISE') {
-            window.open('mailto:support@socialboost.app?subject=Enterprise%20Plan%20Inquiry', '_blank');
-          } else {
-            onSubscribe(selectedPlan, billingCycle);
-          }
-        }
+        content: 'Subscribe',
+        onAction: handleSubscribe,
       }}
       secondaryActions={[
         {
           content: 'Cancel',
-          onAction: onClose
-        }
+          onAction: onClose,
+        },
       ]}
       size="large"
     >
       <Modal.Section>
         <BlockStack gap="400">
-          {/* Current Usage Warning */}
-          {isAtLimit && (
-            <Card>
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <X className="w-5 h-5 text-red-600" />
-                  <Text variant="bodyMd" fontWeight="semibold" as="p" tone="critical">
-                    You&apos;ve reached your current plan limits
-                  </Text>
-                </div>
-                <Text variant="bodySm" as="p" tone="subdued">
-                  Upgrade to continue adding influencers and sending discount codes
+          <div className="text-center">
+            <Text variant="headingLg" as="h2">
+              Choose Your Plan
+            </Text>
+            <Text variant="bodyMd" tone="subdued" as="p">
+              Upgrade to unlock more features and grow your influencer marketing program
+            </Text>
+          </div>
+
+          {/* Current Usage */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <Text variant="headingMd" as="h3">
+              Current Usage
+            </Text>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <Text variant="bodyMd" as="p">
+                  UGC Posts: {usage.ugcCount}/{usage.ugcLimit === -1 ? '∞' : usage.ugcLimit}
                 </Text>
               </div>
-            </Card>
-          )}
+              <div>
+                <Text variant="bodyMd" as="p">
+                  Influencers: {usage.influencerCount}/{usage.influencerLimit === -1 ? '∞' : usage.influencerLimit}
+                </Text>
+              </div>
+            </div>
+          </div>
 
-          {/* Plan Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {plans.map((plan) => (
+          {/* Billing Cycle Toggle */}
+          <div className="text-center">
+            <InlineStack gap="200" align="center">
+              <Button
+                variant={billingCycle === 'monthly' ? 'primary' : 'secondary'}
+                onClick={() => setBillingCycle('monthly')}
+              >
+                Monthly
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={billingCycle === 'yearly' ? 'primary' : 'secondary'}
+                  onClick={() => setBillingCycle('yearly')}
+                >
+                  Yearly
+                </Button>
+                <Badge tone="success">Save 20%</Badge>
+              </div>
+            </InlineStack>
+          </div>
+
+          {/* Plans */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`cursor-pointer transition-all ${
-                  selectedPlan === plan.id 
-                    ? 'ring-2 ring-blue-500 bg-blue-50' 
-                    : 'hover:ring-1 hover:ring-gray-300'
+                className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  selectedPlan === plan.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
               >
-                <Card>
-                <div className="p-4">
-                  <div className="text-center mb-4">
-                    {plan.id === 'PRO' && (
-                      <div className="mb-2">
-                        <Badge tone="success">
-                          Most Popular
-                        </Badge>
-                      </div>
-                    )}
-                    <Text variant="headingMd" as="h3" fontWeight="bold">
-                      {plan.name}
+                <div className="text-center">
+                  <Text variant="headingMd" as="h3">
+                    {plan.name}
+                  </Text>
+                  <Text variant="headingLg" as="p" fontWeight="bold">
+                    ${getPrice(plan).toFixed(0)}/{billingCycle === 'monthly' ? 'mo' : 'mo (billed yearly)'}
+                  </Text>
+                  {plan.ugcLimit === -1 ? (
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Unlimited UGC posts
                     </Text>
-                    {plan.price === 0 ? (
-                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
-                        Free
-                      </Text>
-                    ) : plan.price === null ? (
-                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
-                        Custom
-                      </Text>
-                    ) : (
-                      <div>
-                        <Text variant="headingLg" as="p" fontWeight="bold">
-                          ${billingCycle === 'yearly' ? plan.priceYearly : plan.price}
-                        </Text>
-                        <Text variant="bodySm" tone="subdued" as="p">
-                          /{billingCycle === 'yearly' ? 'year' : 'month'}
-                        </Text>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {plan.features.map((feature, index) => (
-                      <div key={index} className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
-                        <Text variant="bodySm" as="span">{feature}</Text>
-                      </div>
-                    ))}
-                  </div>
-
-                  {plan.id === 'ENTERPRISE' && (
-                    <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                      <Text variant="bodySm" as="p" tone="subdued">
-                        Contact our sales team for custom pricing
-                      </Text>
-                    </div>
+                  ) : (
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Up to {plan.ugcLimit} UGC posts
+                    </Text>
+                  )}
+                  {plan.influencerLimit === -1 ? (
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Unlimited influencers
+                    </Text>
+                  ) : (
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Up to {plan.influencerLimit} influencers
+                    </Text>
                   )}
                 </div>
-              </Card>
-                </div>
-              ))}
+
+                <Divider />
+
+                <BlockStack gap="200">
+                  {plan.features.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <Text variant="bodySm" as="span">
+                        {feature}
+                      </Text>
+                    </div>
+                  ))}
+                </BlockStack>
+              </div>
+            ))}
           </div>
 
-          {/* Billing Cycle Selection */}
-          {selectedPlan !== 'STARTER' && selectedPlan !== 'ENTERPRISE' && (
-            <Card>
-              <div className="p-4">
-                <div className="mb-3">
-                  <Text variant="bodyMd" fontWeight="semibold" as="p">
-                    Billing Cycle
-                  </Text>
-                </div>
-                <div className="flex space-x-4">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="billingCycle"
-                      value="monthly"
-                      checked={billingCycle === 'monthly'}
-                      onChange={(e) => setBillingCycle(e.target.value as 'monthly' | 'yearly')}
-                      className="text-blue-600"
-                    />
-                    <Text variant="bodySm" as="span">Monthly</Text>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="billingCycle"
-                      value="yearly"
-                      checked={billingCycle === 'yearly'}
-                      onChange={(e) => setBillingCycle(e.target.value as 'monthly' | 'yearly')}
-                      className="text-blue-600"
-                    />
-                    <div className="flex items-center space-x-1">
-                      <Text variant="bodySm" as="span">Yearly</Text>
-                      <Badge tone="success">Save 20%</Badge>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Special Offer */}
-          {selectedPlan !== 'STARTER' && selectedPlan !== 'ENTERPRISE' && (
-            <Card>
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Star className="w-5 h-5 text-yellow-600" />
-                  <Text variant="bodyMd" fontWeight="semibold" as="p">
-                    Special Offer
-                  </Text>
-                </div>
-                <Text variant="bodySm" as="p">
-                  Get 20% off when you pay for a full year! 🎉
-                </Text>
-              </div>
-            </Card>
+          {selectedPlanData && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <Text variant="headingMd" as="h3">
+                Selected Plan: {selectedPlanData.name}
+              </Text>
+              <Text variant="bodyMd" as="p">
+                ${getPrice(selectedPlanData).toFixed(0)}/{billingCycle === 'monthly' ? 'month' : 'month (billed yearly)'}
+              </Text>
+            </div>
           )}
         </BlockStack>
       </Modal.Section>
