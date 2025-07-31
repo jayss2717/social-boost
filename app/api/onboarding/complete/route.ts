@@ -3,11 +3,15 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Onboarding completion API called');
     const { shop, onboardingData } = await request.json();
 
     if (!shop) {
       return NextResponse.json({ error: 'Shop parameter required' }, { status: 400 });
     }
+
+    console.log('Processing onboarding for shop:', shop);
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
     try {
       // Check if merchant exists first
@@ -193,7 +197,25 @@ export async function POST(request: NextRequest) {
       }
     } catch (dbError) {
       console.error('Database error in onboarding completion:', dbError);
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 503 });
+      
+      // Try to provide more specific error information
+      if (dbError instanceof Error) {
+        console.error('Error name:', dbError.name);
+        console.error('Error message:', dbError.message);
+        console.error('Error stack:', dbError.stack);
+      }
+      
+      // Check if it's a connection issue
+      if (dbError instanceof Error && dbError.message.includes('connection')) {
+        return NextResponse.json({ error: 'Database connection failed - connection issue' }, { status: 503 });
+      }
+      
+      // Check if it's a validation issue
+      if (dbError instanceof Error && dbError.message.includes('validation')) {
+        return NextResponse.json({ error: 'Database validation failed' }, { status: 400 });
+      }
+      
+      return NextResponse.json({ error: 'Database operation failed' }, { status: 503 });
     }
   } catch (error) {
     console.error('Failed to complete onboarding:', error);
