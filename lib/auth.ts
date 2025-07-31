@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 const DEMO_MERCHANT_ID = 'cmdpgbpw60003vgpvtdgr4pj5';
 
 export function getMerchantId(request: NextRequest): string | null {
-  // In development, use demo merchant ID if no header is provided
+  // Get merchant ID from header
   const merchantId = request.headers.get('x-merchant-id');
   
   if (merchantId) {

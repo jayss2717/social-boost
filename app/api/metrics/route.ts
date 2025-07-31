@@ -1,6 +1,5 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
 import { getMerchantId } from '@/lib/auth';
 
 // Force dynamic rendering for this route
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     // If no merchant ID is provided, return mock data
     if (!merchantId) {
       console.log('🔄 No merchant ID provided, returning mock data');
-      return createSuccessResponse({
+      return NextResponse.json({
         totalUgcPosts: 0,
         totalInfluencers: 0,
         approvedPosts: 0,
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // In CI environment, return mock data
     if (process.env.CI === 'true') {
-      return createSuccessResponse({
+      return NextResponse.json({
         totalUgcPosts: 15,
         totalInfluencers: 3,
         approvedPosts: 12,
@@ -75,7 +74,7 @@ export async function GET(request: NextRequest) {
       console.error('❌ Database connection failed:', dbError);
       // Return mock data if database is unavailable
       console.log('🔄 Returning mock data due to database connection failure');
-      return createSuccessResponse({
+      return NextResponse.json({
         totalUgcPosts: 0,
         totalInfluencers: 0,
         approvedPosts: 0,
@@ -97,50 +96,36 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get all metrics in parallel
-    const [
-      totalUgcPosts,
-      totalInfluencers,
-      approvedPosts,
-      pendingApproval,
-      pendingPayouts,
-      completedPayouts,
-      totalRevenue,
-      recentActivity
-    ] = await Promise.all([
-      // UGC Posts
-      prisma.ugcPost.count({ where: { merchantId } }),
-      // Influencers
-      prisma.influencer.count({ where: { merchantId, isActive: true } }),
-      // Approved UGC Posts
-      prisma.ugcPost.count({ where: { merchantId, isApproved: true } }),
-      // Pending UGC Posts
-      prisma.ugcPost.count({ where: { merchantId, isApproved: false } }),
-      
-      // Payouts
-      prisma.payout.aggregate({
-        where: { merchantId, status: 'PENDING' },
-        _sum: { amount: true },
-      }),
-      prisma.payout.aggregate({
-        where: { merchantId, status: 'COMPLETED' },
-        _sum: { amount: true },
-      }),
-      // Revenue
-      prisma.payout.aggregate({
-        where: { merchantId, status: 'COMPLETED' },
-        _sum: { amount: true },
-      }),
-      // Recent Activity
-      prisma.ugcPost.count({
-        where: {
-          merchantId,
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-          },
+    // Get basic metrics one by one to avoid complex queries
+    const totalUgcPosts = await prisma.ugcPost.count({ where: { merchantId } });
+    const totalInfluencers = await prisma.influencer.count({ where: { merchantId, isActive: true } });
+    const approvedPosts = await prisma.ugcPost.count({ where: { merchantId, isApproved: true } });
+    const pendingApproval = await prisma.ugcPost.count({ where: { merchantId, isApproved: false } });
+    
+    // Get payout data
+    const pendingPayoutsResult = await prisma.payout.aggregate({
+      where: { merchantId, status: 'PENDING' },
+      _sum: { amount: true },
+    });
+    const pendingPayouts = pendingPayoutsResult._sum.amount || 0;
+    
+    const completedPayoutsResult = await prisma.payout.aggregate({
+      where: { merchantId, status: 'COMPLETED' },
+      _sum: { amount: true },
+    });
+    const completedPayouts = completedPayoutsResult._sum.amount || 0;
+    
+    const totalRevenue = completedPayouts; // Use completed payouts as revenue
+    
+    // Get recent activity
+    const recentActivity = await prisma.ugcPost.count({
+      where: {
+        merchantId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         },
-      }),
-    ]);
+      },
+    });
 
     // Calculate engagement metrics
     const engagementData = await prisma.ugcPost.aggregate({
@@ -182,14 +167,14 @@ export async function GET(request: NextRequest) {
       platformData[item.platform as keyof typeof platformData] = item._count.platform;
     });
 
-    return createSuccessResponse({
+    return NextResponse.json({
       totalUgcPosts,
       totalInfluencers,
       approvedPosts,
       pendingApproval,
-      pendingPayouts: pendingPayouts._sum.amount || 0,
-      completedPayouts: completedPayouts._sum.amount || 0,
-      totalRevenue: totalRevenue._sum.amount || 0,
+      pendingPayouts,
+      completedPayouts,
+      totalRevenue,
       averageEngagement,
       totalEngagement,
       engagementCount,
@@ -206,6 +191,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch metrics:', error);
-    return createErrorResponse('Failed to fetch metrics');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json({ error: 'Failed to fetch metrics' }, { status: 500 });
   }
 } 

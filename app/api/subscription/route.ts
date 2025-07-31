@@ -9,7 +9,37 @@ export async function GET(request: NextRequest) {
     const merchantId = request.headers.get('x-merchant-id');
     
     if (!merchantId) {
-      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
+      // Return mock data for development
+      return NextResponse.json({
+        subscription: {
+          id: 'mock-subscription',
+          planId: 'mock-plan',
+          status: 'ACTIVE',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        usage: {
+          influencerCount: 2,
+          ugcCount: 3,
+          influencerLimit: 5,
+          ugcLimit: 20,
+        },
+        plans: [
+          {
+            id: 'starter',
+            name: 'Starter',
+            priceCents: 2900,
+            ugcLimit: 20,
+            influencerLimit: 5,
+          },
+          {
+            id: 'professional',
+            name: 'Professional',
+            priceCents: 7900,
+            ugcLimit: 100,
+            influencerLimit: 20,
+          },
+        ],
+      });
     }
 
     // Get current subscription
@@ -40,18 +70,12 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      success: true,
       subscription,
       usage: {
-        influencers: influencerCount,
-        dmsSent: dmsSentThisMonth,
-        limit: subscription?.plan ? {
-          influencers: subscription.plan.influencerLimit,
-          dmsPerMonth: subscription.plan.ugcLimit,
-        } : {
-          influencers: 1,
-          dmsPerMonth: 5,
-        },
+        influencerCount,
+        ugcCount: dmsSentThisMonth,
+        influencerLimit: subscription?.plan?.influencerLimit || 5,
+        ugcLimit: subscription?.plan?.ugcLimit || 20,
       },
       plans,
     });

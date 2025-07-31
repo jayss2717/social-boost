@@ -3,36 +3,36 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Starting database seeding...');
 
-  // Create plans
+  // Create test plans
   const plans = await Promise.all([
     prisma.plan.upsert({
-      where: { name: 'Free' },
+      where: { name: 'Starter' },
       update: {},
       create: {
-        name: 'Free',
-        priceCents: 0,
+        name: 'Starter',
+        priceCents: 2900, // $29/month
         ugcLimit: 20,
         influencerLimit: 5,
       },
     }),
     prisma.plan.upsert({
-      where: { name: 'Pro' },
+      where: { name: 'Professional' },
       update: {},
       create: {
-        name: 'Pro',
-        priceCents: 2900,
-        ugcLimit: 1000,
-        influencerLimit: -1, // Unlimited
+        name: 'Professional',
+        priceCents: 7900, // $79/month
+        ugcLimit: 100,
+        influencerLimit: 20,
       },
     }),
     prisma.plan.upsert({
-      where: { name: 'Scale' },
+      where: { name: 'Enterprise' },
       update: {},
       create: {
-        name: 'Scale',
-        priceCents: 9900,
+        name: 'Enterprise',
+        priceCents: 19900, // $199/month
         ugcLimit: -1, // Unlimited
         influencerLimit: -1, // Unlimited
       },
@@ -41,87 +41,141 @@ async function main() {
 
   console.log('✅ Plans created:', plans.map(p => p.name));
 
-  // Create demo merchant
+  // Create test merchant
   const merchant = await prisma.merchant.upsert({
-    where: { shop: 'demo-store.myshopify.com' },
+    where: { shop: 'teststorev101.myshopify.com' },
     update: {},
     create: {
-      shop: 'demo-store.myshopify.com',
-      accessToken: 'demo_access_token',
-      scope: 'read_orders,write_discounts,read_products,read_customers',
-      isActive: true,
+      shop: 'teststorev101.myshopify.com',
+      accessToken: 'test-access-token',
+      scope: 'read_products,write_products',
+      shopName: 'Test Store v101',
+      shopEmail: 'test@storev101.com',
+      shopDomain: 'teststorev101.myshopify.com',
+      shopCurrency: 'USD',
+      shopTimezone: 'America/New_York',
+      shopLocale: 'en',
+      onboardingCompleted: true,
+      onboardingStep: 5,
+      onboardingData: {
+        businessType: 'ECOMMERCE',
+        industry: 'Fashion',
+        goals: ['Increase brand awareness', 'Drive sales'],
+        commissionRate: 10,
+        autoApprove: false,
+        minEngagement: 100,
+        payoutSchedule: 'WEEKLY',
+        teamSize: '1-5',
+      },
     },
   });
 
-  console.log('✅ Demo merchant created:', merchant.shop);
+  console.log('✅ Test merchant created:', merchant.shop);
 
-  // Create subscription for demo merchant
+  // Create subscription for the merchant
   const subscription = await prisma.subscription.upsert({
     where: { merchantId: merchant.id },
     update: {},
     create: {
       merchantId: merchant.id,
-      planId: plans[0].id, // Free plan
+      planId: plans[0].id, // Starter plan
       status: 'ACTIVE',
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
     },
   });
 
-  console.log('✅ Subscription created for demo merchant');
+  console.log('✅ Subscription created for merchant');
 
-  // Create demo influencers
+  // Create merchant settings
+  const settings = await prisma.merchantSettings.upsert({
+    where: { merchantId: merchant.id },
+    update: {},
+    create: {
+      merchantId: merchant.id,
+      name: 'Test Store',
+      email: 'test@storev101.com',
+      website: 'https://teststorev101.myshopify.com',
+      linkPattern: '/discount/{code}',
+      socialMedia: {
+        instagram: '@teststore',
+        tiktok: '@teststore',
+        twitter: '@teststore',
+        youtube: '@teststore',
+      },
+      discountSettings: {
+        defaultPercentage: 15,
+        minPercentage: 5,
+        maxPercentage: 50,
+        autoApprove: false,
+      },
+      commissionSettings: {
+        defaultRate: 10,
+        minRate: 5,
+        maxRate: 25,
+        autoPayout: false,
+      },
+      ugcSettings: {
+        autoApprove: false,
+        minEngagement: 100,
+        hashtags: ['#teststore', '#sponsored'],
+        timerSettings: {
+          enabled: true,
+          duration: 24, // hours
+        },
+      },
+      payoutSettings: {
+        autoPayout: false,
+        schedule: 'WEEKLY',
+        minimumAmount: 5000, // $50
+      },
+    },
+  });
+
+  console.log('✅ Merchant settings created');
+
+  // Create some test influencers
   const influencers = await Promise.all([
     prisma.influencer.create({
       data: {
         merchantId: merchant.id,
-        name: 'Sarah Johnson',
+        name: 'Sarah Wilson',
         email: 'sarah@example.com',
-        instagramHandle: 'sarahjohnson',
-        tiktokHandle: 'sarahjohnson',
-        commissionRate: 0.15,
+        instagramHandle: '@sarahwilson',
+        tiktokHandle: '@sarahwilson',
+        commissionRate: 12,
         isActive: true,
       },
     }),
     prisma.influencer.create({
       data: {
         merchantId: merchant.id,
-        name: 'Mike Chen',
+        name: 'Mike Johnson',
         email: 'mike@example.com',
-        instagramHandle: 'mikechen',
-        tiktokHandle: 'mikechen',
-        commissionRate: 0.10,
-        isActive: true,
-      },
-    }),
-    prisma.influencer.create({
-      data: {
-        merchantId: merchant.id,
-        name: 'Emma Davis',
-        email: 'emma@example.com',
-        instagramHandle: 'emmadavis',
-        tiktokHandle: 'emmadavis',
-        commissionRate: 0.20,
+        instagramHandle: '@mikejohnson',
+        tiktokHandle: '@mikejohnson',
+        commissionRate: 10,
         isActive: true,
       },
     }),
   ]);
 
-  console.log('✅ Demo influencers created:', influencers.map(i => i.name));
+  console.log('✅ Test influencers created:', influencers.length);
 
-  // Create demo UGC posts
+  // Create some test UGC posts
   const ugcPosts = await Promise.all([
     prisma.ugcPost.create({
       data: {
         merchantId: merchant.id,
         influencerId: influencers[0].id,
         platform: 'INSTAGRAM',
-        postUrl: 'https://instagram.com/p/ABC123',
-        postId: 'ABC123',
-        content: 'Just got my new product from @demostore! Love the quality and fast shipping! #demostore #shoplocal #quality',
+        postUrl: 'https://instagram.com/p/test1',
+        postId: 'test_post_1',
+        content: 'Amazing product! Love the quality and design. Highly recommend! #teststore #sponsored',
         mediaUrls: ['https://example.com/image1.jpg'],
         engagement: 1250,
-        isApproved: false,
-        isRewarded: false,
+        isApproved: true,
+        isRewarded: true,
+        rewardAmount: 2500, // $25
       },
     }),
     prisma.ugcPost.create({
@@ -129,162 +183,102 @@ async function main() {
         merchantId: merchant.id,
         influencerId: influencers[1].id,
         platform: 'TIKTOK',
-        postUrl: 'https://tiktok.com/@mikechen/video/XYZ789',
-        postId: 'XYZ789',
-        content: 'Unboxing my latest purchase from @demostore! The packaging is amazing! #demostore #unboxing #tiktok',
+        postUrl: 'https://tiktok.com/@mikejohnson/video/test2',
+        postId: 'test_post_2',
+        content: 'Just tried this amazing product! The quality is incredible. #teststore #sponsored',
         mediaUrls: ['https://example.com/video1.mp4'],
-        engagement: 3200,
+        engagement: 850,
         isApproved: true,
         isRewarded: true,
+        rewardAmount: 2000, // $20
       },
     }),
     prisma.ugcPost.create({
       data: {
         merchantId: merchant.id,
-        influencerId: influencers[2].id,
+        influencerId: influencers[0].id,
         platform: 'INSTAGRAM',
-        postUrl: 'https://instagram.com/p/DEF456',
-        postId: 'DEF456',
-        content: 'Styling session with my favorite pieces from @demostore! Perfect for any occasion! #demostore #fashion #style',
-        mediaUrls: ['https://example.com/image2.jpg', 'https://example.com/image3.jpg'],
-        engagement: 890,
-        isApproved: true,
+        postUrl: 'https://instagram.com/p/test3',
+        postId: 'test_post_3',
+        content: 'Another great product from this brand! #teststore #sponsored',
+        mediaUrls: ['https://example.com/image2.jpg'],
+        engagement: 650,
+        isApproved: false,
         isRewarded: false,
       },
     }),
   ]);
 
-  console.log('✅ Demo UGC posts created:', ugcPosts.length);
+  console.log('✅ Test UGC posts created:', ugcPosts.length);
 
-  // Create demo discount codes
-  const discountCodes = await Promise.all([
-    prisma.discountCode.create({
-      data: {
-        merchantId: merchant.id,
-        influencerId: influencers[0].id,
-        code: 'SARAH20',
-        uniqueLink: 'https://demostore.com/discount/SARAH20',
-        discountType: 'PERCENTAGE',
-        discountValue: 20,
-        usageLimit: 100,
-        usageCount: 45,
-        isActive: true,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      },
-    }),
-    prisma.discountCode.create({
-      data: {
-        merchantId: merchant.id,
-        influencerId: influencers[1].id,
-        code: 'MIKE15',
-        uniqueLink: 'https://demostore.com/discount/MIKE15',
-        discountType: 'PERCENTAGE',
-        discountValue: 15,
-        usageLimit: 50,
-        usageCount: 23,
-        isActive: true,
-        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
-      },
-    }),
-  ]);
-
-  console.log('✅ Demo discount codes created:', discountCodes.map(d => d.code));
-
-  // Create demo payouts
+  // Create some test payouts
   const payouts = await Promise.all([
     prisma.payout.create({
       data: {
         merchantId: merchant.id,
         influencerId: influencers[0].id,
-        amount: 15000, // $150.00 in cents
-        status: 'PENDING',
-        periodStart: new Date(),
+        amount: 4500, // $45
+        status: 'COMPLETED',
+        periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
         periodEnd: new Date(),
-        stripeTransferId: null,
       },
     }),
     prisma.payout.create({
       data: {
         merchantId: merchant.id,
         influencerId: influencers[1].id,
-        amount: 7550, // $75.50 in cents
-        status: 'COMPLETED',
-        periodStart: new Date(),
+        amount: 2000, // $20
+        status: 'PENDING',
+        periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
         periodEnd: new Date(),
-        stripeTransferId: 'tr_demo_123456',
-      },
-    }),
-    prisma.payout.create({
-      data: {
-        merchantId: merchant.id,
-        influencerId: influencers[2].id,
-        amount: 20000, // $200.00 in cents
-        status: 'PROCESSING',
-        periodStart: new Date(),
-        periodEnd: new Date(),
-        stripeTransferId: null,
       },
     }),
   ]);
 
-  console.log('✅ Demo payouts created:', payouts.length);
+  console.log('✅ Test payouts created:', payouts.length);
 
-  // Create demo settings
-  const settings = await prisma.merchantSettings.upsert({
-    where: { merchantId: merchant.id },
-    update: {},
-    create: {
-      merchantId: merchant.id,
-      name: 'Demo Store',
-      email: 'demo@store.com',
-      socialMedia: {
-        instagram: '@demostore',
-        tiktok: '@demostore',
-        twitter: '@demostore',
-        youtube: 'demostore',
+  // Create some test discount codes
+  const discountCodes = await Promise.all([
+    prisma.discountCode.create({
+      data: {
+        merchantId: merchant.id,
+        influencerId: influencers[0].id,
+        ugcPostId: ugcPosts[0].id,
+        code: 'SARAH15',
+        uniqueLink: 'https://teststorev101.myshopify.com/discount/SARAH15',
+        codeType: 'INFLUENCER',
+        discountType: 'PERCENTAGE',
+        discountValue: 15,
+        usageLimit: 100,
+        usageCount: 25,
+        isActive: true,
       },
-      discountSettings: {
-        defaultPercentage: 20,
-        maxPercentage: 50,
-        minPercentage: 5,
-        autoApprove: false,
+    }),
+    prisma.discountCode.create({
+      data: {
+        merchantId: merchant.id,
+        influencerId: influencers[1].id,
+        ugcPostId: ugcPosts[1].id,
+        code: 'MIKE10',
+        uniqueLink: 'https://teststorev101.myshopify.com/discount/MIKE10',
+        codeType: 'INFLUENCER',
+        discountType: 'PERCENTAGE',
+        discountValue: 10,
+        usageLimit: 50,
+        usageCount: 15,
+        isActive: true,
       },
-      commissionSettings: {
-        defaultRate: 10,
-        maxRate: 25,
-        minRate: 5,
-        autoPayout: false,
-      },
-      ugcSettings: {
-        autoApprove: false,
-        minEngagement: 100,
-        requiredHashtags: ['#demostore', '#shoplocal'],
-        excludedWords: ['spam', 'inappropriate'],
-      },
-      payoutSettings: {
-        autoPayout: false,
-        payoutSchedule: 'WEEKLY',
-        minimumPayout: 50,
-      },
-    },
-  });
+    }),
+  ]);
 
-  console.log('✅ Demo settings created');
+  console.log('✅ Test discount codes created:', discountCodes.length);
 
   console.log('🎉 Database seeding completed successfully!');
-  console.log('\nDemo Data Summary:');
-  console.log(`- Plans: ${plans.length}`);
-  console.log(`- Merchant: ${merchant.shop}`);
-  console.log(`- Influencers: ${influencers.length}`);
-  console.log(`- UGC Posts: ${ugcPosts.length}`);
-  console.log(`- Discount Codes: ${discountCodes.length}`);
-  console.log(`- Payouts: ${payouts.length}`);
-  console.log(`- Settings: 1`);
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
