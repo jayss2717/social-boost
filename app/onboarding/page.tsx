@@ -1,6 +1,6 @@
 'use client';
 
-import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner, ProgressBar } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { Check, ArrowRight, ArrowLeft, Store, Users, Hash, DollarSign, Settings } from 'lucide-react';
 
