@@ -138,7 +138,7 @@ export default function PaywallModal({ open, onClose, onSubscribe, usage }: Payw
           {/* Plan Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map((plan) => (
-              <Card
+              <div
                 key={plan.id}
                 className={`cursor-pointer transition-all ${
                   selectedPlan === plan.id 
@@ -147,12 +147,15 @@ export default function PaywallModal({ open, onClose, onSubscribe, usage }: Payw
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
               >
+                <Card>
                 <div className="p-4">
                   <div className="text-center mb-4">
                     {plan.id === 'PRO' && (
-                      <Badge tone="success" className="mb-2">
-                        Most Popular
-                      </Badge>
+                      <div className="mb-2">
+                        <Badge tone="success">
+                          Most Popular
+                        </Badge>
+                      </div>
                     )}
                     <Text variant="headingMd" as="h3" fontWeight="bold">
                       {plan.name}
@@ -195,16 +198,19 @@ export default function PaywallModal({ open, onClose, onSubscribe, usage }: Payw
                   )}
                 </div>
               </Card>
-            ))}
+                </div>
+              ))}
           </div>
 
           {/* Billing Cycle Selection */}
           {selectedPlan !== 'STARTER' && selectedPlan !== 'ENTERPRISE' && (
             <Card>
               <div className="p-4">
-                <Text variant="bodyMd" fontWeight="semibold" as="p" className="mb-3">
-                  Billing Cycle
-                </Text>
+                <div className="mb-3">
+                  <Text variant="bodyMd" fontWeight="semibold" as="p">
+                    Billing Cycle
+                  </Text>
+                </div>
                 <div className="flex space-x-4">
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input

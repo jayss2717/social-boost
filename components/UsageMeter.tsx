@@ -26,7 +26,7 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
 
   useEffect(() => {
     fetchUsage();
-  }, [merchantId, fetchUsage]);
+  }, [merchantId]);
 
   const fetchUsage = useCallback(async () => {
     try {
@@ -87,10 +87,10 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
               Usage This Month
             </Text>
             {isAtLimit && (
-              <Badge tone="critical">
-                <AlertTriangle className="w-4 h-4 mr-1" />
-                At Limit
-              </Badge>
+              <div className="flex items-center">
+                <AlertTriangle className="w-4 h-4 mr-1 text-red-600" />
+                <Badge tone="critical">At Limit</Badge>
+              </div>
             )}
           </div>
 
@@ -141,13 +141,14 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
               <Text variant="bodySm" as="p" tone="critical">
                 You&apos;ve reached your current plan limits. Upgrade to continue adding influencers and sending discount codes.
               </Text>
-              <Button
-                size="slim"
-                className="mt-2"
-                onClick={() => setShowPaywall(true)}
-              >
-                Upgrade Plan
-              </Button>
+              <div className="mt-2">
+                <Button
+                  size="slim"
+                  onClick={() => setShowPaywall(true)}
+                >
+                  Upgrade Plan
+                </Button>
+              </div>
             </div>
           )}
 
@@ -156,14 +157,15 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
               <Text variant="bodySm" as="p" tone="subdued">
                 You&apos;re approaching your plan limits. Consider upgrading for more capacity.
               </Text>
-              <Button
-                size="slim"
-                variant="secondary"
-                className="mt-2"
-                onClick={() => setShowPaywall(true)}
-              >
-                View Plans
-              </Button>
+              <div className="mt-2">
+                <Button
+                  size="slim"
+                  variant="secondary"
+                  onClick={() => setShowPaywall(true)}
+                >
+                  View Plans
+                </Button>
+              </div>
             </div>
           )}
         </div>
