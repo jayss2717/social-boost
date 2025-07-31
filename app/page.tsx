@@ -301,6 +301,10 @@ export default function Dashboard() {
         <PaywallModal
           open={showPaywall}
           onClose={() => setShowPaywall(false)}
+          onSubscribe={(planId, billingCycle) => {
+            console.log('Subscribing to plan:', planId, billingCycle);
+            setShowPaywall(false);
+          }}
           usage={usage}
         />
       )}
