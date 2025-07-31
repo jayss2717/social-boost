@@ -116,9 +116,29 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
+      // Get the current shop from URL or localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop') || localStorage.getItem('shop');
+      
+      if (!shop) {
+        console.error('No shop parameter found');
+        return;
+      }
+
+      // First get the merchant by shop
+      const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
+      const merchantData = await merchantResponse.json();
+      
+      if (!merchantData.success || !merchantData.merchant) {
+        console.error('Failed to fetch merchant data');
+        return;
+      }
+
+      const merchantId = merchantData.merchant.id;
+      
       const response = await fetch('/api/settings', {
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         }
       });
       const data = await response.json();
@@ -240,11 +260,31 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      // Get the current shop from URL or localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop') || localStorage.getItem('shop');
+      
+      if (!shop) {
+        setSaveMessage('No shop parameter found');
+        return;
+      }
+
+      // First get the merchant by shop
+      const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
+      const merchantData = await merchantResponse.json();
+      
+      if (!merchantData.success || !merchantData.merchant) {
+        setSaveMessage('Failed to fetch merchant data');
+        return;
+      }
+
+      const merchantId = merchantData.merchant.id;
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           name: formData.name,
@@ -274,16 +314,36 @@ export default function SettingsPage() {
     }
   };
 
+  const getMerchantId = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop') || localStorage.getItem('shop');
+    
+    if (!shop) {
+      throw new Error('No shop parameter found');
+    }
+
+    const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
+    const merchantData = await merchantResponse.json();
+    
+    if (!merchantData.success || !merchantData.merchant) {
+      throw new Error('Failed to fetch merchant data');
+    }
+
+    return merchantData.merchant.id;
+  };
+
   const handleSaveInfluencerSettings = async () => {
     setIsSaving(true);
     setSaveMessage('');
 
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           discountSettings: formData.discountSettings,
@@ -314,11 +374,13 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           ugcSettings: formData.ugcSettings,
@@ -347,11 +409,13 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           teamSettings: formData.teamSettings,
@@ -380,11 +444,13 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           domainSettings: formData.domainSettings,
@@ -413,11 +479,13 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify({
           legalSettings: formData.legalSettings,
