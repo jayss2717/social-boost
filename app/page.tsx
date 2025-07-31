@@ -13,8 +13,30 @@ export default function Dashboard() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   const isLoading = metricsLoading || subscriptionLoading || isCheckingOnboarding;
+
+  // Error boundary for React errors
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Global error caught:', error);
+      setHasError(true);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   // Check onboarding status
   useEffect(() => {
@@ -180,6 +202,35 @@ export default function Dashboard() {
     );
   }
 
+  // Handle React errors gracefully
+  if (hasError) {
+    return (
+      <Page title="Dashboard">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <div className="p-6 text-center">
+                <Banner tone="critical">
+                  <Text variant="headingLg" as="h2">
+                    Application Error
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Something went wrong with the application. Please refresh the page to try again.
+                  </Text>
+                  <div className="mt-4">
+                    <Button variant="primary" onClick={() => window.location.reload()}>
+                      Refresh Page
+                    </Button>
+                  </div>
+                </Banner>
+              </div>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
   // Handle API errors gracefully
   if (subscriptionError || metricsError) {
     return (
@@ -237,13 +288,13 @@ export default function Dashboard() {
     },
     {
       title: 'Total Revenue',
-      value: `$${(metrics?.totalRevenue || 0) / 100}`,
+      value: `$${Math.round((metrics?.totalRevenue || 0) / 100)}`,
       icon: DollarSign,
       color: 'success',
     },
     {
       title: 'Pending Payouts',
-      value: `$${(metrics?.pendingPayouts || 0) / 100}`,
+      value: `$${Math.round((metrics?.pendingPayouts || 0) / 100)}`,
       icon: Gift,
       color: 'warning',
     },
@@ -266,27 +317,30 @@ export default function Dashboard() {
       <Layout>
         <Layout.Section>
           <Grid>
-            {metricCards.map((card, index) => (
-              <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 4, lg: 4, xl: 4 }} key={index}>
-                <Card>
-                  <div className="p-6">
-                    <BlockStack gap="400">
-                      <div className="flex items-center space-x-3">
-                        <card.icon className="w-6 h-6 text-sb-primary" />
-                        <div>
-                          <Text variant="bodyMd" tone="subdued" as="p">
-                            {card.title}
-                          </Text>
-                          <Text variant="headingLg" as="h2">
-                            {card.value}
-                          </Text>
+            {metricCards.map((card, index) => {
+              const IconComponent = card.icon;
+              return (
+                <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 4, lg: 4, xl: 4 }} key={index}>
+                  <Card>
+                    <div className="p-6">
+                      <BlockStack gap="400">
+                        <div className="flex items-center space-x-3">
+                          <IconComponent className="w-6 h-6 text-sb-primary" />
+                          <div>
+                            <Text variant="bodyMd" tone="subdued" as="p">
+                              {card.title}
+                            </Text>
+                            <Text variant="headingLg" as="h2">
+                              {card.value}
+                            </Text>
+                          </div>
                         </div>
-                      </div>
-                    </BlockStack>
-                  </div>
-                </Card>
-              </Grid.Cell>
-            ))}
+                      </BlockStack>
+                    </div>
+                  </Card>
+                </Grid.Cell>
+              );
+            })}
           </Grid>
         </Layout.Section>
 
@@ -331,7 +385,7 @@ export default function Dashboard() {
           </Card>
         </Layout.Section>
 
-        {metrics?.topPosts && metrics.topPosts.length > 0 && (
+        {metrics?.topPosts && Array.isArray(metrics.topPosts) && metrics.topPosts.length > 0 && (
           <Layout.Section>
             <Card>
               <div className="p-6">
@@ -343,14 +397,14 @@ export default function Dashboard() {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                       <div>
                         <Text variant="bodyMd" as="p">
-                          {String(post.platform)} - {String(post.influencerName)}
+                          {String(post.platform || 'Unknown')} - {String(post.influencerName || 'Unknown')}
                         </Text>
                         <Text variant="bodySm" tone="subdued" as="p">
-                          {String(post.content)}
+                          {String(post.content || 'No content')}
                         </Text>
                       </div>
                       <Badge tone="success">
-                        {`${post.engagement} engagement`}
+                        {`${post.engagement || 0} engagement`}
                       </Badge>
                     </div>
                   ))}

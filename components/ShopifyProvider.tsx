@@ -15,18 +15,29 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
                           window.location.hostname.includes('shopify.com');
 
     if (isShopifyAdmin) {
-      // Initialize Shopify App Bridge
+      // Initialize Shopify App Bridge with better error handling
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.9/dist/index.umd.js';
+      script.async = true;
+      
       script.onload = () => {
-        // @ts-ignore
-        if (window.createApp) {
-          try {
+        try {
+          // @ts-ignore
+          if (typeof window.createApp === 'function') {
+            const host = new URLSearchParams(window.location.search).get('host');
+            const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
+            
+            if (!host) {
+              console.warn('No host parameter found, skipping App Bridge initialization');
+              setIsLoaded(true);
+              return;
+            }
+
             // @ts-ignore
             const app = window.createApp({
-              apiKey: process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c',
-              host: new URLSearchParams(window.location.search).get('host') || '',
-              forceRedirect: true,
+              apiKey,
+              host,
+              forceRedirect: false, // Changed to false to prevent redirect loops
             });
             
             // Store app instance globally
@@ -34,19 +45,21 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
             window.shopifyApp = app;
             console.log('Shopify App Bridge initialized successfully');
             setIsLoaded(true);
-          } catch (error) {
-            console.error('Failed to initialize Shopify App Bridge:', error);
-            setIsLoaded(true); // Continue anyway
+          } else {
+            console.warn('Shopify App Bridge createApp function not available');
+            setIsLoaded(true);
           }
-        } else {
-          console.warn('Shopify App Bridge not available');
-          setIsLoaded(true);
+        } catch (error) {
+          console.error('Failed to initialize Shopify App Bridge:', error);
+          setIsLoaded(true); // Continue anyway
         }
       };
+      
       script.onerror = () => {
-        console.warn('Failed to load Shopify App Bridge');
+        console.warn('Failed to load Shopify App Bridge script');
         setIsLoaded(true);
       };
+      
       document.head.appendChild(script);
     } else {
       console.log('Not in Shopify admin context, skipping App Bridge initialization');
@@ -54,12 +67,14 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
     }
   }, []);
 
+  // Production-ready loading state
   if (!isLoaded) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading SocialBoost...</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Loading SocialBoost...</p>
+          <p className="text-gray-400 text-sm mt-2">Please wait while we initialize your app</p>
         </div>
       </div>
     );
