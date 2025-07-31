@@ -146,6 +146,7 @@ model DiscountCode {
   brandMentionId  String?  // Link to brand mention for random people
   code            String
   uniqueLink      String?
+  codeType        CodeType @default(RANDOM)  // INFLUENCER or RANDOM
   discountType    DiscountType
   discountValue   Float
   usageLimit      Int?
@@ -167,6 +168,11 @@ model DiscountCode {
 enum DiscountType {
   PERCENTAGE
   FIXED_AMOUNT
+}
+
+enum CodeType {
+  INFLUENCER  // Reusable codes for enrolled influencers
+  RANDOM      // One-time codes for random mentions
 }
 
 model Payout {

@@ -22,12 +22,7 @@ interface UsageData {
 export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPaywall, setShowPaywall] = useState(false);
-
-  useEffect(() => {
-    fetchUsage();
-  }, [merchantId]);
-
+  
   const fetchUsage = useCallback(async () => {
     try {
       const response = await fetch('/api/subscription', {
@@ -46,6 +41,12 @@ export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
       setLoading(false);
     }
   }, [merchantId]);
+
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    fetchUsage();
+  }, [fetchUsage]);
 
   const handleUpgrade = (planId: string, billingCycle: 'monthly' | 'yearly') => {
     // Handle subscription upgrade

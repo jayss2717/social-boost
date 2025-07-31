@@ -212,7 +212,7 @@ export class InstagramAPI {
 
   private async handleInfluencerMention(merchantId: string, mentionData: Record<string, unknown>, influencer: Record<string, unknown>): Promise<void> {
     // Create UGC post for registered influencer
-    await prisma.ugcPost.create({
+    const ugcPost = await prisma.ugcPost.create({
       data: {
         merchantId,
         influencerId: influencer.id as string,
@@ -226,6 +226,38 @@ export class InstagramAPI {
         isRewarded: false,
       },
     });
+
+    // Check if influencer already has a reusable code
+    const existingCode = await prisma.discountCode.findFirst({
+      where: {
+        merchantId,
+        influencerId: influencer.id as string,
+        codeType: 'INFLUENCER',
+        isActive: true,
+      },
+    });
+
+    if (!existingCode) {
+      // Create reusable discount code for influencer
+      const code = this.generateInfluencerCode(influencer.name as string);
+      
+      await prisma.discountCode.create({
+        data: {
+          merchantId,
+          influencerId: influencer.id as string,
+          ugcPostId: ugcPost.id,
+          code,
+          codeType: 'INFLUENCER',
+          discountType: 'PERCENTAGE', // Default to percentage
+          discountValue: 15, // Default 15% discount for influencers
+          usageLimit: 100, // High usage limit for influencers
+          isActive: true,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        },
+      });
+
+      console.log(`Created reusable discount code ${code} for influencer ${influencer.name}`);
+    }
 
     console.log(`Created UGC post for influencer ${influencer.name}`);
   }
@@ -243,7 +275,7 @@ export class InstagramAPI {
     const codesSentToday = await prisma.discountCode.count({
       where: {
         merchantId,
-        influencerId: null, // Random people don't have influencerId
+        codeType: 'RANDOM',
         createdAt: {
           gte: today,
         },
@@ -258,14 +290,15 @@ export class InstagramAPI {
     // Generate unique discount code
     const code = this.generateRandomCode(mentionData.username as string, settings.discountValue as number);
     
-    // Create discount code
+    // Create one-time discount code for random person
     await prisma.discountCode.create({
       data: {
         merchantId,
         code,
+        codeType: 'RANDOM',
         discountType: settings.discountType as 'PERCENTAGE' | 'FIXED_AMOUNT',
         discountValue: settings.discountValue as number,
-        usageLimit: settings.discountUsageLimit as number,
+        usageLimit: 1, // One-time use for random people
         isActive: true,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
@@ -280,7 +313,7 @@ export class InstagramAPI {
     });
 
     if (dmSent) {
-      console.log(`Sent discount code ${code} to random person @${mentionData.username}`);
+      console.log(`Sent one-time discount code ${code} to random person @${mentionData.username}`);
     }
   }
 
@@ -288,6 +321,12 @@ export class InstagramAPI {
     const firstName = username.charAt(0).toUpperCase();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `${firstName}${discountValue}${random}`;
+  }
+
+  private generateInfluencerCode(influencerName: string): string {
+    const name = influencerName.replace(/\s+/g, '').toUpperCase();
+    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+    return `${name}${random}`;
   }
 
   private createRandomPersonMessage(code: string, discountValue: number): string {

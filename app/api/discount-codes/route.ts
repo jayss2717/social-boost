@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { discountCodeSchema } from '@/utils/validation';
 import { generateDiscountLink } from '@/utils/discount-links';
 
-// Generate unique discount code
+// Generate unique discount code for influencers
 function generateDiscountCode(influencerName: string, discountValue: number): string {
   const prefix = influencerName.split(' ')[0].toUpperCase();
   const lastName = influencerName.split(' ')[1]?.toUpperCase() || '';
@@ -82,6 +82,11 @@ export async function GET(request: NextRequest) {
       const discountCodes = await prisma.discountCode.findMany({
         where,
         orderBy: { createdAt: 'desc' },
+        include: {
+          influencer: {
+            select: { name: true, email: true }
+          }
+        }
       });
 
       // Add unique links to all discount codes using merchant settings
@@ -168,6 +173,7 @@ export async function POST(request: NextRequest) {
           ...validatedData,
           merchantId,
           code,
+          codeType: 'INFLUENCER', // Manual creation is always for influencers
           expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
         },
       });

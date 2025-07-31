@@ -32,6 +32,7 @@ export const ugcPostSchema = z.object({
 // Discount Code validation
 export const discountCodeSchema = z.object({
   influencerId: z.string(),
+  codeType: z.enum(['INFLUENCER', 'RANDOM']).optional().default('INFLUENCER'),
   discountType: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
   discountValue: z.number().min(0.01),
   usageLimit: z.number().min(1).max(10000),
