@@ -12,6 +12,7 @@ export default function Dashboard() {
   const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
 
   const isLoading = metricsLoading || subscriptionLoading || isCheckingOnboarding;
 
@@ -39,6 +40,12 @@ export default function Dashboard() {
               const data = await response.json();
               console.log('Merchant data:', data);
               
+              // Store merchant ID in localStorage for API calls
+              if (data.id) {
+                localStorage.setItem('merchantId', data.id);
+                console.log('Stored merchant ID:', data.id);
+              }
+              
               // Redirect to onboarding if not completed
               if (!data.onboardingCompleted) {
                 console.log('Redirecting to onboarding...');
@@ -55,6 +62,7 @@ export default function Dashboard() {
             }
           } catch (error) {
             console.error('Failed to fetch merchant data:', error);
+            setOnboardingError('Failed to check onboarding status');
             // If database is not available, try test API
             console.log('Database not available, trying test API...');
             try {
@@ -71,10 +79,9 @@ export default function Dashboard() {
               }
             } catch (testError) {
               console.error('Test API also failed:', testError);
-              // Final fallback
-              console.log('All APIs failed, redirecting to test onboarding...');
-              window.location.href = '/test-onboarding';
-              return;
+              setOnboardingError('Failed to connect to backend services');
+              // Final fallback - stay on dashboard with error
+              console.log('All APIs failed, staying on dashboard with error state');
             }
           }
         }
@@ -83,10 +90,8 @@ export default function Dashboard() {
         setIsCheckingOnboarding(false);
       } catch (error) {
         console.error('Failed to check onboarding status:', error);
-        // If there's an error, redirect to test onboarding as fallback
-        console.log('Error occurred, redirecting to test onboarding...');
-        window.location.href = '/test-onboarding';
-        return;
+        setOnboardingError('An unexpected error occurred');
+        setIsCheckingOnboarding(false);
       }
     };
 
@@ -104,7 +109,7 @@ export default function Dashboard() {
                   <Spinner size="large" />
                   <div className="mt-4">
                     <Text variant="bodyMd" as="p">
-                      Checking onboarding status...
+                      {isCheckingOnboarding ? 'Checking onboarding status...' : 'Loading dashboard...'}
                     </Text>
                   </div>
                 </div>
@@ -116,7 +121,36 @@ export default function Dashboard() {
     );
   }
 
-  // Handle errors gracefully
+  // Handle onboarding errors
+  if (onboardingError) {
+    return (
+      <Page title="Dashboard">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <div className="p-6 text-center">
+                <Banner tone="critical">
+                  <Text variant="headingLg" as="h2">
+                    Setup Required
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    {onboardingError}. Please complete the setup process to continue.
+                  </Text>
+                  <div className="mt-4">
+                    <Button variant="primary" onClick={() => window.location.reload()}>
+                      Retry Setup
+                    </Button>
+                  </div>
+                </Banner>
+              </div>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
+  // Handle API errors gracefully
   if (subscriptionError || metricsError) {
     return (
       <Page title="Dashboard">

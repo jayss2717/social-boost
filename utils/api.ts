@@ -3,29 +3,45 @@
 const DEMO_MERCHANT_ID = 'cmdpgbpw60003vgpvtdgr4pj5';
 
 export async function apiFetch(url: string, options: RequestInit = {}) {
+  // Get merchant ID from localStorage or use demo ID
+  const merchantId = typeof window !== 'undefined' 
+    ? localStorage.getItem('merchantId') || DEMO_MERCHANT_ID
+    : DEMO_MERCHANT_ID;
+
   const headers = {
     'Content-Type': 'application/json',
-    'x-merchant-id': DEMO_MERCHANT_ID,
+    'x-merchant-id': merchantId,
     ...options.headers,
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+    if (!response.ok) {
+      // If 404 or other error, return null instead of throwing
+      if (response.status === 404) {
+        console.log(`API endpoint not found: ${url}`);
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  const data = await response.json();
-  
-  // Handle API response format
-  if (data.success && data.data !== undefined) {
-    return data.data;
+    const data = await response.json();
+    
+    // Handle API response format
+    if (data.success && data.data !== undefined) {
+      return data.data;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`API fetch error for ${url}:`, error);
+    // Return null instead of throwing to prevent client-side errors
+    return null;
   }
-  
-  return data;
 }
 
 export async function apiPost(url: string, body: any) {

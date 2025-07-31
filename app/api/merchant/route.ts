@@ -120,6 +120,26 @@ export async function GET(request: NextRequest) {
         });
 
         console.log(`✅ Created new merchant: ${merchant.id}`);
+        
+        // Return the merchant ID in the response so it can be stored in localStorage
+        const response = {
+          id: merchant.id,
+          shop: merchant.shop,
+          shopName: merchant.shopName,
+          shopEmail: merchant.shopEmail,
+          shopDomain: merchant.shopDomain,
+          shopCurrency: merchant.shopCurrency,
+          shopTimezone: merchant.shopTimezone,
+          shopLocale: merchant.shopLocale,
+          onboardingCompleted: merchant.onboardingCompleted,
+          onboardingStep: merchant.onboardingStep,
+          onboardingData: merchant.onboardingData,
+          settings: merchant.settings,
+          _newMerchant: true, // Flag to indicate this is a new merchant
+        };
+        
+        console.log('Merchant API response:', response);
+        return NextResponse.json(response);
       } catch (createError) {
         console.error('Failed to create merchant:', createError);
         return NextResponse.json({ error: 'Failed to create merchant' }, { status: 500 });
