@@ -13,6 +13,8 @@ interface OnboardingData {
   minEngagement: number;
   payoutSchedule: 'WEEKLY' | 'MONTHLY' | 'MANUAL';
   teamSize: string;
+  selectedPlan?: string;
+  socialMediaConnected?: boolean;
 }
 
 const ONBOARDING_STEPS = [
@@ -45,6 +47,18 @@ const ONBOARDING_STEPS = [
     title: 'Payout Setup',
     description: 'Configure payment schedules',
     icon: DollarSign,
+  },
+  {
+    id: 6,
+    title: 'Choose Plan',
+    description: 'Select your subscription plan',
+    icon: DollarSign,
+  },
+  {
+    id: 7,
+    title: 'Connect Social Media',
+    description: 'Connect your social media accounts',
+    icon: Hash,
   },
 ];
 
@@ -449,6 +463,268 @@ export default function OnboardingPage() {
                   <Text variant="bodySm" as="p">
                     <strong>Payout Schedule:</strong> Process influencer payments {onboardingData.payoutSchedule.toLowerCase()}
                   </Text>
+                </div>
+              </BlockStack>
+            </div>
+          </Card>
+        );
+
+      case 6:
+        return (
+          <Card>
+            <div className="p-6">
+              <BlockStack gap="400">
+                <div className="text-center mb-6">
+                  <DollarSign className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  <Text variant="headingLg" as="h2">
+                    Choose Your Plan
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Select the perfect plan for your business
+                  </Text>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Starter Plan */}
+                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="text-center">
+                      <Text variant="headingMd" as="h3" fontWeight="bold">
+                        Starter
+                      </Text>
+                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
+                        Free
+                      </Text>
+                      <Text variant="bodySm" tone="subdued" as="p">
+                        Perfect for getting started
+                      </Text>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">1 Influencer</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">5 DMs/month</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Basic UGC detection</Text>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pro Plan */}
+                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors bg-blue-50 border-blue-200">
+                    <div className="text-center">
+                      <Text variant="headingMd" as="h3" fontWeight="bold">
+                        Pro
+                      </Text>
+                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
+                        $19.99
+                      </Text>
+                      <Text variant="bodySm" tone="subdued" as="p">
+                        Most popular choice
+                      </Text>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">10 Influencers</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">300 DMs/month</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Advanced analytics</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Priority support</Text>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scale Plan */}
+                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="text-center">
+                      <Text variant="headingMd" as="h3" fontWeight="bold">
+                        Scale
+                      </Text>
+                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
+                        $59.99
+                      </Text>
+                      <Text variant="bodySm" tone="subdued" as="p">
+                        For growing businesses
+                      </Text>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">50 Influencers</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">1000 DMs/month</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Custom integrations</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Dedicated support</Text>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enterprise Plan */}
+                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                    <div className="text-center">
+                      <Text variant="headingMd" as="h3" fontWeight="bold">
+                        Enterprise
+                      </Text>
+                      <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
+                        Custom
+                      </Text>
+                      <Text variant="bodySm" tone="subdued" as="p">
+                        Contact support
+                      </Text>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Unlimited Influencers</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Unlimited DMs</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">Custom features</Text>
+                      </div>
+                      <div className="flex items-center">
+                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        <Text variant="bodySm" as="span">24/7 support</Text>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <Text variant="bodySm" as="p">
+                    <strong>Special Offer:</strong> Get 20% off when you pay for a full year! 🎉
+                  </Text>
+                </div>
+
+                <Select
+                  label="Select Plan"
+                  options={[
+                    { label: 'Starter (Free)', value: 'STARTER' },
+                    { label: 'Pro ($19.99/month)', value: 'PRO' },
+                    { label: 'Scale ($59.99/month)', value: 'SCALE' },
+                    { label: 'Enterprise (Contact Support)', value: 'ENTERPRISE' },
+                  ]}
+                  value={onboardingData.selectedPlan || 'STARTER'}
+                  onChange={(value) => updateOnboardingData('selectedPlan', value)}
+                />
+              </BlockStack>
+            </div>
+          </Card>
+        );
+
+      case 7:
+        return (
+          <Card>
+            <div className="p-6">
+              <BlockStack gap="400">
+                <div className="text-center mb-6">
+                  <Hash className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  <Text variant="headingLg" as="h2">
+                    Connect Social Media
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Connect your social media accounts to detect brand mentions
+                  </Text>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Instagram */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                          <Text variant="bodySm" fontWeight="bold" as="span" tone="white">
+                            IG
+                          </Text>
+                        </div>
+                        <Text variant="bodyMd" fontWeight="semibold" as="p">
+                          Instagram
+                        </Text>
+                      </div>
+                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                    </div>
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Detect brand mentions and send discount codes via DM
+                    </Text>
+                    <Button 
+                      size="slim" 
+                      className="mt-3"
+                      onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                    >
+                      Connect Instagram
+                    </Button>
+                  </div>
+
+                  {/* TikTok */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                          <Text variant="bodySm" fontWeight="bold" as="span" tone="white">
+                            TT
+                          </Text>
+                        </div>
+                        <Text variant="bodyMd" fontWeight="semibold" as="p">
+                          TikTok
+                        </Text>
+                      </div>
+                      <div className="w-4 h-4 bg-gray-300 rounded-full"></div>
+                    </div>
+                    <Text variant="bodySm" tone="subdued" as="p">
+                      Monitor TikTok mentions and engage with creators
+                    </Text>
+                    <Button 
+                      size="slim" 
+                      className="mt-3"
+                      onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                    >
+                      Connect TikTok
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <Text variant="bodySm" as="p">
+                    <strong>How it works:</strong> Once connected, we'll automatically detect when someone mentions your brand and send them a discount code via direct message.
+                  </Text>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="skipSocialMedia"
+                    className="rounded"
+                    onChange={(e) => updateOnboardingData('socialMediaConnected', e.target.checked)}
+                  />
+                  <label htmlFor="skipSocialMedia">
+                    <Text variant="bodySm" as="span">
+                      Skip for now (I'll connect later)
+                    </Text>
+                  </label>
                 </div>
               </BlockStack>
             </div>

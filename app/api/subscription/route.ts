@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSubscriptionUsage } from '@/utils/subscription';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -9,89 +8,116 @@ export async function GET(request: NextRequest) {
   try {
     const merchantId = request.headers.get('x-merchant-id');
     
-    // If no merchant ID provided, return demo data for testing
     if (!merchantId) {
-      const demoUsage = {
-        ugcCount: 15,
-        influencerCount: 3,
-        ugcLimit: 20,
-        influencerLimit: 5,
-      };
-
-      const plans = [
-        { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
-        { name: 'Pro', price: 29, ugcLimit: 1000, influencerLimit: -1 },
-        { name: 'Scale', price: 99, ugcLimit: -1, influencerLimit: -1 },
-      ];
-
-      return NextResponse.json({
-        usage: demoUsage,
-        subscription: {
-          id: 'demo',
-          merchantId: 'demo',
-          planId: 'free',
-          status: 'ACTIVE',
-          plan: { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
-        },
-        plans,
-      });
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
-    // Test database connection first
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('✅ Database connection successful for subscription');
-    } catch (dbError) {
-      console.error('❌ Database connection failed for subscription:', dbError);
-      // Return demo data if database is unavailable
-      const demoUsage = {
-        ugcCount: 0,
-        influencerCount: 0,
-        ugcLimit: 20,
-        influencerLimit: 5,
-      };
+    // Get current subscription
+    const subscription = await prisma.subscription.findUnique({
+      where: { merchantId },
+      include: {
+        plan: true,
+      },
+    });
 
-      const plans = [
-        { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
-        { name: 'Pro', price: 29, ugcLimit: 1000, influencerLimit: -1 },
-        { name: 'Scale', price: 99, ugcLimit: -1, influencerLimit: -1 },
-      ];
+    // Get usage statistics
+    const influencerCount = await prisma.influencer.count({
+      where: { merchantId, isActive: true },
+    });
 
-      return NextResponse.json({
-        usage: demoUsage,
-        subscription: {
-          id: 'demo',
-          merchantId: merchantId || 'demo',
-          planId: 'free',
-          status: 'ACTIVE',
-          plan: { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
+    const dmsSentThisMonth = await prisma.discountCode.count({
+      where: {
+        merchantId,
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         },
-        plans,
-        _note: 'Demo data - database connection failed',
-      });
-    }
+      },
+    });
 
-    const [usage, subscription] = await Promise.all([
-      getSubscriptionUsage(merchantId),
-      prisma.subscription.findUnique({
-        where: { merchantId },
-        include: { plan: true },
-      }),
-    ]);
-
-    const plans = [
-      { name: 'Free', price: 0, ugcLimit: 20, influencerLimit: 5 },
-      { name: 'Pro', price: 29, ugcLimit: 1000, influencerLimit: -1 },
-      { name: 'Scale', price: 99, ugcLimit: -1, influencerLimit: -1 },
-    ];
+    // Get all available plans
+    const plans = await prisma.plan.findMany({
+      orderBy: { priceCents: 'asc' },
+    });
 
     return NextResponse.json({
-      usage,
+      success: true,
       subscription,
+      usage: {
+        influencers: influencerCount,
+        dmsSent: dmsSentThisMonth,
+        limit: subscription?.plan ? {
+          influencers: subscription.plan.influencerLimit,
+          dmsPerMonth: subscription.plan.ugcLimit,
+        } : {
+          influencers: 1,
+          dmsPerMonth: 5,
+        },
+      },
       plans,
     });
   } catch (error) {
-    console.error('Subscription API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Failed to fetch subscription:', error);
+    return NextResponse.json({ error: 'Failed to fetch subscription' }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const merchantId = request.headers.get('x-merchant-id');
+    
+    if (!merchantId) {
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
+    }
+
+    const { planId, billingCycle } = await request.json();
+
+    if (!planId) {
+      return NextResponse.json({ error: 'Plan ID required' }, { status: 400 });
+    }
+
+    // Get the plan
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
+    // Calculate billing period
+    const currentPeriodEnd = new Date();
+    if (billingCycle === 'yearly') {
+      currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+    } else {
+      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+    }
+
+    // Create or update subscription
+    const subscription = await prisma.subscription.upsert({
+      where: { merchantId },
+      update: {
+        planId,
+        currentPeriodEnd,
+        status: 'ACTIVE',
+      },
+      create: {
+        merchantId,
+        planId,
+        currentPeriodEnd,
+        status: 'ACTIVE',
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      subscription,
+      message: 'Subscription updated successfully',
+    });
+  } catch (error) {
+    console.error('Failed to update subscription:', error);
+    return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
   }
 } 

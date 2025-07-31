@@ -1,125 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { InstagramAPI } from '@/lib/instagram';
-import { TikTokAPI } from '@/lib/tiktok';
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { platform, accessToken, accountId, username, displayName } = await request.json();
-
-    if (!platform || !accessToken || !accountId || !username) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: platform, accessToken, accountId, username' 
-      }, { status: 400 });
+    const merchantId = request.headers.get('x-merchant-id');
+    
+    if (!merchantId) {
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
-    // Get merchant
-    const merchant = await prisma.merchant.findFirst({
-      where: { isActive: true },
-    });
+    const { platform, accountId, username, displayName, accessToken, refreshToken } = await request.json();
 
-    if (!merchant) {
-      return NextResponse.json({ error: 'No active merchant found' }, { status: 404 });
+    if (!platform || !accountId || !username || !accessToken) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Generate webhook secret
-    const webhookSecret = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
-
-    // Verify the account and get additional info
-    let accountInfo;
-    try {
-      if (platform === 'INSTAGRAM') {
-        const instagramAPI = new InstagramAPI({
-          accessToken,
-          businessAccountId: accountId,
-          webhookVerifyToken: webhookSecret,
-        });
-        accountInfo = await instagramAPI.getBusinessAccount();
-      } else if (platform === 'TIKTOK') {
-        const tiktokAPI = new TikTokAPI({
-          accessToken,
-          businessAccountId: accountId,
-          webhookVerifyToken: webhookSecret,
-        });
-        accountInfo = await tiktokAPI.getBusinessAccount();
-      } else {
-        return NextResponse.json({ error: 'Unsupported platform' }, { status: 400 });
-      }
-    } catch (error) {
-      console.error(`Failed to verify ${platform} account:`, error);
-      return NextResponse.json({ 
-        error: `Failed to verify ${platform} account. Please check your credentials.` 
-      }, { status: 400 });
-    }
-
-    // Create or update social media account
-    const socialMediaAccount = await prisma.socialMediaAccount.upsert({
+    // Check if account already exists
+    const existingAccount = await prisma.socialMediaAccount.findUnique({
       where: {
         merchantId_platform: {
-          merchantId: merchant.id,
-          platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
+          merchantId,
+          platform: platform as any,
         },
-      },
-      update: {
-        accountId,
-        username,
-        displayName: displayName || accountInfo?.name,
-        accessToken, // In production, this should be encrypted
-        webhookSecret,
-        isActive: true,
-        lastSyncAt: new Date(),
-      },
-      create: {
-        merchantId: merchant.id,
-        platform: platform as 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER',
-        accountId,
-        username,
-        displayName: displayName || accountInfo?.name,
-        accessToken, // In production, this should be encrypted
-        webhookSecret,
-        isActive: true,
-        lastSyncAt: new Date(),
       },
     });
 
-    // Subscribe to webhooks
-    const webhookUrl = `${process.env.HOST || 'http://localhost:3000'}/api/webhooks/${platform.toLowerCase()}`;
-    
-    try {
-      if (platform === 'INSTAGRAM') {
-        const instagramAPI = new InstagramAPI({
+    if (existingAccount) {
+      // Update existing account
+      const updatedAccount = await prisma.socialMediaAccount.update({
+        where: { id: existingAccount.id },
+        data: {
+          accountId,
+          username,
+          displayName,
           accessToken,
-          businessAccountId: accountId,
-          webhookVerifyToken: webhookSecret,
-        });
-        await instagramAPI.subscribeToWebhooks(webhookUrl);
-      } else if (platform === 'TIKTOK') {
-        const tiktokAPI = new TikTokAPI({
+          refreshToken,
+          isActive: true,
+          lastSyncAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        account: updatedAccount,
+        message: 'Social media account updated successfully',
+      });
+    } else {
+      // Create new account
+      const newAccount = await prisma.socialMediaAccount.create({
+        data: {
+          merchantId,
+          platform: platform as any,
+          accountId,
+          username,
+          displayName,
           accessToken,
-          businessAccountId: accountId,
-          webhookVerifyToken: webhookSecret,
-        });
-        await tiktokAPI.subscribeToWebhooks(webhookUrl);
-      }
-    } catch (error) {
-      console.error(`Failed to subscribe to ${platform} webhooks:`, error);
-      // Don't fail the connection, just log the error
+          refreshToken,
+          isActive: true,
+          lastSyncAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        account: newAccount,
+        message: 'Social media account connected successfully',
+      });
     }
+  } catch (error) {
+    console.error('Failed to connect social media account:', error);
+    return NextResponse.json({ error: 'Failed to connect social media account' }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const merchantId = request.headers.get('x-merchant-id');
+    
+    if (!merchantId) {
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
+    }
+
+    const accounts = await prisma.socialMediaAccount.findMany({
+      where: { merchantId },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json({
       success: true,
-      message: `${platform} account connected successfully`,
-      account: {
-        id: socialMediaAccount.id,
-        platform: socialMediaAccount.platform,
-        username: socialMediaAccount.username,
-        displayName: socialMediaAccount.displayName,
-        isActive: socialMediaAccount.isActive,
-      },
+      accounts,
     });
   } catch (error) {
-    console.error('Social media connection error:', error);
-    return NextResponse.json({ error: 'Failed to connect social media account' }, { status: 500 });
+    console.error('Failed to fetch social media accounts:', error);
+    return NextResponse.json({ error: 'Failed to fetch social media accounts' }, { status: 500 });
   }
 } 
