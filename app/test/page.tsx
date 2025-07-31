@@ -4,9 +4,9 @@ import { Page, Layout, Card, Text, Button, BlockStack, Banner } from '@shopify/p
 import { useState, useEffect } from 'react';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useInfluencers } from '@/hooks/useSubscription';
-import { useUgcPosts } from '@/hooks/useSubscription';
-import { usePayouts } from '@/hooks/useSubscription';
+import { useInfluencers } from '@/hooks/useInfluencers';
+import { useUgcPosts } from '@/hooks/useUgcPosts';
+import { usePayouts } from '@/hooks/usePayouts';
 
 export default function TestPage() {
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useMetrics();

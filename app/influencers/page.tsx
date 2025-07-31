@@ -3,7 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, Modal, TextField, Select, Badge, Banner, InlineStack, DataTable } from '@shopify/polaris';
 import { useState } from 'react';
 import { Plus, Copy, Gift, Search, Eye, Trash } from 'lucide-react';
-import { useInfluencers } from '@/hooks/useSubscription';
+import { useInfluencers } from '@/hooks/useInfluencers';
 
 interface Influencer {
   id: string;
