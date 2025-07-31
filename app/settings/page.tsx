@@ -129,19 +129,27 @@ export default function SettingsPage() {
       const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
       const merchantData = await merchantResponse.json();
       
-      if (!merchantData.success || !merchantData.merchant) {
+      if (!merchantData.id) {
         console.error('Failed to fetch merchant data');
         return;
       }
 
-      const merchantId = merchantData.merchant.id;
+      const merchantId = merchantData.id;
       
-      const response = await fetch('/api/settings', {
-        headers: {
-          'x-merchant-id': merchantId
-        }
-      });
-      const data = await response.json();
+      // Use the settings data from merchant response if available, otherwise fetch from settings API
+      let data;
+      if (merchantData.settings) {
+        data = merchantData.settings;
+      } else {
+        const response = await fetch('/api/settings', {
+          headers: {
+            'x-merchant-id': merchantId
+          }
+        });
+        const settingsResponse = await response.json();
+        data = settingsResponse.data || settingsResponse;
+      }
+      
       setFormData({
         name: data.name || '',
         email: data.email || '',
