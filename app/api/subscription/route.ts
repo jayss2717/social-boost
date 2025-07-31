@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
-    const { planId, billingCycle } = await request.json();
+    const { planId } = await request.json();
 
     if (!planId) {
       return NextResponse.json({ error: 'Plan ID required' }, { status: 400 });

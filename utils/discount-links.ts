@@ -22,9 +22,9 @@ export function generateDiscountLink(
   code: string, 
   merchantSettings?: MerchantSettings
 ): string {
-  // If no merchant settings or website, fall back to default
+  // If no merchant settings or website, return a placeholder
   if (!merchantSettings?.website) {
-    return `https://demostore.com/discount/${code}`;
+    return `https://your-store.com/discount/${code}`;
   }
 
   // Clean the website URL (remove trailing slash)

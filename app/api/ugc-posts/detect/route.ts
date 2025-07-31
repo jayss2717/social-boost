@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
               influencerId: influencer.id,
               ugcPostId: ugcPost.id,
               code: uniqueCode,
-              uniqueLink: `https://demostore.com/discount/${uniqueCode}`,
+              uniqueLink: `https://your-store.com/discount/${uniqueCode}`,
               discountType: currentSettings.discountType,
               discountValue: currentSettings.discountValue,
               usageCount: 0,

@@ -534,11 +534,11 @@ export default function SettingsPage() {
     }
   };
 
-  const handleReconnectSocialMedia = (platform: string) => {
-    console.log(`Reconnecting ${platform}...`);
-    setSaveMessage(`${platform} reconnection initiated...`);
-    setTimeout(() => setSaveMessage(''), 3000);
-  };
+  // const handleReconnectSocialMedia = (platform: string) => {
+  //   console.log(`Reconnecting ${platform}...`);
+  //   setSaveMessage(`${platform} reconnection initiated...`);
+  //   setTimeout(() => setSaveMessage(''), 3000);
+  // };
 
   const handleDisconnectSocialMedia = (id: string) => {
     console.log(`Disconnecting social media account with ID: ${id}`);

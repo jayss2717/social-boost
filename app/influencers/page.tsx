@@ -61,6 +61,24 @@ export default function InfluencersPage() {
     expiresAt: '',
   });
 
+  const getMerchantId = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop') || localStorage.getItem('shop');
+    
+    if (!shop) {
+      throw new Error('No shop parameter found');
+    }
+
+    const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
+    const merchantData = await merchantResponse.json();
+    
+    if (!merchantData.success || !merchantData.merchant) {
+      throw new Error('Failed to fetch merchant data');
+    }
+
+    return merchantData.merchant.id;
+  };
+
   // Filter influencers based on search query
   const filteredData = (influencers as Influencer[] || []).filter((influencer: Influencer) =>
     searchQuery.trim() === '' ||
@@ -86,11 +104,13 @@ export default function InfluencersPage() {
         cleanedFormData.tiktokHandle = formData.tiktokHandle.trim();
       }
 
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/influencers', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify(cleanedFormData),
       });
@@ -129,11 +149,13 @@ export default function InfluencersPage() {
           : undefined,
       };
 
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/discount-codes', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify(cleanedDiscountData),
       });
@@ -176,12 +198,13 @@ export default function InfluencersPage() {
     }
 
     try {
+      const merchantId = await getMerchantId();
       console.log('Attempting to delete discount code:', discountCodeId);
       const response = await fetch(`/api/discount-codes/${discountCodeId}`, {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
       });
 
@@ -210,11 +233,12 @@ export default function InfluencersPage() {
     }
 
     try {
+      const merchantId = await getMerchantId();
       const response = await fetch(`/api/influencers/${influencerId}`, {
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
       });
 
@@ -263,11 +287,12 @@ export default function InfluencersPage() {
         cleanedEditFormData.tiktokHandle = editFormData.tiktokHandle.trim();
       }
 
+      const merchantId = await getMerchantId();
       const response = await fetch(`/api/influencers/${selectedInfluencer.id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdpgbpw60003vgpvtdgr4pj5' // Demo merchant ID
+          'x-merchant-id': merchantId
         },
         body: JSON.stringify(cleanedEditFormData),
       });

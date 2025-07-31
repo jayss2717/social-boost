@@ -117,23 +117,12 @@ export default function OnboardingPage() {
         }
       }
       
-      // If all attempts failed, use mock data
-      console.log('Using mock merchant data');
-      setMerchantData({
-        shopName: 'Demo Store',
-        shopEmail: 'demo@example.com',
-        shopDomain: 'demo-store.myshopify.com',
-        shopCurrency: 'USD',
-      });
+      // If all attempts failed, show error
+      console.error('Failed to fetch merchant data after all attempts');
+      setMerchantData(null);
     } catch (error) {
       console.error('Error fetching merchant data:', error);
-      // Use mock data on error
-      setMerchantData({
-        shopName: 'Demo Store',
-        shopEmail: 'demo@example.com',
-        shopDomain: 'demo-store.myshopify.com',
-        shopCurrency: 'USD',
-      });
+      setMerchantData(null);
     }
   };
 

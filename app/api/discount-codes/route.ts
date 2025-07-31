@@ -16,55 +16,8 @@ export async function GET(request: NextRequest) {
     const merchantId = request.headers.get('x-merchant-id');
     const influencerId = request.nextUrl.searchParams.get('influencerId');
     
-    // If no merchant ID provided, return demo data for testing
     if (!merchantId) {
-      return NextResponse.json([
-        {
-          id: 'demo-1',
-          merchantId: 'demo',
-          influencerId: 'demo-1',
-          code: 'SARAHJ20ABC',
-          discountType: 'PERCENTAGE',
-          discountValue: 20,
-          usageLimit: 100,
-          usageCount: 15,
-          isActive: true,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          uniqueLink: 'https://demostore.com/discount/SARAHJ20ABC',
-        },
-        {
-          id: 'demo-2',
-          merchantId: 'demo',
-          influencerId: 'demo-2',
-          code: 'MIKECH15XYZ',
-          discountType: 'FIXED',
-          discountValue: 1500, // $15.00 in cents
-          usageLimit: 50,
-          usageCount: 8,
-          isActive: true,
-          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          uniqueLink: 'https://demostore.com/discount/MIKECH15XYZ',
-        },
-        {
-          id: 'demo-3',
-          merchantId: 'demo',
-          influencerId: 'demo-3',
-          code: 'EMMAD20DEF',
-          discountType: 'PERCENTAGE',
-          discountValue: 20,
-          usageLimit: 75,
-          usageCount: 12,
-          isActive: true,
-          expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          uniqueLink: 'https://demostore.com/discount/EMMAD20DEF',
-        }
-      ]);
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
     try {
@@ -101,24 +54,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(discountCodesWithLinks);
     } catch (dbError) {
       console.error('Database error in discount codes API:', dbError);
-      // Return demo data if database fails
-      return NextResponse.json([
-        {
-          id: 'demo-1',
-          merchantId: 'demo',
-          influencerId: 'demo-1',
-          code: 'SARAHJ20ABC',
-          discountType: 'PERCENTAGE',
-          discountValue: 20,
-          usageLimit: 100,
-          usageCount: 15,
-          isActive: true,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          uniqueLink: 'https://demostore.com/discount/SARAHJ20ABC',
-        }
-      ]);
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 503 });
     }
   } catch (error) {
     console.error('Discount codes API error:', error);

@@ -47,7 +47,7 @@ async function main() {
     update: {},
     create: {
       shop: 'teststorev101.myshopify.com',
-      accessToken: 'test-access-token',
+      accessToken: 'pending',
       scope: 'read_products,write_products',
       shopName: 'Test Store v101',
       shopEmail: 'test@storev101.com',

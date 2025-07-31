@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     const userInfo = userData.data.user;
 
     // Save or update social media account
-    const socialMediaAccount = await prisma.socialMediaAccount.upsert({
+    await prisma.socialMediaAccount.upsert({
       where: {
         merchantId_platform: {
           merchantId,

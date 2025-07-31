@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -51,16 +50,6 @@ export async function POST(request: NextRequest) {
         console.log('Unhandled webhook event type:', webhookData.event_type);
     }
 
-    // Store webhook event in database for tracking
-    await prisma.webhookEvent.create({
-      data: {
-        platform: 'TIKTOK',
-        eventType: webhookData.event_type || 'unknown',
-        eventData: webhookData,
-        processed: false,
-      },
-    });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('TikTok webhook error:', error);
@@ -81,5 +70,4 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ message: 'TikTok webhook endpoint is active' });
-} 
 } 
