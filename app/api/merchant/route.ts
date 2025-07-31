@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
         await prisma.merchantSettings.create({
           data: {
             merchantId: merchant.id,
-            name: merchant.shopName,
-            email: merchant.shopEmail,
+            name: merchant.shopName || shop.replace('.myshopify.com', ''),
+            email: merchant.shopEmail || `admin@${shop}`,
             website: `https://${shop}`,
             linkPattern: '/discount/{code}',
             socialMedia: {
