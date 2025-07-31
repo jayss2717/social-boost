@@ -1,6 +1,6 @@
 # SocialBoost Deployment Summary
 
-## �� Deployment Status: COMPLETE ✅
+## 🎉 Deployment Status: COMPLETE ✅
 
 ### ✅ Issues Fixed
 
@@ -19,6 +19,7 @@
 13. **Testing Framework**: Added `vitest` dependency for test configuration
 14. **Package Lock Sync**: Updated package-lock.json to match package.json dependencies
 15. **ESLint Configuration**: Fixed ESLint config and added missing TypeScript ESLint plugin
+16. **Fresh Installation**: Fixed merchant API to handle new store installations automatically
 
 ### ✅ APIs Working
 
@@ -75,7 +76,7 @@ The application has been successfully deployed to all platforms:
 
 #### ✅ Shopify App Store
 - **Status**: ✅ Successfully deployed
-- **Version**: socialboost-11 (active)
+- **Version**: socialboost-12 (active)
 - **App ID**: 270578352129
 - **Partner Dashboard**: https://partners.shopify.com/4415443/apps/270578352129/versions
 - **Client ID**: 4638bbbd1542925e067ab11f3eecdc1c
@@ -117,6 +118,18 @@ For production deployment, ensure these environment variables are set:
 - **Testing framework**: Added vitest for test configuration
 - **Package lock sync**: Updated package-lock.json to match package.json
 - **ESLint configuration**: Fixed config and added TypeScript ESLint plugin
+- **Fresh installation**: Fixed merchant API to handle new store installations automatically
+
+### 🆕 Latest Fix: Fresh Installation Support
+
+**Problem**: When a fresh Shopify store installs the app, the database is empty and causes client-side errors.
+
+**Solution**: 
+- ✅ Updated merchant API to automatically create new merchant for fresh installations
+- ✅ Creates default subscription with Starter plan
+- ✅ Creates default merchant settings
+- ✅ Handles onboarding flow for new merchants
+- ✅ Prevents client-side errors during fresh app installation
 
 ---
 
