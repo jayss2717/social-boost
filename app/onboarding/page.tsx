@@ -130,9 +130,12 @@ export default function OnboardingPage() {
   };
 
   const handleNext = async () => {
+    console.log('handleNext called, currentStep:', currentStep, 'total steps:', ONBOARDING_STEPS.length);
     if (currentStep < ONBOARDING_STEPS.length) {
+      console.log('Moving to next step:', currentStep + 1);
       setCurrentStep(currentStep + 1);
     } else {
+      console.log('Completing onboarding...');
       await completeOnboarding();
     }
   };
@@ -145,8 +148,12 @@ export default function OnboardingPage() {
 
   const completeOnboarding = async () => {
     try {
+      console.log('Starting onboarding completion...');
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
+      
+      console.log('Shop:', shop);
+      console.log('Onboarding data:', onboardingData);
 
       const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
@@ -159,12 +166,21 @@ export default function OnboardingPage() {
         }),
       });
 
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
       if (response.ok) {
+        console.log('Onboarding completed successfully, redirecting...');
         // Redirect to dashboard with shop parameter
         window.location.href = `/?shop=${shop}`;
+      } else {
+        console.error('Onboarding completion failed:', responseData);
+        alert('Failed to complete onboarding. Please try again.');
       }
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
+      alert('Failed to complete onboarding. Please try again.');
     }
   };
 
@@ -460,6 +476,9 @@ export default function OnboardingPage() {
                 </Text>
               </div>
               <ProgressBar progress={currentStep / ONBOARDING_STEPS.length} />
+              <div className="mt-2 text-sm text-gray-500">
+                Debug: Step {currentStep} of {ONBOARDING_STEPS.length} ({(currentStep / ONBOARDING_STEPS.length * 100).toFixed(0)}%)
+              </div>
             </div>
 
             {/* Step Content */}
