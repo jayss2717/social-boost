@@ -657,7 +657,7 @@ export default function OnboardingPage() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                          <Text variant="bodySm" fontWeight="bold" as="span" tone="white">
+                          <Text variant="bodySm" fontWeight="bold" as="span" className="text-white">
                             IG
                           </Text>
                         </div>
@@ -684,7 +684,7 @@ export default function OnboardingPage() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                          <Text variant="bodySm" fontWeight="bold" as="span" tone="white">
+                          <Text variant="bodySm" fontWeight="bold" as="span" className="text-white">
                             TT
                           </Text>
                         </div>
