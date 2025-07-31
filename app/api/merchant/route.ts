@@ -13,15 +13,117 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 });
     }
 
-    const merchant = await prisma.merchant.findUnique({
+    let merchant = await prisma.merchant.findUnique({
       where: { shop },
       include: {
         settings: true,
       },
     });
 
+    // If merchant doesn't exist, create a new one for fresh installations
     if (!merchant) {
-      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+      console.log(`🔄 Creating new merchant for shop: ${shop}`);
+      
+      try {
+        merchant = await prisma.merchant.create({
+          data: {
+            shop,
+            accessToken: 'pending', // Will be updated during OAuth
+            scope: 'read_products,write_products',
+            shopName: shop.replace('.myshopify.com', ''),
+            shopEmail: `admin@${shop}`,
+            shopDomain: shop,
+            shopCurrency: 'USD',
+            shopTimezone: 'America/New_York',
+            shopLocale: 'en',
+            onboardingCompleted: false,
+            onboardingStep: 1,
+            onboardingData: {
+              businessType: 'ECOMMERCE',
+              industry: 'General',
+              goals: ['Increase brand awareness'],
+              commissionRate: 10,
+              autoApprove: false,
+              minEngagement: 100,
+              payoutSchedule: 'WEEKLY',
+              teamSize: '1-5',
+            },
+          },
+          include: {
+            settings: true,
+          },
+        });
+
+        // Get or create the Starter plan
+        const starterPlan = await prisma.plan.upsert({
+          where: { name: 'Starter' },
+          update: {},
+          create: {
+            name: 'Starter',
+            priceCents: 2900, // $29/month
+            ugcLimit: 20,
+            influencerLimit: 5,
+          },
+        });
+
+        // Create default subscription
+        await prisma.subscription.create({
+          data: {
+            merchantId: merchant.id,
+            planId: starterPlan.id, // Use the actual plan ID
+            status: 'ACTIVE',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          },
+        });
+
+        // Create default merchant settings
+        await prisma.merchantSettings.create({
+          data: {
+            merchantId: merchant.id,
+            name: merchant.shopName,
+            email: merchant.shopEmail,
+            website: `https://${shop}`,
+            linkPattern: '/discount/{code}',
+            socialMedia: {
+              instagram: '',
+              tiktok: '',
+              twitter: '',
+              youtube: '',
+            },
+            discountSettings: {
+              defaultPercentage: 15,
+              minPercentage: 5,
+              maxPercentage: 50,
+              autoApprove: false,
+            },
+            commissionSettings: {
+              defaultRate: 10,
+              minRate: 5,
+              maxRate: 25,
+              autoPayout: false,
+            },
+            ugcSettings: {
+              autoApprove: false,
+              minEngagement: 100,
+              hashtags: ['#sponsored'],
+              timerSettings: {
+                enabled: true,
+                duration: 24, // hours
+              },
+            },
+            payoutSettings: {
+              autoPayout: false,
+              schedule: 'WEEKLY',
+              minimumAmount: 5000, // $50
+            },
+          },
+        });
+
+        console.log(`✅ Created new merchant: ${merchant.id}`);
+      } catch (createError) {
+        console.error('Failed to create merchant:', createError);
+        return NextResponse.json({ error: 'Failed to create merchant' }, { status: 500 });
+      }
     }
 
     const response = {
