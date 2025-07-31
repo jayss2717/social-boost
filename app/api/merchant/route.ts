@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       shopLocale: merchant.shopLocale,
       onboardingCompleted: merchant.onboardingCompleted,
       onboardingStep: merchant.onboardingStep,
+      onboardingData: merchant.onboardingData,
       settings: merchant.settings,
     };
     
