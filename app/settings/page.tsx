@@ -19,6 +19,23 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
   
+  // Handle OAuth results
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    
+    if (success) {
+      setSaveMessage(`✅ ${success === 'instagram_connected' ? 'Instagram' : 'TikTok'} connected successfully!`);
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      setSaveMessage(`❌ Connection failed: ${error}`);
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+  
   // Edit mode states
   const [merchantEditMode, setMerchantEditMode] = useState(false);
   const [influencerEditMode, setInfluencerEditMode] = useState(false);
@@ -768,9 +785,14 @@ export default function SettingsPage() {
                         <Button 
                           size="slim" 
                           variant="secondary"
-                          onClick={() => handleReconnectSocialMedia('instagram')}
+                          onClick={() => {
+                            const merchantId = localStorage.getItem('merchantId');
+                            if (merchantId) {
+                              window.location.href = `/api/auth/instagram?merchantId=${merchantId}`;
+                            }
+                          }}
                         >
-                          Reconnect
+                          Connect
                         </Button>
                       </div>
                     </div>
@@ -792,9 +814,14 @@ export default function SettingsPage() {
                         <Button 
                           size="slim" 
                           variant="secondary"
-                          onClick={() => handleReconnectSocialMedia('tiktok')}
+                          onClick={() => {
+                            const merchantId = localStorage.getItem('merchantId');
+                            if (merchantId) {
+                              window.location.href = `/api/auth/tiktok?merchantId=${merchantId}`;
+                            }
+                          }}
                         >
-                          Reconnect
+                          Connect
                         </Button>
                       </div>
                     </div>

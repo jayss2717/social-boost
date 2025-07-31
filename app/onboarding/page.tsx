@@ -506,7 +506,14 @@ export default function OnboardingPage() {
                     <div className="mt-3">
                       <Button 
                         size="slim" 
-                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                        onClick={() => {
+                          const merchantId = localStorage.getItem('merchantId');
+                          if (merchantId) {
+                            window.location.href = `/api/auth/instagram?merchantId=${merchantId}`;
+                          } else {
+                            updateOnboardingData('socialMediaConnected', true);
+                          }
+                        }}
                       >
                         Connect Instagram
                       </Button>
@@ -534,7 +541,14 @@ export default function OnboardingPage() {
                     <div className="mt-3">
                       <Button 
                         size="slim" 
-                        onClick={() => updateOnboardingData('socialMediaConnected', true)}
+                        onClick={() => {
+                          const merchantId = localStorage.getItem('merchantId');
+                          if (merchantId) {
+                            window.location.href = `/api/auth/tiktok?merchantId=${merchantId}`;
+                          } else {
+                            updateOnboardingData('socialMediaConnected', true);
+                          }
+                        }}
                       >
                         Connect TikTok
                       </Button>
