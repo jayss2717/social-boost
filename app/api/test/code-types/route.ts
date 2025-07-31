@@ -7,7 +7,7 @@ export async function GET() {
     const testMerchantId = 'test-merchant-' + Date.now();
     
     // Create a test merchant first
-    const merchant = await prisma.merchant.create({
+    await prisma.merchant.create({
       data: {
         id: testMerchantId,
         shop: 'test-shop-' + Date.now() + '.myshopify.com',

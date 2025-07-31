@@ -765,11 +765,11 @@ export default function OnboardingPage() {
                 ></div>
               </div>
               
-              <div className="flex justify-between mt-2">
-                {ONBOARDING_STEPS.map((step, index) => {
-                  const StepIcon = step.icon;
-                  const isActive = currentStep === step.id;
-                  const isCompleted = currentStep > step.id;
+                             <div className="flex justify-between mt-2">
+                 {ONBOARDING_STEPS.map((step) => {
+                   const StepIcon = step.icon;
+                   const isActive = currentStep === step.id;
+                   const isCompleted = currentStep > step.id;
                   
                   return (
                     <div key={step.id} className="flex flex-col items-center">
