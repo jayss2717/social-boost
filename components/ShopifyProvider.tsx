@@ -17,7 +17,7 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
     if (isShopifyAdmin) {
       // Initialize Shopify App Bridge with better error handling
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.9/dist/index.umd.js';
+      script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.8/umd/index.js';
       script.async = true;
       
       script.onload = () => {
@@ -68,7 +68,7 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
         console.log('Detected iframe context, attempting App Bridge initialization');
         // Try to initialize anyway for iframe contexts
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.9/dist/index.umd.js';
+        script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.8/umd/index.js';
         script.async = true;
         
         script.onload = () => {
