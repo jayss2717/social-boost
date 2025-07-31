@@ -37,13 +37,34 @@ export default function Dashboard() {
           try {
             const response = await fetch(`/api/merchant?shop=${shop}`);
             if (response.ok) {
-              const data = await response.json();
-              console.log('Merchant data:', data);
+              let data;
+              try {
+                data = await response.json();
+                console.log('Merchant data:', data);
+              } catch (jsonError) {
+                console.error('Failed to parse merchant response:', jsonError);
+                setOnboardingError('Invalid response from server');
+                setIsCheckingOnboarding(false);
+                return;
+              }
+              
+              // Handle both success and error responses
+              if (data.error) {
+                console.error('Merchant API error:', data.error);
+                setOnboardingError('Failed to load merchant data');
+                setIsCheckingOnboarding(false);
+                return;
+              }
               
               // Store merchant ID in localStorage for API calls
               if (data.id) {
                 localStorage.setItem('merchantId', data.id);
                 console.log('Stored merchant ID:', data.id);
+              } else {
+                console.error('No merchant ID in response:', data);
+                setOnboardingError('Invalid merchant data received');
+                setIsCheckingOnboarding(false);
+                return;
               }
               
               // Redirect to onboarding if not completed
