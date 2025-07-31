@@ -41,6 +41,9 @@ export default function Dashboard() {
               try {
                 data = await response.json();
                 console.log('Merchant data:', data);
+                console.log('Data type:', typeof data);
+                console.log('Data keys:', Object.keys(data));
+                console.log('onboardingCompleted:', data.onboardingCompleted, typeof data.onboardingCompleted);
               } catch (jsonError) {
                 console.error('Failed to parse merchant response:', jsonError);
                 setOnboardingError('Invalid response from server');
@@ -69,8 +72,14 @@ export default function Dashboard() {
               
               // Redirect to onboarding if not completed
               if (!data.onboardingCompleted) {
-                console.log('Redirecting to onboarding...');
-                window.location.href = `/onboarding?shop=${shop}`;
+                console.log('Redirecting to onboarding...', { shop, onboardingCompleted: data.onboardingCompleted });
+                try {
+                  window.location.href = `/onboarding?shop=${shop}`;
+                } catch (redirectError) {
+                  console.error('Failed to redirect to onboarding:', redirectError);
+                  setOnboardingError('Failed to redirect to onboarding');
+                  setIsCheckingOnboarding(false);
+                }
                 return; // Don't set isCheckingOnboarding to false if redirecting
               } else {
                 console.log('Onboarding already completed, staying on dashboard');
@@ -107,7 +116,7 @@ export default function Dashboard() {
           }
         }
         
-        // Only set to false if we're not redirecting
+        // Set to false if we're not redirecting
         setIsCheckingOnboarding(false);
       } catch (error) {
         console.error('Failed to check onboarding status:', error);
