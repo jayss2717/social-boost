@@ -9,61 +9,9 @@ export async function GET(request: NextRequest) {
   try {
     const merchantId = getMerchantId(request);
 
-    // If no merchant ID is provided, return mock data
+    // If no merchant ID is provided, return error
     if (!merchantId) {
-      console.log('🔄 No merchant ID provided, returning mock data');
-      return NextResponse.json({
-        totalUgcPosts: 0,
-        totalInfluencers: 0,
-        approvedPosts: 0,
-        pendingApproval: 0,
-        pendingPayouts: 0,
-        completedPayouts: 0,
-        totalRevenue: 0,
-        averageEngagement: 0,
-        totalEngagement: 0,
-        engagementCount: 0,
-        recentActivity: 0,
-        topPosts: [],
-        platformDistribution: {
-          INSTAGRAM: 0,
-          TIKTOK: 0,
-          YOUTUBE: 0,
-        },
-        _note: 'Mock data - no merchant ID provided',
-      });
-    }
-
-    // In CI environment, return mock data
-    if (process.env.CI === 'true') {
-      return NextResponse.json({
-        totalUgcPosts: 15,
-        totalInfluencers: 3,
-        approvedPosts: 12,
-        pendingApproval: 3,
-        pendingPayouts: 2500,
-        completedPayouts: 15000,
-        totalRevenue: 15000,
-        averageEngagement: 1250,
-        totalEngagement: 18750,
-        engagementCount: 15,
-        recentActivity: 5,
-        topPosts: [
-          {
-            id: 'mock-1',
-            platform: 'INSTAGRAM',
-            engagement: 2500,
-            content: 'Amazing product! Love the quality...',
-            influencerName: 'Sarah Wilson',
-            createdAt: new Date().toISOString(),
-          },
-        ],
-        platformDistribution: {
-          INSTAGRAM: 10,
-          TIKTOK: 3,
-          YOUTUBE: 2,
-        },
-      });
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
     // Test database connection first
@@ -72,62 +20,34 @@ export async function GET(request: NextRequest) {
       console.log('✅ Database connection successful');
     } catch (dbError) {
       console.error('❌ Database connection failed:', dbError);
-      // Return mock data if database is unavailable
-      console.log('🔄 Returning mock data due to database connection failure');
-      return NextResponse.json({
-        totalUgcPosts: 0,
-        totalInfluencers: 0,
-        approvedPosts: 0,
-        pendingApproval: 0,
-        pendingPayouts: 0,
-        completedPayouts: 0,
-        totalRevenue: 0,
-        averageEngagement: 0,
-        totalEngagement: 0,
-        engagementCount: 0,
-        recentActivity: 0,
-        topPosts: [],
-        platformDistribution: {
-          INSTAGRAM: 0,
-          TIKTOK: 0,
-          YOUTUBE: 0,
-        },
-        _note: 'Mock data - database connection failed',
-      });
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
     }
 
     // Get basic metrics one by one to avoid complex queries
     const totalUgcPosts = await prisma.ugcPost.count({ where: { merchantId } });
     const totalInfluencers = await prisma.influencer.count({ where: { merchantId, isActive: true } });
-    const approvedPosts = await prisma.ugcPost.count({ where: { merchantId, isApproved: true } });
-    const pendingApproval = await prisma.ugcPost.count({ where: { merchantId, isApproved: false } });
-    
-    // Get payout data
-    const pendingPayoutsResult = await prisma.payout.aggregate({
+    const approvedPosts = await prisma.ugcPost.count({ 
+      where: { merchantId, isApproved: true } 
+    });
+    const pendingApproval = await prisma.ugcPost.count({ 
+      where: { merchantId, isApproved: false } 
+    });
+
+    // Calculate payout amounts
+    const pendingPayouts = await prisma.payout.aggregate({
       where: { merchantId, status: 'PENDING' },
       _sum: { amount: true },
     });
-    const pendingPayouts = pendingPayoutsResult._sum.amount || 0;
-    
-    const completedPayoutsResult = await prisma.payout.aggregate({
+
+    const completedPayouts = await prisma.payout.aggregate({
       where: { merchantId, status: 'COMPLETED' },
       _sum: { amount: true },
     });
-    const completedPayouts = completedPayoutsResult._sum.amount || 0;
-    
-    const totalRevenue = completedPayouts; // Use completed payouts as revenue
-    
-    // Get recent activity
-    const recentActivity = await prisma.ugcPost.count({
-      where: {
-        merchantId,
-        createdAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-        },
-      },
-    });
 
-    // Calculate engagement metrics
+    // Calculate total revenue (sum of all completed payouts)
+    const totalRevenue = completedPayouts._sum.amount || 0;
+
+    // Get engagement metrics
     const engagementData = await prisma.ugcPost.aggregate({
       where: { merchantId },
       _sum: { engagement: true },
@@ -136,13 +56,23 @@ export async function GET(request: NextRequest) {
 
     const totalEngagement = engagementData._sum.engagement || 0;
     const engagementCount = engagementData._count.engagement || 0;
-    const averageEngagement = engagementCount > 0 ? totalEngagement / engagementCount : 0;
+    const averageEngagement = engagementCount > 0 ? Math.round(totalEngagement / engagementCount) : 0;
 
-    // Get top posts
+    // Get recent activity (posts created in last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentActivity = await prisma.ugcPost.count({
+      where: {
+        merchantId,
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    // Get top performing posts
     const topPosts = await prisma.ugcPost.findMany({
-      where: { merchantId },
+      where: { merchantId, isApproved: true },
       orderBy: { engagement: 'desc' },
-      take: 5,
+      take: 3,
       include: {
         influencer: {
           select: { name: true },
@@ -164,7 +94,9 @@ export async function GET(request: NextRequest) {
     };
 
     platformDistribution.forEach((item) => {
-      platformData[item.platform as keyof typeof platformData] = item._count.platform;
+      if (item.platform in platformData) {
+        platformData[item.platform as keyof typeof platformData] = item._count.platform;
+      }
     });
 
     return NextResponse.json({
@@ -172,14 +104,14 @@ export async function GET(request: NextRequest) {
       totalInfluencers,
       approvedPosts,
       pendingApproval,
-      pendingPayouts,
-      completedPayouts,
+      pendingPayouts: pendingPayouts._sum.amount || 0,
+      completedPayouts: completedPayouts._sum.amount || 0,
       totalRevenue,
       averageEngagement,
       totalEngagement,
       engagementCount,
       recentActivity,
-      topPosts: topPosts.map((post) => ({
+      topPosts: topPosts.map(post => ({
         id: post.id,
         platform: post.platform,
         engagement: post.engagement,
@@ -191,10 +123,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch metrics:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
     return NextResponse.json({ error: 'Failed to fetch metrics' }, { status: 500 });
   }
 } 

@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Failed to create/update merchant:', error);
       // If database fails, still redirect to onboarding
-      const baseUrl = process.env.HOST || 'http://localhost:3000';
+      const baseUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
       const onboardingUrl = `${baseUrl}/onboarding?shop=${shop}`;
       console.log('Database failed, redirecting to onboarding:', onboardingUrl);
       return NextResponse.redirect(onboardingUrl);

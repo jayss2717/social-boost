@@ -1,29 +1,21 @@
 import { NextRequest } from 'next/server';
 
-// Demo merchant ID for development
-const DEMO_MERCHANT_ID = 'cmdpgbpw60003vgpvtdgr4pj5';
-
 export function getMerchantId(request: NextRequest): string | null {
-  // Get merchant ID from header
   const merchantId = request.headers.get('x-merchant-id');
   
-  if (merchantId) {
-    return merchantId;
+  if (!merchantId) {
+    console.warn('No merchant ID provided in request headers');
+    return null;
   }
   
-  // For development or CI, return demo merchant ID
-  if (process.env.NODE_ENV === 'development' || process.env.CI === 'true') {
-    return DEMO_MERCHANT_ID;
-  }
-  
-  return null;
+  return merchantId;
 }
 
 export function requireMerchantId(request: NextRequest): string {
   const merchantId = getMerchantId(request);
   
   if (!merchantId) {
-    throw new Error('Merchant ID required');
+    throw new Error('Merchant ID is required');
   }
   
   return merchantId;

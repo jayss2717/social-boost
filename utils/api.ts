@@ -1,12 +1,15 @@
 // API utility functions for consistent headers and error handling
 
-const DEMO_MERCHANT_ID = 'cmdpgbpw60003vgpvtdgr4pj5';
-
 export async function apiFetch(url: string, options: RequestInit = {}) {
-  // Get merchant ID from localStorage or use demo ID
+  // Get merchant ID from localStorage or return error
   const merchantId = typeof window !== 'undefined' 
-    ? localStorage.getItem('merchantId') || DEMO_MERCHANT_ID
-    : DEMO_MERCHANT_ID;
+    ? localStorage.getItem('merchantId')
+    : null;
+
+  if (!merchantId) {
+    console.error('No merchant ID available for API call');
+    return null;
+  }
 
   const headers = {
     'Content-Type': 'application/json',

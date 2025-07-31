@@ -9,37 +9,7 @@ export async function GET(request: NextRequest) {
     const merchantId = request.headers.get('x-merchant-id');
     
     if (!merchantId) {
-      // Return mock data for development
-      return NextResponse.json({
-        subscription: {
-          id: 'mock-subscription',
-          planId: 'mock-plan',
-          status: 'ACTIVE',
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        usage: {
-          influencerCount: 2,
-          ugcCount: 3,
-          influencerLimit: 5,
-          ugcLimit: 20,
-        },
-        plans: [
-          {
-            id: 'starter',
-            name: 'Starter',
-            priceCents: 2900,
-            ugcLimit: 20,
-            influencerLimit: 5,
-          },
-          {
-            id: 'professional',
-            name: 'Professional',
-            priceCents: 7900,
-            ugcLimit: 100,
-            influencerLimit: 20,
-          },
-        ],
-      });
+      return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
     // Get current subscription
@@ -49,6 +19,10 @@ export async function GET(request: NextRequest) {
         plan: true,
       },
     });
+
+    if (!subscription) {
+      return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
+    }
 
     // Get usage statistics
     const influencerCount = await prisma.influencer.count({
@@ -99,47 +73,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan ID required' }, { status: 400 });
     }
 
-    // Get the plan
+    // Verify plan exists
     const plan = await prisma.plan.findUnique({
       where: { id: planId },
     });
 
     if (!plan) {
-      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Invalid plan ID' }, { status: 400 });
     }
 
-    // Calculate billing period
-    const currentPeriodEnd = new Date();
-    if (billingCycle === 'yearly') {
-      currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
-    } else {
-      currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
-    }
-
-    // Create or update subscription
+    // Update or create subscription
     const subscription = await prisma.subscription.upsert({
       where: { merchantId },
       update: {
         planId,
-        currentPeriodEnd,
         status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       },
       create: {
         merchantId,
         planId,
-        currentPeriodEnd,
         status: 'ACTIVE',
-      },
-      include: {
-        plan: true,
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      subscription,
-      message: 'Subscription updated successfully',
-    });
+    return NextResponse.json({ subscription });
   } catch (error) {
     console.error('Failed to update subscription:', error);
     return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
