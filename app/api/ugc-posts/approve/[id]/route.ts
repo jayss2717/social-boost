@@ -132,13 +132,28 @@ function calculateRewardAmount(engagement: number, baseAmount?: number): number 
   return 10; // Low engagement: $10
 }
 
+// Define interface for UGC post
+interface UgcPost {
+  id: string;
+  merchantId: string;
+  influencerId?: string | null;
+  merchant: {
+    accessToken?: string;
+    shop: string;
+    shopDomain?: string;
+  };
+  influencer?: {
+    name?: string;
+  } | null;
+}
+
 // Create reward discount code
-async function createRewardDiscountCode(ugcPost: unknown, rewardAmount: number, rewardType: string) {
-  const merchant = (ugcPost as any).merchant;
+async function createRewardDiscountCode(ugcPost: UgcPost, rewardAmount: number, rewardType: string) {
+  const merchant = ugcPost.merchant;
   
   // Generate unique discount code
   const code = generateDiscountLink(
-    `${(ugcPost as any).influencer?.name || 'UGC'}-${Date.now()}`, 
+    `${ugcPost.influencer?.name || 'UGC'}-${Date.now()}`, 
     { website: merchant.shopDomain }
   );
 
@@ -165,9 +180,9 @@ async function createRewardDiscountCode(ugcPost: unknown, rewardAmount: number, 
   // Create discount code in database
   const discountCode = await prisma.discountCode.create({
     data: {
-      merchantId: (ugcPost as any).merchantId,
-      influencerId: (ugcPost as any).influencerId,
-      ugcPostId: (ugcPost as any).id,
+      merchantId: ugcPost.merchantId,
+      influencerId: ugcPost.influencerId,
+      ugcPostId: ugcPost.id,
       code,
       codeType: 'INFLUENCER',
       discountType: rewardType === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED_AMOUNT',

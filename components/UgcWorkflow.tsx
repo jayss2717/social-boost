@@ -1,12 +1,41 @@
 'use client';
 
-import { Card, Text, Button, Badge, Modal, TextField, Select, Banner } from '@shopify/polaris';
+import { Card, Text, Badge, Button, Modal, TextField, Select, Banner } from '@shopify/polaris';
 import { useState } from 'react';
 import { CheckCircle, XCircle, Gift, TrendingUp } from 'lucide-react';
 
+interface UgcPost {
+  id: string;
+  platform: 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE' | 'TWITTER';
+  postUrl: string;
+  postId: string;
+  content: string;
+  mediaUrls: string[];
+  engagement: number;
+  isApproved: boolean;
+  isRewarded: boolean;
+  isRejected: boolean;
+  rejectionReason?: string;
+  rewardAmount: number;
+  influencerId: string;
+  influencer?: {
+    name: string;
+    email: string;
+    instagramHandle: string;
+    tiktokHandle: string;
+  } | null;
+  discountCode?: {
+    code: string;
+    uniqueLink: string;
+    usageCount: number;
+    usageLimit: number;
+  };
+  createdAt: string;
+}
+
 interface UgcWorkflowProps {
-  post: any;
-  onApprove: (postId: string, options: any) => Promise<void>;
+  post: UgcPost;
+  onApprove: (postId: string, options: Record<string, unknown>) => Promise<void>;
   onReject: (postId: string, reason: string) => Promise<void>;
   onRefresh: () => void;
 }
@@ -41,7 +70,7 @@ export function UgcWorkflow({ post, onApprove, onReject, onRefresh }: UgcWorkflo
   const handleApprove = async () => {
     setIsProcessing(true);
     try {
-      await onApprove(post.id, approvalOptions);
+      await onApprove(post.id as string, approvalOptions);
       setShowApprovalModal(false);
       onRefresh();
     } catch (error) {
@@ -54,7 +83,7 @@ export function UgcWorkflow({ post, onApprove, onReject, onRefresh }: UgcWorkflo
   const handleReject = async () => {
     setIsProcessing(true);
     try {
-      await onReject(post.id, rejectionReason);
+      await onReject(post.id as string, rejectionReason);
       setShowRejectionModal(false);
       onRefresh();
     } catch (error) {
@@ -64,8 +93,8 @@ export function UgcWorkflow({ post, onApprove, onReject, onRefresh }: UgcWorkflo
     }
   };
 
-  const engagementInfo = getEngagementLevel(post.engagement);
-  const suggestedReward = getSuggestedReward(post.engagement);
+  const engagementInfo = getEngagementLevel(post.engagement as number);
+  const suggestedReward = getSuggestedReward(post.engagement as number);
 
   return (
     <div>
@@ -82,8 +111,8 @@ export function UgcWorkflow({ post, onApprove, onReject, onRefresh }: UgcWorkflo
                   Review and approve user-generated content
                 </Text>
               </div>
-              <Badge tone={post.isApproved ? 'success' : 'critical'}>
-                {post.isApproved ? 'Approved' : 'Pending Approval'}
+              <Badge tone={(post.isApproved as boolean) ? 'success' : 'critical'}>
+                {(post.isApproved as boolean) ? 'Approved' : 'Pending Approval'}
               </Badge>
             </div>
 

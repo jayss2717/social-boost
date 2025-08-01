@@ -31,6 +31,19 @@ interface DiscountCode {
   uniqueLink: string;
 }
 
+interface AutomatedCodeResult {
+  influencerId: string;
+  influencerName: string;
+  success: boolean;
+  codes?: DiscountCode[];
+  error?: string;
+  aiOptimization?: {
+    confidenceScore: number;
+    strategy: string;
+    reasoning: string[];
+  };
+}
+
 export default function InfluencersPage() {
   const { data: influencers, isLoading, mutate } = useInfluencers();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -42,7 +55,7 @@ export default function InfluencersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [isProcessingAutomated, setIsProcessingAutomated] = useState(false);
-  const [automatedResults, setAutomatedResults] = useState<any[]>([]);
+  const [automatedResults, setAutomatedResults] = useState<AutomatedCodeResult[]>([]);
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -148,7 +161,7 @@ export default function InfluencersPage() {
 
   const handleGenerateDiscountCode = async () => {
     try {
-      const merchantId = await getMerchantId();
+      await getMerchantId();
       
       const response = await fetch('/api/discount-codes', {
         method: 'POST',

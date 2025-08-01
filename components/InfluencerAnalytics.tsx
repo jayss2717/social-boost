@@ -5,11 +5,59 @@ import { TrendingUp, DollarSign, Users, Gift, Target, Award, Brain, BarChart3, A
 import { useState } from 'react';
 
 interface InfluencerAnalyticsProps {
-  influencers: any[];
-  payouts: any[];
-  discountCodes: any[];
-  aiInsights?: any[];
-  predictiveMetrics?: any[];
+  influencers: {
+    id: string;
+    name: string;
+    email?: string;
+    instagramHandle?: string;
+    tiktokHandle?: string;
+    commissionRate: number;
+    isActive: boolean;
+    discountCodes: Array<{
+      id: string;
+      code: string;
+      discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+      discountValue: number;
+      usageLimit: number;
+      usageCount: number;
+      isActive: boolean;
+      expiresAt: string;
+      uniqueLink: string;
+      aiOptimized?: boolean;
+    }>;
+  }[];
+  payouts: Array<{
+    id: string;
+    amount: number;
+    status: string;
+  }>;
+  discountCodes: Array<{
+    id: string;
+    code: string;
+    discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+    discountValue: number;
+    usageLimit: number;
+    usageCount: number;
+    isActive: boolean;
+    expiresAt: string;
+    uniqueLink: string;
+    aiOptimized?: boolean;
+    influencerId?: string;
+  }>;
+  aiInsights?: Array<{
+    influencerName: string;
+    performanceTrend: string;
+    confidenceScore: number;
+    recommendedActions: string[];
+  }>;
+  predictiveMetrics?: Array<{
+    influencerName: string;
+    projectedEarnings: number;
+    growthRate: number;
+    churnRisk: number;
+    optimalCommissionRate: number;
+    recommendedStrategies: string[];
+  }>;
 }
 
 export function InfluencerAnalytics({ 

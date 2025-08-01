@@ -103,7 +103,7 @@ export default function UgcPage() {
     }
   };
 
-  const handleApprovePost = async (postId: string, options: any) => {
+  const handleApprovePost = async (postId: string, options: Record<string, unknown>) => {
     try {
       const response = await fetch(`/api/ugc-posts/approve/${postId}`, {
         method: 'PUT',
