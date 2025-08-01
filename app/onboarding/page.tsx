@@ -121,10 +121,17 @@ export default function OnboardingPage() {
       const maxAttempts = 3;
       
       while (attempts < maxAttempts) {
-        const response = await fetch(`https://socialboost-blue.vercel.app/api/merchant?shop=${shop}`);
+        const response = await fetch(`/api/merchant?shop=${shop}`);
         if (response.ok) {
           const data = await response.json();
           console.log('Found merchant data:', data);
+          
+          // Store merchant ID in localStorage if not already set
+          if (data.id && !localStorage.getItem('merchantId')) {
+            localStorage.setItem('merchantId', data.id);
+            console.log('Stored merchant ID in localStorage:', data.id);
+          }
+          
           setMerchantData(data);
           return; // Success, exit the function
         } else if (response.status === 404) {
@@ -175,7 +182,7 @@ export default function OnboardingPage() {
 
       console.log('Completing onboarding with data:', onboardingData);
 
-      const response = await fetch('https://socialboost-blue.vercel.app/api/onboarding/complete', {
+      const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -864,11 +871,11 @@ export default function OnboardingPage() {
               </div>
               
               <div>
-                                  <Button 
-                    variant="primary"
-                    onClick={handleNext}
-                    icon={currentStep === ONBOARDING_STEPS.length ? undefined : () => React.createElement(ArrowRight, {})}
-                  >
+                <Button 
+                  variant="primary"
+                  onClick={handleNext}
+                  icon={currentStep === ONBOARDING_STEPS.length ? undefined : () => React.createElement(ArrowRight, {})}
+                >
                   {currentStep === ONBOARDING_STEPS.length ? 'Complete Setup' : 'Next'}
                 </Button>
               </div>
@@ -878,4 +885,4 @@ export default function OnboardingPage() {
       </Layout>
     </Page>
   );
-} 
+}

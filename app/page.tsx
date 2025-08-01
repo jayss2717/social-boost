@@ -4,12 +4,72 @@ import { Page, Layout, Card, Text, Button, Badge, DataTable } from '@shopify/pol
 import { useMerchantId } from '@/hooks/useMerchantId';
 import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function DashboardPage() {
   const merchantId = useMerchantId();
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Check for new installations and redirect to onboarding
+  useEffect(() => {
+    const checkForNewInstallation = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop');
+      
+      if (shop && !merchantId && !isRedirecting) {
+        console.log('New installation detected, checking merchant status...');
+        setIsRedirecting(true);
+        
+        try {
+          const response = await fetch(`/api/merchant?shop=${shop}`);
+          if (response.ok) {
+            const merchantData = await response.json();
+            
+            // Store merchant ID in localStorage
+            localStorage.setItem('merchantId', merchantData.id);
+            
+            // If this is a new merchant or onboarding not completed, redirect to onboarding
+            if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
+              console.log('Redirecting to onboarding...');
+              window.location.href = `/onboarding?shop=${shop}`;
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking merchant status:', error);
+        }
+        
+        setIsRedirecting(false);
+      }
+    };
+
+    checkForNewInstallation();
+  }, [merchantId, isRedirecting]);
+
+  // Show loading state while redirecting
+  if (isRedirecting) {
+    return (
+      <Page title="Dashboard">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+                <Text variant="headingLg" as="h2">
+                  Setting up your store...
+                </Text>
+                <Text variant="bodyMd" as="p" tone="subdued">
+                  Please wait while we configure your SocialBoost account
+                </Text>
+              </div>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   if (!merchantId) {
     return (
