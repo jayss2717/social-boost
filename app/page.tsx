@@ -25,6 +25,8 @@ export default function Dashboard() {
 
   // Error boundary for React errors
   useEffect(() => {
+    if (!isClient) return;
+
     const handleError = (error: ErrorEvent) => {
       console.error('Global error caught:', error);
       setHasError(true);
@@ -42,7 +44,7 @@ export default function Dashboard() {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
-  }, []);
+  }, [isClient]);
 
   // Check onboarding status
   useEffect(() => {

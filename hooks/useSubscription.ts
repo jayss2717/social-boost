@@ -35,7 +35,11 @@ export function useSubscription() {
 
   const { data, error, isLoading, mutate } = useSWR(
     merchantId ? '/api/subscription' : null, // Only fetch if merchantId exists
-    fetcher
+    fetcher,
+    {
+      // Prevent SWR from running during SSR
+      revalidateOnMount: typeof window !== 'undefined',
+    }
   );
 
   return {

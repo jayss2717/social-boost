@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 
 export function useMerchantId() {
   const [merchantId, setMerchantId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+    
     // Get initial merchantId from localStorage
     const initialMerchantId = localStorage.getItem('merchantId');
     setMerchantId(initialMerchantId);
@@ -28,6 +31,11 @@ export function useMerchantId() {
       window.removeEventListener('merchantIdSet', handleMerchantIdSet as EventListener);
     };
   }, []);
+
+  // Return null during server-side rendering
+  if (!isClient) {
+    return null;
+  }
 
   return merchantId;
 } 
