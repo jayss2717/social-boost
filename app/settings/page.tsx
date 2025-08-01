@@ -705,7 +705,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveMerchantSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1055,7 +1055,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveInfluencerSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1277,7 +1277,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveUgcSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1485,7 +1485,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveTeamSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1506,7 +1506,7 @@ export default function SettingsPage() {
                     <Button
                       size="slim"
                       onClick={() => setShowInviteModal(true)}
-                      icon={() => <UserPlus className="w-4 h-4" />}
+                      icon={() => React.createElement(UserPlus, { className: "w-4 h-4" })}
                     >
                       Invite Member
                     </Button>
@@ -1697,7 +1697,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveDomainSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1783,7 +1783,7 @@ export default function SettingsPage() {
                       <Button
                         size="slim"
                         onClick={handleSaveLegalSettings}
-                        icon={() => <Save className="w-4 h-4" />}
+                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
                       >
                         Save
                       </Button>
@@ -1865,7 +1865,7 @@ export default function SettingsPage() {
                       <Button 
                         size="slim" 
                         variant="secondary" 
-                        icon={() => <Download className="w-4 h-4" />}
+                        icon={() => React.createElement(Download, { className: "w-4 h-4" })}
                         onClick={handleExportData}
                       >
                         Export Data
@@ -1982,7 +1982,7 @@ export default function SettingsPage() {
                     <Button 
                       size="slim" 
                       variant="secondary" 
-                      icon={() => <Download className="w-4 h-4" />}
+                      icon={() => React.createElement(Download, { className: "w-4 h-4" })}
                       onClick={handleDownloadAllInvoices}
                     >
                       Download All

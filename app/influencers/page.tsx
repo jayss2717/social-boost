@@ -4,6 +4,7 @@ import { Page, Layout, Card, Text, Button, BlockStack, Modal, TextField, Select,
 import { useState } from 'react';
 import { Plus, Copy, Gift, Search, Eye, Trash } from 'lucide-react';
 import { useInfluencers } from '@/hooks/useInfluencers';
+import React from 'react';
 
 interface Influencer {
   id: string;
@@ -363,7 +364,7 @@ export default function InfluencersPage() {
       title="Influencers"
       primaryAction={{
         content: 'Add Influencer',
-        icon: () => <Plus size={20} />,
+                    icon: () => React.createElement(Plus, { size: 20 }),
         onAction: () => setShowAddModal(true),
       }}
     >
@@ -403,7 +404,7 @@ export default function InfluencersPage() {
                             setSelectedInfluencer(influencer);
                             setShowDetailsModal(true);
                           }}
-                          icon={<Eye className="w-4 h-4" />}
+                          icon={() => React.createElement(Eye, { className: "w-4 h-4" })}
                         >
                           Details
                         </Button>
@@ -416,7 +417,7 @@ export default function InfluencersPage() {
                             setSelectedInfluencer(influencer);
                             setShowDiscountModal(true);
                           }}
-                          icon={<Gift className="w-4 h-4" />}
+                          icon={() => React.createElement(Gift, { className: "w-4 h-4" })}
                         >
                           Generate Code
                         </Button>
@@ -426,7 +427,7 @@ export default function InfluencersPage() {
                           size="slim"
                           variant="secondary"
                           onClick={() => handleDeleteInfluencer(influencer.id)}
-                          icon={<Trash className="w-4 h-4" />}
+                          icon={() => React.createElement(Trash, { className: "w-4 h-4" })}
                           tone="critical"
                         >
                           Delete
@@ -784,7 +785,7 @@ export default function InfluencersPage() {
                                 <Button
                                   size="slim"
                                   onClick={() => copyToClipboard(code.code)}
-                                  icon={<Copy className="w-4 h-4" />}
+                                  icon={() => React.createElement(Copy, { className: "w-4 h-4" })}
                                 />
                               </div>
                               <div title="Copy discount link">
@@ -792,7 +793,7 @@ export default function InfluencersPage() {
                                   size="slim"
                                   variant="secondary"
                                   onClick={() => copyToClipboard(code.uniqueLink || '')}
-                                  icon={<Copy className="w-4 h-4" />}
+                                  icon={() => React.createElement(Copy, { className: "w-4 h-4" })}
                                 />
                               </div>
                               <div title="Delete discount code">
@@ -801,7 +802,7 @@ export default function InfluencersPage() {
                                   variant="secondary"
                                   tone="critical"
                                   onClick={() => handleDeleteDiscountCode(code.id)}
-                                  icon={<Trash className="w-4 h-4" />}
+                                  icon={() => React.createElement(Trash, { className: "w-4 h-4" })}
                                 />
                               </div>
                             </div>

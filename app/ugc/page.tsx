@@ -230,7 +230,7 @@ export default function UgcPage() {
                             setSelectedPost(post);
                             setShowDetailsModal(true);
                           }}
-                          icon={<Eye className="w-4 h-4" />}
+                          icon={() => React.createElement(Eye, { className: "w-4 h-4" })}
                         >
                           Details
                         </Button>
@@ -241,7 +241,7 @@ export default function UgcPage() {
                             size="slim"
                             variant="secondary"
                             onClick={() => handleApprovePost(post.id)}
-                            icon={<CheckCircle className="w-4 h-4" />}
+                            icon={() => React.createElement(CheckCircle, { className: "w-4 h-4" })}
                           >
                             Approve
                           </Button>
@@ -256,7 +256,7 @@ export default function UgcPage() {
                               setSelectedPost(post);
                               setShowSendModal(true);
                             }}
-                            icon={<Send className="w-4 h-4" />}
+                            icon={() => React.createElement(Send, { className: "w-4 h-4" })}
                           >
                             Send DM
                           </Button>

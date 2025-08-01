@@ -215,7 +215,7 @@ export default function PayoutsPage() {
       title="Payouts"
       primaryAction={{
         content: 'Process All Pending',
-        icon: () => <Send size={20} />,
+                    icon: () => React.createElement(Send, { size: 20 }),
         onAction: handleBulkProcess,
         disabled: pendingPayouts.length === 0,
       }}
@@ -358,7 +358,7 @@ export default function PayoutsPage() {
                             setSelectedPayout(payout);
                             setShowDetailsModal(true);
                           }}
-                          icon={<Eye className="w-4 h-4" />}
+                          icon={() => React.createElement(Eye, { className: "w-4 h-4" })}
                         >
                           Details
                         </Button>
@@ -372,7 +372,7 @@ export default function PayoutsPage() {
                               setSelectedPayout(payout);
                               setShowProcessModal(true);
                             }}
-                            icon={<Send className="w-4 h-4" />}
+                            icon={() => React.createElement(Send, { className: "w-4 h-4" })}
                           >
                             Process
                           </Button>
@@ -575,9 +575,9 @@ export default function PayoutsPage() {
                         <Button
                           variant="secondary"
                           onClick={() => window.open(`/api/payouts/${selectedPayout.id}/download`, '_blank')}
-                          icon={<Download className="w-4 h-4" />}
-                        >
-                          Download Receipt
+                                                      icon={() => React.createElement(Download, { className: "w-4 h-4" })}
+                          >
+                            Download Receipt
                         </Button>
                       </InlineStack>
                     </div>

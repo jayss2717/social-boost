@@ -834,9 +834,9 @@ export default function OnboardingPage() {
                         'bg-gray-300 text-gray-600'
                       }`}>
                         {isCompleted ? (
-                          <Check className="w-4 h-4" />
+                          React.createElement(Check, { className: "w-4 h-4" })
                         ) : (
-                          <StepIcon className="w-4 h-4" />
+                          React.createElement(StepIcon, { className: "w-4 h-4" })
                         )}
                       </div>
                       <span className={`text-center text-sm ${
@@ -857,18 +857,18 @@ export default function OnboardingPage() {
             <div className="flex justify-between mt-8">
               <div>
                 {currentStep > 1 && (
-                  <Button onClick={handleBack} icon={ArrowLeft}>
+                  <Button onClick={handleBack} icon={() => React.createElement(ArrowLeft, {})}>
                     Back
                   </Button>
                 )}
               </div>
               
               <div>
-                <Button 
-                  variant="primary"
-                  onClick={handleNext}
-                  icon={currentStep === ONBOARDING_STEPS.length ? undefined : ArrowRight}
-                >
+                                  <Button 
+                    variant="primary"
+                    onClick={handleNext}
+                    icon={currentStep === ONBOARDING_STEPS.length ? undefined : () => React.createElement(ArrowRight, {})}
+                  >
                   {currentStep === ONBOARDING_STEPS.length ? 'Complete Setup' : 'Next'}
                 </Button>
               </div>
