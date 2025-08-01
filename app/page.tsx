@@ -6,6 +6,7 @@ import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';
 import PaywallModal from '@/components/PaywallModal';
 import { useState, useEffect } from 'react';
+import React from 'react';
 
 export default function Dashboard() {
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useMetrics();
@@ -364,7 +365,7 @@ export default function Dashboard() {
                     <div className="p-6">
                       <BlockStack gap="400">
                         <div className="flex items-center space-x-3">
-                          <IconComponent className="w-6 h-6 text-sb-primary" />
+                          {React.createElement(IconComponent, { className: "w-6 h-6 text-sb-primary" })}
                           <div>
                             <Text variant="bodyMd" tone="subdued" as="p">
                               {card.title}
