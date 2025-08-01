@@ -4,6 +4,21 @@ export interface Merchant {
   accessToken: string;
   scope: string;
   isActive: boolean;
+  
+  // Shopify data
+  shopifyShopId?: string;
+  shopName?: string;
+  shopEmail?: string;
+  shopDomain?: string;
+  shopCurrency?: string;
+  shopTimezone?: string;
+  shopLocale?: string;
+  
+  // Onboarding
+  onboardingCompleted: boolean;
+  onboardingStep: number;
+  onboardingData?: any;
+  
   createdAt: Date;
   updatedAt: Date;
 }
