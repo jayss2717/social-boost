@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Banner } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { Check, ArrowRight, ArrowLeft, Store, Users, Hash, DollarSign, Settings } from 'lucide-react';
+import React from 'react';
 
 interface OnboardingData {
   businessType: string;
@@ -218,7 +219,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <Store className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(Store, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Store Verification
                   </Text>
@@ -274,7 +275,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <Settings className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(Settings, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Business Setup
                   </Text>
@@ -361,7 +362,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(Users, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Influencer Settings
                   </Text>
@@ -412,7 +413,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <Hash className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(Hash, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     UGC Preferences
                   </Text>
@@ -448,7 +449,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <DollarSign className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(DollarSign, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Payout Setup
                   </Text>
@@ -486,7 +487,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <Hash className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(Hash, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Connect Social Media
                   </Text>
@@ -597,7 +598,7 @@ export default function OnboardingPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center mb-6">
-                  <DollarSign className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  {React.createElement(DollarSign, { className: "w-12 h-12 mx-auto mb-4 text-blue-600" })}
                   <Text variant="headingLg" as="h2">
                     Choose Your Plan
                   </Text>
@@ -622,15 +623,15 @@ export default function OnboardingPage() {
                     </div>
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">1 Influencer</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">5 DMs/month</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Basic UGC detection</Text>
                       </div>
                     </div>
@@ -651,19 +652,19 @@ export default function OnboardingPage() {
                     </div>
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">10 Influencers</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">300 DMs/month</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Advanced analytics</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Priority support</Text>
                       </div>
                     </div>
@@ -684,23 +685,23 @@ export default function OnboardingPage() {
                     </div>
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">50 Influencers</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">1000 DMs/month</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Advanced analytics</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Priority support</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Custom integrations</Text>
                       </div>
                     </div>
@@ -721,23 +722,23 @@ export default function OnboardingPage() {
                     </div>
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Unlimited Influencers</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Unlimited DMs</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Custom analytics</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">Dedicated support</Text>
                       </div>
                       <div className="flex items-center">
-                        <Check className="w-4 h-4 text-green-600 mr-2" />
+                        {React.createElement(Check, { className: "w-4 h-4 text-green-600 mr-2" })}
                         <Text variant="bodySm" as="span">White-label options</Text>
                       </div>
                     </div>
