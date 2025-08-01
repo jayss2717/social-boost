@@ -1,5 +1,4 @@
 import { prisma } from './prisma';
-import type { Merchant } from '../types';
 
 /**
  * Validates if a merchant has proper Shopify credentials
