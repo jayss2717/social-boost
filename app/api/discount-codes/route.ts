@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { discountCodeSchema } from '@/utils/validation';
 import { generateDiscountLink } from '@/utils/discount-links';
+import { ShopifyAPI } from '@/lib/shopify';
+import { checkUsageLimit } from '@/utils/subscription';
 
 // Generate unique discount code for influencers
 function generateDiscountCode(influencerName: string, discountValue: number): string {
@@ -72,14 +74,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = discountCodeSchema.parse(body);
 
-    try {
-      // Get influencer details for code generation
-      const influencer = await prisma.influencer.findUnique({
-        where: { id: validatedData.influencerId },
-      });
+    // Check usage limits
+    const usageCheck = await checkUsageLimit(merchantId, 'ugc');
+    if (!usageCheck.allowed) {
+      return NextResponse.json({ 
+        error: 'Usage limit exceeded',
+        current: usageCheck.current,
+        limit: usageCheck.limit
+      }, { status: 403 });
+    }
 
-      if (!influencer) {
-        return NextResponse.json({ error: 'Influencer not found' }, { status: 404 });
+    try {
+      // Get merchant and influencer details
+      const [merchant, influencer] = await Promise.all([
+        prisma.merchant.findUnique({
+          where: { id: merchantId },
+          select: { shop: true, accessToken: true }
+        }),
+        prisma.influencer.findUnique({
+          where: { id: validatedData.influencerId },
+        })
+      ]);
+
+      if (!merchant || !influencer) {
+        return NextResponse.json({ error: 'Merchant or influencer not found' }, { status: 404 });
+      }
+
+      if (!merchant.accessToken) {
+        return NextResponse.json({ error: 'Shopify access token not found' }, { status: 400 });
       }
 
       // Generate unique discount code
@@ -98,19 +120,43 @@ export async function POST(request: NextRequest) {
         attempts++;
       }
 
+      // Create real discount code in Shopify
+      const shopifyAPI = new ShopifyAPI(merchant.accessToken, merchant.shop);
+      let shopifyPriceRuleId: string | null = null;
+
+      try {
+        const shopifyDiscount = await shopifyAPI.createDiscountCode(
+          code,
+          validatedData.discountType === 'PERCENTAGE' ? 'percentage' : 'fixed_amount',
+          validatedData.discountValue,
+          validatedData.usageLimit,
+          validatedData.expiresAt ? new Date(validatedData.expiresAt) : undefined
+        );
+        shopifyPriceRuleId = shopifyDiscount.id.toString();
+        console.log(`Created Shopify discount code: ${code} with ID: ${shopifyPriceRuleId}`);
+      } catch (shopifyError) {
+        console.error('Failed to create Shopify discount code:', shopifyError);
+        return NextResponse.json({ 
+          error: 'Failed to create discount code in Shopify',
+          details: shopifyError instanceof Error ? shopifyError.message : 'Unknown error'
+        }, { status: 500 });
+      }
+
       // Fetch merchant settings for link generation
       const merchantSettings = await prisma.merchantSettings.findUnique({
         where: { merchantId },
         select: { website: true, linkPattern: true },
       });
 
+      // Create discount code in database
       const discountCode = await prisma.discountCode.create({
         data: {
           ...validatedData,
           merchantId,
           code,
-          codeType: 'INFLUENCER', // Manual creation is always for influencers
+          codeType: 'INFLUENCER',
           expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
+          shopifyPriceRuleId, // Store Shopify price rule ID for future reference
         },
       });
 

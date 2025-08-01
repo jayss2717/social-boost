@@ -1,128 +1,239 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getMerchantId } from '@/lib/auth';
+import { ShopifyAPI } from '@/lib/shopify';
 
-// Force dynamic rendering for this route
-export const dynamic = 'force-dynamic';
+interface OrderMetric {
+  orderId: string;
+  totalAmount: number;
+  currency: string;
+  discountCodesUsed: number;
+  customerEmail: string | null;
+  processedAt: Date;
+}
+
+interface DiscountCodeWithInfluencer {
+  id: string;
+  code: string;
+  usageCount: number;
+  discountValue: number;
+  discountType: string;
+  createdAt: Date;
+  influencer?: {
+    name: string;
+  } | null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const merchantId = getMerchantId(request);
-
-    // If no merchant ID is provided, return error
+    const merchantId = request.headers.get('x-merchant-id');
+    const period = request.nextUrl.searchParams.get('period') || '30d'; // 7d, 30d, 90d, 1y
+    
     if (!merchantId) {
       return NextResponse.json({ error: 'Merchant ID required' }, { status: 401 });
     }
 
-    // Test database connection first
-    try {
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('✅ Database connection successful');
-    } catch (dbError) {
-      console.error('❌ Database connection failed:', dbError);
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
 
-    // Get basic metrics one by one to avoid complex queries
-    const totalUgcPosts = await prisma.ugcPost.count({ where: { merchantId } });
-    const totalInfluencers = await prisma.influencer.count({ where: { merchantId, isActive: true } });
-    const approvedPosts = await prisma.ugcPost.count({ 
-      where: { merchantId, isApproved: true } 
-    });
-    const pendingApproval = await prisma.ugcPost.count({ 
-      where: { merchantId, isApproved: false } 
+    // Get merchant details
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { shop: true, accessToken: true }
     });
 
-    // Calculate payout amounts
-    const pendingPayouts = await prisma.payout.aggregate({
-      where: { merchantId, status: 'PENDING' },
-      _sum: { amount: true },
-    });
+    if (!merchant) {
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    }
 
-    const completedPayouts = await prisma.payout.aggregate({
-      where: { merchantId, status: 'COMPLETED' },
-      _sum: { amount: true },
-    });
-
-    // Calculate total revenue (sum of all completed payouts)
-    const totalRevenue = completedPayouts._sum.amount || 0;
-
-    // Get engagement metrics
-    const engagementData = await prisma.ugcPost.aggregate({
-      where: { merchantId },
-      _sum: { engagement: true },
-      _count: { engagement: true },
-    });
-
-    const totalEngagement = engagementData._sum.engagement || 0;
-    const engagementCount = engagementData._count.engagement || 0;
-    const averageEngagement = engagementCount > 0 ? Math.round(totalEngagement / engagementCount) : 0;
-
-    // Get recent activity (posts created in last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentActivity = await prisma.ugcPost.count({
-      where: {
-        merchantId,
-        createdAt: { gte: sevenDaysAgo },
-      },
-    });
-
-    // Get top performing posts
-    const topPosts = await prisma.ugcPost.findMany({
-      where: { merchantId, isApproved: true },
-      orderBy: { engagement: 'desc' },
-      take: 3,
-      include: {
-        influencer: {
-          select: { name: true },
+    // Get comprehensive metrics
+    const [
+      totalDiscountCodes,
+      activeDiscountCodes,
+      totalUsage,
+      totalRevenue,
+      influencerCount,
+      ugcPostCount,
+      payoutData,
+      orderMetrics,
+      topPerformingCodes,
+      recentActivity
+    ] = await Promise.all([
+      // Total discount codes created
+      prisma.discountCode.count({
+        where: { 
+          merchantId,
+          createdAt: { gte: startDate }
+        }
+      }),
+      
+      // Active discount codes
+      prisma.discountCode.count({
+        where: { 
+          merchantId,
+          isActive: true,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: now } }
+          ]
+        }
+      }),
+      
+      // Total usage count
+      prisma.discountCode.aggregate({
+        where: { merchantId },
+        _sum: { usageCount: true }
+      }),
+      
+      // Total revenue from orders (placeholder for now)
+      Promise.resolve({ _sum: { totalAmount: 0 } }),
+      
+      // Influencer count
+      prisma.influencer.count({
+        where: { 
+          merchantId,
+          isActive: true
+        }
+      }),
+      
+      // UGC posts count
+      prisma.ugcPost.count({
+        where: { 
+          merchantId,
+          createdAt: { gte: startDate }
+        }
+      }),
+      
+      // Payout data
+      prisma.payout.aggregate({
+        where: { 
+          merchantId,
+          createdAt: { gte: startDate }
         },
+        _sum: { amount: true },
+        _count: true
+      }),
+      
+      // Order metrics (placeholder for now)
+      Promise.resolve([] as OrderMetric[]),
+      
+      // Top performing discount codes
+      prisma.discountCode.findMany({
+        where: { 
+          merchantId,
+          usageCount: { gt: 0 }
+        },
+        include: {
+          influencer: {
+            select: { name: true }
+          }
+        },
+        orderBy: { usageCount: 'desc' },
+        take: 5
+      }),
+      
+      // Recent activity
+      prisma.discountCode.findMany({
+        where: { 
+          merchantId,
+          createdAt: { gte: startDate }
+        },
+        include: {
+          influencer: {
+            select: { name: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      })
+    ]);
+
+    // Get Shopify analytics if access token is available
+    let shopifyAnalytics = null;
+    if (merchant.accessToken) {
+      try {
+        const shopifyAPI = new ShopifyAPI(merchant.accessToken, merchant.shop);
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = now.toISOString().split('T')[0];
+        
+        shopifyAnalytics = await shopifyAPI.getUsageAnalytics(startDateStr, endDateStr);
+      } catch (error) {
+        console.error('Failed to get Shopify analytics:', error);
+      }
+    }
+
+    // Calculate conversion rates and performance metrics
+    const conversionRate = totalDiscountCodes > 0 ? (totalUsage._sum.usageCount || 0) / totalDiscountCodes : 0;
+    const averageOrderValue = orderMetrics.length > 0 
+      ? orderMetrics.reduce((sum: number, order: OrderMetric) => sum + order.totalAmount, 0) / orderMetrics.length 
+      : 0;
+
+    const metrics = {
+      period,
+      summary: {
+        totalDiscountCodes,
+        activeDiscountCodes,
+        totalUsage: totalUsage._sum.usageCount || 0,
+        totalRevenue: totalRevenue._sum.totalAmount || 0,
+        influencerCount,
+        ugcPostCount,
+        totalPayouts: payoutData._count || 0,
+        totalPayoutAmount: payoutData._sum.amount || 0,
       },
-    });
-
-    // Get platform distribution
-    const platformDistribution = await prisma.ugcPost.groupBy({
-      by: ['platform'],
-      where: { merchantId },
-      _count: { platform: true },
-    });
-
-    const platformData = {
-      INSTAGRAM: 0,
-      TIKTOK: 0,
-      YOUTUBE: 0,
+      performance: {
+        conversionRate: Math.round(conversionRate * 100) / 100,
+        averageOrderValue: Math.round(averageOrderValue / 100 * 100) / 100, // Convert from cents to dollars
+        averagePayoutAmount: payoutData._count > 0 
+          ? Math.round((payoutData._sum.amount || 0) / payoutData._count / 100 * 100) / 100 
+          : 0,
+      },
+      topPerformingCodes: topPerformingCodes.map((code: DiscountCodeWithInfluencer) => ({
+        id: code.id,
+        code: code.code,
+        usageCount: code.usageCount,
+        influencerName: code.influencer?.name || 'Unknown',
+        discountValue: code.discountValue,
+        discountType: code.discountType,
+      })),
+      recentActivity: recentActivity.map((code: DiscountCodeWithInfluencer) => ({
+        id: code.id,
+        code: code.code,
+        createdAt: code.createdAt,
+        influencerName: code.influencer?.name || 'Unknown',
+        discountValue: code.discountValue,
+        discountType: code.discountType,
+      })),
+      orderMetrics: orderMetrics.map((order: OrderMetric) => ({
+        orderId: order.orderId,
+        totalAmount: order.totalAmount / 100, // Convert from cents to dollars
+        currency: order.currency,
+        discountCodesUsed: order.discountCodesUsed,
+        customerEmail: order.customerEmail,
+        processedAt: order.processedAt,
+      })),
+      shopifyAnalytics,
     };
 
-    platformDistribution.forEach((item) => {
-      if (item.platform in platformData) {
-        platformData[item.platform as keyof typeof platformData] = item._count.platform;
-      }
-    });
-
-    return NextResponse.json({
-      totalUgcPosts,
-      totalInfluencers,
-      approvedPosts,
-      pendingApproval,
-      pendingPayouts: pendingPayouts._sum.amount || 0,
-      completedPayouts: completedPayouts._sum.amount || 0,
-      totalRevenue,
-      averageEngagement,
-      totalEngagement,
-      engagementCount,
-      recentActivity,
-      topPosts: topPosts.map(post => ({
-        id: post.id,
-        platform: post.platform,
-        engagement: post.engagement,
-        content: post.content,
-        influencerName: post.influencer?.name || 'Unknown',
-        createdAt: post.createdAt.toISOString(),
-      })),
-      platformDistribution: platformData,
-    });
+    return NextResponse.json(metrics);
   } catch (error) {
-    console.error('Failed to fetch metrics:', error);
+    console.error('Metrics API error:', error);
     return NextResponse.json({ error: 'Failed to fetch metrics' }, { status: 500 });
   }
 } 

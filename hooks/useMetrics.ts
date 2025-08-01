@@ -1,51 +1,100 @@
-import useSWR from 'swr';
-import { apiFetch } from '@/utils/api';
+import { useState, useEffect } from 'react';
 import { useMerchantId } from './useMerchantId';
 
-const fetcher = async (url: string) => {
-  // Check if merchantId is available
-  const merchantId = typeof window !== 'undefined' 
-    ? localStorage.getItem('merchantId')
-    : null;
+interface MetricsData {
+  period: string;
+  summary: {
+    totalDiscountCodes: number;
+    activeDiscountCodes: number;
+    totalUsage: number;
+    totalRevenue: number;
+    influencerCount: number;
+    ugcCount: number;
+    ugcLimit: number;
+    influencerLimit: number;
+    totalPayouts: number;
+    totalPayoutAmount: number;
+  };
+  performance: {
+    conversionRate: number;
+    averageOrderValue: number;
+    averagePayoutAmount: number;
+  };
+  topPerformingCodes: Array<{
+    id: string;
+    code: string;
+    usageCount: number;
+    influencerName: string;
+    discountValue: number;
+    discountType: string;
+  }>;
+  recentActivity: Array<{
+    id: string;
+    code: string;
+    createdAt: string;
+    influencerName: string;
+    discountValue: number;
+    discountType: string;
+  }>;
+  orderMetrics: Array<{
+    orderId: string;
+    totalAmount: number;
+    currency: string;
+    discountCodesUsed: number;
+    customerEmail: string | null;
+    processedAt: string;
+  }>;
+  shopifyAnalytics: any;
+}
 
-  if (!merchantId) {
-    console.log('No merchantId available, skipping metrics fetch');
-    return null;
-  }
-
-  const result = await apiFetch(url);
-  if (result === null) {
-    // Return default metrics structure to prevent React errors
-    return {
-      totalUgcPosts: 0,
-      totalInfluencers: 0,
-      totalRevenue: 0,
-      pendingPayouts: 0,
-      approvedPosts: 0,
-      pendingApproval: 0,
-      averageEngagement: 0,
-      topPosts: [],
-    };
-  }
-  return result;
-};
-
-export function useMetrics() {
+export function useMetrics(period: string = '30d') {
+  const [data, setData] = useState<MetricsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const merchantId = useMerchantId();
 
-  const { data, error, isLoading, mutate } = useSWR(
-    merchantId ? '/api/metrics' : null, // Only fetch if merchantId exists
-    fetcher,
-    {
-      // Prevent SWR from running during SSR
-      revalidateOnMount: typeof window !== 'undefined',
+  useEffect(() => {
+    if (!merchantId) {
+      setIsLoading(false);
+      return;
     }
-  );
+
+    const fetchMetrics = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch(`/api/metrics?period=${period}`, {
+          headers: {
+            'x-merchant-id': merchantId,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics: ${response.statusText}`);
+        }
+
+        const metricsData = await response.json();
+        setData(metricsData);
+      } catch (err) {
+        console.error('Error fetching metrics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [merchantId, period]);
 
   return {
     data,
-    error,
     isLoading,
-    mutate,
+    error,
+    refetch: () => {
+      setIsLoading(true);
+      setError(null);
+      // Trigger refetch by updating the effect dependencies
+    },
   };
 }

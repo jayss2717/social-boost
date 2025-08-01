@@ -4,6 +4,8 @@ import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, InlineS
 import { useState, useEffect } from 'react';
 import { Hash, Instagram, Eye, CheckCircle, Send, Filter, Youtube, Twitter, MessageCircle } from 'lucide-react';
 import React from 'react';
+import { UgcWorkflow } from '@/components/UgcWorkflow';
+import { UgcAnalytics } from '@/components/UgcAnalytics';
 
 interface UgcPost {
   id: string;
@@ -15,6 +17,8 @@ interface UgcPost {
   engagement: number;
   isApproved: boolean;
   isRewarded: boolean;
+  isRejected: boolean;
+  rejectionReason?: string;
   rewardAmount: number;
   influencerId: string;
   influencer?: {
@@ -41,6 +45,8 @@ export default function UgcPage() {
   const [selectedPost, setSelectedPost] = useState<UgcPost | null>(null);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showWorkflow, setShowWorkflow] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -55,9 +61,10 @@ export default function UgcPage() {
 
     let filtered = posts.filter(post => {
       if (filter === 'all') return true;
-      if (filter === 'pending') return !post.isApproved;
+      if (filter === 'pending') return !post.isApproved && !post.isRejected;
       if (filter === 'approved') return post.isApproved && !post.isRewarded;
       if (filter === 'rewarded') return post.isRewarded;
+      if (filter === 'rejected') return post.isRejected;
       return true;
     });
 
@@ -96,17 +103,45 @@ export default function UgcPage() {
     }
   };
 
-  const handleApprovePost = async (postId: string) => {
+  const handleApprovePost = async (postId: string, options: any) => {
     try {
-      const response = await fetch(`/api/ugc-posts/${postId}/approve`, {
+      const response = await fetch(`/api/ugc-posts/approve/${postId}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(options),
       });
 
       if (response.ok) {
         fetchPosts();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to approve post:', errorData);
       }
     } catch (error) {
       console.error('Failed to approve post:', error);
+    }
+  };
+
+  const handleRejectPost = async (postId: string, reason: string) => {
+    try {
+      const response = await fetch(`/api/ugc-posts/reject/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (response.ok) {
+        fetchPosts();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to reject post:', errorData);
+      }
+    } catch (error) {
+      console.error('Failed to reject post:', error);
     }
   };
 
@@ -126,6 +161,9 @@ export default function UgcPage() {
   };
 
   const getStatusBadge = (post: UgcPost) => {
+    if (post.isRejected) {
+      return <Badge tone="critical">Rejected</Badge>;
+    }
     if (!post.isApproved) {
       return <Badge tone="attention">Pending Approval</Badge>;
     }
@@ -150,6 +188,14 @@ export default function UgcPage() {
     }
   };
 
+  const getEngagementLevel = (engagement: number) => {
+    if (engagement >= 10000) return { level: 'High', color: 'success' };
+    if (engagement >= 5000) return { level: 'Medium-High', color: 'success' };
+    if (engagement >= 1000) return { level: 'Medium', color: 'warning' };
+    if (engagement >= 500) return { level: 'Low-Medium', color: 'warning' };
+    return { level: 'Low', color: 'attention' };
+  };
+
   if (isLoading) {
     return (
       <Page title="UGC Content">
@@ -166,6 +212,11 @@ export default function UgcPage() {
     );
   }
 
+  const pendingPosts = posts.filter(post => !post.isApproved && !post.isRejected);
+  const approvedPosts = posts.filter(post => post.isApproved && !post.isRewarded);
+  const rewardedPosts = posts.filter(post => post.isRewarded);
+  const rejectedPosts = posts.filter(post => post.isRejected);
+
   return (
     <Page
       title="UGC Content"
@@ -173,11 +224,87 @@ export default function UgcPage() {
         content: 'Refresh',
         onAction: fetchPosts,
       }}
+      secondaryActions={[
+        {
+          content: 'Workflow View',
+          onAction: () => setShowWorkflow(!showWorkflow),
+        },
+        {
+          content: 'Analytics',
+          onAction: () => setShowAnalytics(!showAnalytics),
+        },
+      ]}
     >
       <Layout>
+        {/* Summary Cards */}
+        <Layout.Section>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <Card>
+              <div style={{ padding: '1rem', textAlign: 'center' }}>
+                <Text variant="headingLg" as="p" tone="critical">
+                  {pendingPosts.length}
+                </Text>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Pending Approval
+                </Text>
+              </div>
+            </Card>
+            <Card>
+              <div style={{ padding: '1rem', textAlign: 'center' }}>
+                <Text variant="headingLg" as="p" tone="success">
+                  {approvedPosts.length}
+                </Text>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Approved
+                </Text>
+              </div>
+            </Card>
+            <Card>
+              <div style={{ padding: '1rem', textAlign: 'center' }}>
+                <Text variant="headingLg" as="p" tone="success">
+                  {rewardedPosts.length}
+                </Text>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Rewarded
+                </Text>
+              </div>
+            </Card>
+            <Card>
+              <div style={{ padding: '1rem', textAlign: 'center' }}>
+                <Text variant="headingLg" as="p" tone="critical">
+                  {rejectedPosts.length}
+                </Text>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Rejected
+                </Text>
+              </div>
+            </Card>
+          </div>
+        </Layout.Section>
+
+        {/* Analytics View */}
+        {showAnalytics && (
+          <Layout.Section>
+            <UgcAnalytics posts={posts} />
+          </Layout.Section>
+        )}
+
+        {/* Workflow View */}
+        {showWorkflow && pendingPosts.length > 0 && (
+          <Layout.Section>
+            <UgcWorkflow
+              post={pendingPosts[0]}
+              onApprove={handleApprovePost}
+              onReject={handleRejectPost}
+              onRefresh={fetchPosts}
+            />
+          </Layout.Section>
+        )}
+
+        {/* Main Content */}
         <Layout.Section>
           <Card>
-            <div className="p-6 w-full">
+            <div style={{ padding: '1.5rem' }}>
               <div className="mb-6">
                 <TextField
                   label="Search UGC posts"
@@ -200,6 +327,7 @@ export default function UgcPage() {
                     { label: 'Pending Approval', value: 'pending' },
                     { label: 'Approved', value: 'approved' },
                     { label: 'Rewarded', value: 'rewarded' },
+                    { label: 'Rejected', value: 'rejected' },
                   ]}
                   value={filter}
                   onChange={setFilter}
@@ -220,7 +348,12 @@ export default function UgcPage() {
                       <div className="text-sm text-gray-500">{post.influencer?.email || 'No email'}</div>
                     </div>,
                     getStatusBadge(post),
-                    `${post.engagement.toLocaleString()} engagements`,
+                    <div key={post.id}>
+                      <div>{post.engagement.toLocaleString()} engagements</div>
+                      <Badge tone={getEngagementLevel(post.engagement).color as 'success' | 'warning' | 'attention' | 'info'}>
+                        {getEngagementLevel(post.engagement).level}
+                      </Badge>
+                    </div>,
                     new Date(post.createdAt).toLocaleDateString(),
                     <InlineStack key={post.id} gap="200">
                       <div title="View post details and content">
@@ -235,12 +368,12 @@ export default function UgcPage() {
                           Details
                         </Button>
                       </div>
-                      {!post.isApproved && (
+                      {!post.isApproved && !post.isRejected && (
                         <div title="Approve this UGC post">
                           <Button
                             size="slim"
                             variant="secondary"
-                            onClick={() => handleApprovePost(post.id)}
+                            onClick={() => handleApprovePost(post.id, { autoReward: true })}
                             icon={() => React.createElement(CheckCircle, { className: "w-4 h-4" })}
                           >
                             Approve
@@ -376,9 +509,14 @@ export default function UgcPage() {
                       <Text variant="bodySm" tone="subdued" as="p">
                         Engagement
                       </Text>
-                      <Text variant="bodyMd" as="p">
-                        {selectedPost.engagement.toLocaleString()} engagements
-                      </Text>
+                      <div className="flex items-center space-x-2">
+                        <Text variant="bodyMd" as="p">
+                          {selectedPost.engagement.toLocaleString()} engagements
+                        </Text>
+                        <Badge tone={getEngagementLevel(selectedPost.engagement).color as 'success' | 'warning' | 'attention' | 'info'}>
+                          {getEngagementLevel(selectedPost.engagement).level}
+                        </Badge>
+                      </div>
                     </div>
                     <div>
                       <Text variant="bodySm" tone="subdued" as="p">

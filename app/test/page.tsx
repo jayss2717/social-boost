@@ -132,18 +132,18 @@ export default function TestPage() {
                     <Text variant="headingMd" as="h3">Metrics API</Text>
                     {metricsError ? (
                       <Banner tone="critical">
-                        Error: {metricsError.message}
+                        Error: {metricsError}
                       </Banner>
                     ) : (
                       <div className="mt-2">
                         <Text variant="bodyMd" as="span">
-                          Total UGC Posts: {metrics?.totalUgcPosts || 0}
+                          Total UGC Posts: {metrics?.summary?.ugcCount || 0}
                         </Text>
                         <Text variant="bodyMd" as="span">
-                          Total Influencers: {metrics?.totalInfluencers || 0}
+                          Total Influencers: {metrics?.summary?.influencerCount || 0}
                         </Text>
                         <Text variant="bodyMd" as="span">
-                          Total Revenue: ${(metrics?.totalRevenue || 0) / 100}
+                          Total Revenue: ${(metrics?.summary?.totalRevenue || 0) / 100}
                         </Text>
                       </div>
                     )}

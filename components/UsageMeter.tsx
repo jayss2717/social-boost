@@ -1,181 +1,189 @@
 'use client';
 
-import { Card, Text, ProgressBar, Button, Badge } from '@shopify/polaris';
-import { AlertTriangle, Users, MessageCircle } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
-import PaywallModal from './PaywallModal';
+import { Card, ProgressBar, Text, Badge, Button } from '@shopify/polaris';
+import { useMetrics } from '@/hooks/useMetrics';
+import { useState } from 'react';
 
 interface UsageMeterProps {
-  merchantId: string;
-  onUpgrade?: () => void;
+  showDetails?: boolean;
 }
 
-interface UsageData {
-  influencerCount: number;
-  ugcCount: number;
-  influencerLimit: number;
-  ugcLimit: number;
-}
+export function UsageMeter({ showDetails = false }: UsageMeterProps) {
+  const { data: metrics, isLoading, error } = useMetrics();
+  const [selectedPeriod, setSelectedPeriod] = useState('30d');
 
-export default function UsageMeter({ merchantId, onUpgrade }: UsageMeterProps) {
-  const [usage, setUsage] = useState<UsageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  const fetchUsage = useCallback(async () => {
-    try {
-      const response = await fetch('/api/subscription', {
-        headers: {
-          'x-merchant-id': merchantId,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsage(data.usage);
-      }
-    } catch (error) {
-      console.error('Failed to fetch usage:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [merchantId]);
-
-  const [showPaywall, setShowPaywall] = useState(false);
-
-  useEffect(() => {
-    fetchUsage();
-  }, [fetchUsage]);
-
-  const handleUpgrade = (planId: string, billingCycle: 'monthly' | 'yearly') => {
-    // Handle subscription upgrade
-    console.log('Upgrading to:', planId, billingCycle);
-    setShowPaywall(false);
-    if (onUpgrade) {
-      onUpgrade();
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
-        <div className="p-4">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-            <div className="h-2 bg-gray-200 rounded w-full mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
+        <div style={{ padding: '1rem' }}>
+          <Text variant="bodyMd" as="p">Loading usage metrics...</Text>
         </div>
       </Card>
     );
   }
 
-  if (!usage) {
-    return null;
+  if (error || !metrics) {
+    return (
+      <Card>
+        <div style={{ padding: '1rem' }}>
+          <Text variant="bodyMd" as="p" tone="critical">
+            Failed to load usage metrics
+          </Text>
+        </div>
+      </Card>
+    );
   }
 
-  const influencerPercentage = (usage.influencerCount / usage.influencerLimit) * 100;
-  const ugcPercentage = (usage.ugcCount / usage.ugcLimit) * 100;
-  const isAtLimit = influencerPercentage >= 100 || ugcPercentage >= 100;
+  const { summary, performance } = metrics;
+
+  // Calculate usage percentages
+  const ugcUsagePercent = summary.ugcLimit > 0 ? (summary.ugcCount / summary.ugcLimit) * 100 : 0;
+  const influencerUsagePercent = summary.influencerLimit > 0 ? (summary.influencerCount / summary.influencerLimit) * 100 : 0;
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       <Card>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <Text variant="headingMd" as="h3">
-              Usage This Month
-            </Text>
-            {isAtLimit && (
-              <div className="flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-1 text-red-600" />
-                <Badge tone="critical">At Limit</Badge>
+        <div style={{ padding: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text variant="headingMd" as="h3">Usage Overview</Text>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                {['7d', '30d', '90d', '1y'].map((period) => (
+                  <Button
+                    key={period}
+                    size="slim"
+                    pressed={selectedPeriod === period}
+                    onClick={() => setSelectedPeriod(period)}
+                  >
+                    {period}
+                  </Button>
+                ))}
               </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {/* Influencers Usage */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <Text variant="bodyMd" as="span">
-                    Influencers
-                  </Text>
-                </div>
-                <Text variant="bodyMd" as="span">
-                  {usage.influencerCount} / {usage.influencerLimit === -1 ? '∞' : usage.influencerLimit}
-                </Text>
-              </div>
-              <ProgressBar
-                progress={Math.min(influencerPercentage, 100)}
-                tone={influencerPercentage >= 90 ? 'critical' : 'success'}
-                size="small"
-              />
             </div>
 
-            {/* UGC Posts Usage */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  <Text variant="bodyMd" as="span">
-                    UGC Posts
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <Text variant="bodyMd" as="p">
+                    UGC Posts: {summary.ugcCount} / {summary.ugcLimit === -1 ? '∞' : summary.ugcLimit}
                   </Text>
+                  <ProgressBar
+                    progress={Math.min(ugcUsagePercent, 100)}
+                    size="small"
+                    tone={ugcUsagePercent > 80 ? 'critical' : 'success'}
+                  />
                 </div>
-                <Text variant="bodyMd" as="span">
-                  {usage.ugcCount} / {usage.ugcLimit === -1 ? '∞' : usage.ugcLimit}
-                </Text>
               </div>
-              <ProgressBar
-                progress={Math.min(ugcPercentage, 100)}
-                tone={ugcPercentage >= 90 ? 'critical' : 'success'}
-                size="small"
-              />
+
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <Text variant="bodyMd" as="p">
+                    Influencers: {summary.influencerCount} / {summary.influencerLimit === -1 ? '∞' : summary.influencerLimit}
+                  </Text>
+                  <ProgressBar
+                    progress={Math.min(influencerUsagePercent, 100)}
+                    size="small"
+                    tone={influencerUsagePercent > 80 ? 'critical' : 'success'}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-
-          {isAtLimit && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <Text variant="bodySm" as="p" tone="critical">
-                You&apos;ve reached your current plan limits. Upgrade to continue adding influencers and sending discount codes.
-              </Text>
-              <div className="mt-2">
-                <Button
-                  size="slim"
-                  onClick={() => setShowPaywall(true)}
-                >
-                  Upgrade Plan
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {!isAtLimit && (influencerPercentage >= 80 || ugcPercentage >= 80) && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <Text variant="bodySm" as="p" tone="subdued">
-                You&apos;re approaching your plan limits. Consider upgrading for more capacity.
-              </Text>
-              <div className="mt-2">
-                <Button
-                  size="slim"
-                  variant="secondary"
-                  onClick={() => setShowPaywall(true)}
-                >
-                  View Plans
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </Card>
 
-      <PaywallModal
-        open={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        onSubscribe={handleUpgrade}
-        usage={usage}
-      />
-    </>
+      {showDetails && (
+        <>
+          <Card>
+            <div style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Text variant="headingMd" as="h3">Performance Metrics</Text>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Total Revenue</Text>
+                    <Text variant="headingLg" as="p">
+                      ${(summary.totalRevenue / 100).toFixed(2)}
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Conversion Rate</Text>
+                    <Text variant="headingLg" as="p">
+                      {(performance.conversionRate * 100).toFixed(1)}%
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Avg Order Value</Text>
+                    <Text variant="headingLg" as="p">
+                      ${performance.averageOrderValue.toFixed(2)}
+                    </Text>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Active Discount Codes</Text>
+                    <Text variant="headingLg" as="p">
+                      {summary.activeDiscountCodes}
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Total Usage</Text>
+                    <Text variant="headingLg" as="p">
+                      {summary.totalUsage}
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" tone="subdued">Total Payouts</Text>
+                    <Text variant="headingLg" as="p">
+                      ${(summary.totalPayoutAmount / 100).toFixed(2)}
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {metrics.topPerformingCodes && metrics.topPerformingCodes.length > 0 && (
+            <Card>
+              <div style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <Text variant="headingMd" as="h3">Top Performing Codes</Text>
+                  
+                  {metrics.topPerformingCodes.map((code) => (
+                    <div key={code.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <Text variant="bodyMd" as="p">
+                          {code.code}
+                        </Text>
+                        <Text variant="bodySm" as="p" tone="subdued">
+                          {code.influencerName}
+                        </Text>
+                      </div>
+                      
+                      <div>
+                        <Badge tone="success">
+                          {`${code.usageCount} uses`}
+                        </Badge>
+                      </div>
+                      
+                      <div>
+                        <Text variant="bodyMd" as="p">
+                          {code.discountValue}{code.discountType === 'PERCENTAGE' ? '%' : '$'} off
+                        </Text>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
   );
 } 

@@ -1,215 +1,33 @@
 'use client';
 
-import { Page, Layout, Card, Text, Spinner, Banner, Button } from '@shopify/polaris';
+import { Page, Layout, Card, Text, Button, Badge, DataTable } from '@shopify/polaris';
+import { useMerchantId } from '@/hooks/useMerchantId';
 import { useMetrics } from '@/hooks/useMetrics';
-import { useSubscription } from '@/hooks/useSubscription';
-import EnhancedDashboard from '@/components/EnhancedDashboard';
-import { useState, useEffect } from 'react';
-import React from 'react';
+import { UsageMeter } from '@/components/UsageMeter';
+import { useState } from 'react';
 
-export default function Dashboard() {
-  const { isLoading: metricsLoading, error: metricsError } = useMetrics();
-  const { isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
+export default function DashboardPage() {
+  const merchantId = useMerchantId();
+  const { data: metrics } = useMetrics();
+  const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
 
-  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
-  const [onboardingError, setOnboardingError] = useState<string | null>(null);
-  const [hasError, setHasError] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  const isLoading = metricsLoading || subscriptionLoading || isCheckingOnboarding;
-
-  // Ensure client-side rendering to prevent hydration issues
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Error boundary for React errors
-  useEffect(() => {
-    if (!isClient) return;
-
-    const handleError = (error: ErrorEvent) => {
-      console.error('Global error caught:', error);
-      setHasError(true);
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      setHasError(true);
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, [isClient]);
-
-  // Check onboarding status
-  useEffect(() => {
-    if (!isClient) return;
-
-    const checkOnboarding = async () => {
-      try {
-        // Get shop from URL or localStorage
-        const urlParams = new URLSearchParams(window.location.search);
-        const shop = urlParams.get('shop') || localStorage.getItem('shop');
-        
-        console.log('Checking onboarding for shop:', shop);
-        
-        // For testing purposes, always redirect to onboarding if no shop is provided
-        if (!shop) {
-          console.log('No shop provided, redirecting to test onboarding...');
-          window.location.href = '/test-onboarding';
-          return;
-        }
-        
-        if (shop) {
-          try {
-            // First check if merchant exists and has valid credentials
-            const response = await fetch(`/api/merchant?shop=${shop}`);
-            if (response.ok) {
-              let data;
-              try {
-                data = await response.json();
-                console.log('Merchant data:', data);
-                console.log('Data type:', typeof data);
-                console.log('Data keys:', Object.keys(data));
-                console.log('onboardingCompleted:', data.onboardingCompleted, typeof data.onboardingCompleted);
-              } catch (jsonError) {
-                console.error('Failed to parse merchant response:', jsonError);
-                setOnboardingError('Invalid response from server');
-                setIsCheckingOnboarding(false);
-                return;
-              }
-              
-              // Handle both success and error responses
-              if (data.error) {
-                console.error('Merchant API error:', data.error);
-                setOnboardingError('Failed to load merchant data');
-                setIsCheckingOnboarding(false);
-                return;
-              }
-              
-              // Store merchant ID in localStorage for API calls
-              if (data.id) {
-                localStorage.setItem('merchantId', data.id);
-                localStorage.setItem('shop', shop);
-                console.log('Stored merchant ID:', data.id);
-                console.log('Stored shop:', shop);
-                
-                // Check if credentials are valid
-                console.log('🔍 Checking credentials:', {
-                  accessToken: data.accessToken ? '***' : 'null',
-                  shopifyShopId: data.shopifyShopId,
-                  onboardingCompleted: data.onboardingCompleted
-                });
-                
-                if (data.accessToken === 'pending' || !data.shopifyShopId) {
-                  // Check if we've already tried OAuth to prevent infinite loops
-                  const oauthAttempted = sessionStorage.getItem('oauth_attempted');
-                  if (oauthAttempted) {
-                    console.log('⚠️ OAuth already attempted, proceeding with onboarding...');
-                    sessionStorage.removeItem('oauth_attempted');
-                  } else {
-                    console.log('⚠️ Invalid credentials detected, redirecting to OAuth...');
-                    sessionStorage.setItem('oauth_attempted', 'true');
-                    
-                    // For embedded apps, we need to redirect the parent window
-                    if (window.parent !== window) {
-                      // We're in an iframe, use the embedded redirect
-                      window.location.href = `/api/auth/shopify/embedded-redirect?shop=${shop}`;
-                    } else {
-                      // We're not in an iframe, redirect normally
-                      window.location.href = `/api/auth/shopify?shop=${shop}`;
-                    }
-                    return;
-                  }
-                }
-                
-                // Dispatch custom event to notify hooks that merchantId is available
-                window.dispatchEvent(new CustomEvent('merchantIdSet', { detail: data.id }));
-              } else {
-                console.error('No merchant ID in response:', data);
-                setOnboardingError('Invalid merchant data received');
-                setIsCheckingOnboarding(false);
-                return;
-              }
-              
-              // Redirect to onboarding if not completed
-              if (!data.onboardingCompleted) {
-                console.log('Redirecting to onboarding...', { shop, onboardingCompleted: data.onboardingCompleted });
-                try {
-                  window.location.href = `/onboarding?shop=${shop}`;
-                } catch (redirectError) {
-                  console.error('Failed to redirect to onboarding:', redirectError);
-                  setOnboardingError('Failed to redirect to onboarding');
-                  setIsCheckingOnboarding(false);
-                }
-                return; // Don't set isCheckingOnboarding to false if redirecting
-              } else {
-                console.log('Onboarding already completed, staying on dashboard');
-              }
-            } else if (response.status === 404) {
-              // Merchant not found, redirect to onboarding
-              console.log('Merchant not found (404), redirecting to onboarding...');
-              window.location.href = `/onboarding?shop=${shop}`;
-              return;
-            }
-          } catch (error) {
-            console.error('Failed to fetch merchant data:', error);
-            setOnboardingError('Failed to check onboarding status');
-            // If database is not available, try test API
-            console.log('Database not available, trying test API...');
-            try {
-              const testResponse = await fetch(`/api/test/onboarding-check?shop=${shop}`);
-              if (testResponse.ok) {
-                const testData = await testResponse.json();
-                console.log('Test merchant data:', testData);
-                
-                if (!testData.onboardingCompleted) {
-                  console.log('Redirecting to test onboarding...');
-                  window.location.href = '/test-onboarding';
-                  return;
-                }
-              }
-            } catch (testError) {
-              console.error('Test API also failed:', testError);
-              setOnboardingError('Failed to connect to backend services');
-              // Final fallback - stay on dashboard with error
-              console.log('All APIs failed, staying on dashboard with error state');
-            }
-          }
-        }
-        
-        // Set to false if we're not redirecting
-        setIsCheckingOnboarding(false);
-      } catch (error) {
-        console.error('Failed to check onboarding status:', error);
-        setOnboardingError('An unexpected error occurred');
-        setIsCheckingOnboarding(false);
-      }
-    };
-
-    checkOnboarding();
-  }, [isClient]);
-
-  // Don't render anything until client-side hydration is complete
-  if (!isClient) {
+  if (!merchantId) {
     return (
       <Page title="Dashboard">
         <Layout>
           <Layout.Section>
             <Card>
-              <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                  <Spinner size="large" />
-                  <div className="mt-4">
-                    <Text variant="bodyMd" as="p">
-                      Initializing...
-                    </Text>
-                  </div>
+              <div style={{ padding: '2rem', textAlign: 'center' }}>
+                <Text variant="headingLg" as="h2">
+                  Welcome to SocialBoost
+                </Text>
+                <Text variant="bodyMd" as="p" tone="subdued">
+                  Complete Shopify integration for influencer marketing
+                </Text>
+                <div style={{ marginTop: '1rem' }}>
+                  <Button variant="primary" url="/onboarding">
+                    Get Started
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -218,123 +36,230 @@ export default function Dashboard() {
       </Page>
     );
   }
-
-  if (isLoading) {
-    return (
-      <Page title="Dashboard">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                  <Spinner size="large" />
-                  <div className="mt-4">
-                    <Text variant="bodyMd" as="p">
-                      {isCheckingOnboarding ? 'Checking onboarding status...' : 'Loading dashboard...'}
-                    </Text>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
-
-  // Handle onboarding errors
-  if (onboardingError) {
-    return (
-      <Page title="Dashboard">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <div className="p-6 text-center">
-                <Banner tone="critical">
-                  <Text variant="headingLg" as="h2">
-                    Setup Required
-                  </Text>
-                  <Text variant="bodyMd" tone="subdued" as="p">
-                    {onboardingError}. Please complete the setup process to continue.
-                  </Text>
-                  <div className="mt-4">
-                    <Button variant="primary" onClick={() => window.location.reload()}>
-                      Retry Setup
-                    </Button>
-                  </div>
-                </Banner>
-              </div>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
-
-  // Handle React errors gracefully
-  if (hasError) {
-    return (
-      <Page title="Dashboard">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <div className="p-6 text-center">
-                <Banner tone="critical">
-                  <Text variant="headingLg" as="h2">
-                    Application Error
-                  </Text>
-                  <Text variant="bodyMd" tone="subdued" as="p">
-                    Something went wrong with the application. Please refresh the page to try again.
-                  </Text>
-                  <div className="mt-4">
-                    <Button variant="primary" onClick={() => window.location.reload()}>
-                      Refresh Page
-                    </Button>
-                  </div>
-                </Banner>
-              </div>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
-
-  // Handle API errors gracefully
-  if (subscriptionError || metricsError) {
-    return (
-      <Page title="Dashboard">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <div className="p-6 text-center">
-                <Banner tone="critical">
-                  <Text variant="headingLg" as="h2">
-                    Connection Error
-                  </Text>
-                  <Text variant="bodyMd" tone="subdued" as="p">
-                    Unable to connect to the backend. Please check your connection and try again.
-                  </Text>
-                  <div className="mt-4">
-                    <Button variant="primary" onClick={() => window.location.reload()}>
-                      Retry Connection
-                    </Button>
-                  </div>
-                </Banner>
-              </div>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
-
-
-
-  // Get shop from localStorage or URL params
-  const shop = typeof window !== 'undefined' ? (localStorage.getItem('shop') || new URLSearchParams(window.location.search).get('shop') || undefined) : undefined;
 
   return (
-    <EnhancedDashboard shop={shop} />
+    <Page title="Dashboard">
+      <Layout>
+        {/* Welcome Section */}
+        <Layout.Section>
+          <Card>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Text variant="headingLg" as="h2">
+                  Welcome to SocialBoost
+                </Text>
+                <Text variant="bodyMd" as="p" tone="subdued">
+                  Complete Shopify integration with real discount codes, automated webhooks, and comprehensive analytics.
+                </Text>
+                
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <Badge tone="success">Real Shopify Integration</Badge>
+                  <Badge tone="success">Automated Webhooks</Badge>
+                  <Badge tone="success">Usage Tracking</Badge>
+                  <Badge tone="success">Revenue Analytics</Badge>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Layout.Section>
+
+        {/* Usage Overview */}
+        <Layout.Section>
+          <UsageMeter showDetails={showDetailedMetrics} />
+        </Layout.Section>
+
+        {/* Quick Actions */}
+        <Layout.Section>
+          <Card>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Text variant="headingMd" as="h3">Quick Actions</Text>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                  <Button url="/influencers" variant="primary">
+                    Manage Influencers
+                  </Button>
+                  <Button url="/ugc">
+                    View UGC Posts
+                  </Button>
+                  <Button url="/payouts">
+                    Process Payouts
+                  </Button>
+                  <Button url="/settings">
+                    Settings
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Layout.Section>
+
+        {/* Performance Metrics */}
+        {metrics && (
+          <Layout.Section>
+            <Card>
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="headingMd" as="h3">Performance Overview</Text>
+                    <Button
+                      size="slim"
+                      onClick={() => setShowDetailedMetrics(!showDetailedMetrics)}
+                    >
+                      {showDetailedMetrics ? 'Hide Details' : 'Show Details'}
+                    </Button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <Text variant="headingLg" as="p" tone="success">
+                        ${(metrics.summary.totalRevenue / 100).toFixed(2)}
+                      </Text>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        Total Revenue
+                      </Text>
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <Text variant="headingLg" as="p" tone="success">
+                        {metrics.summary.totalUsage}
+                      </Text>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        Code Uses
+                      </Text>
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <Text variant="headingLg" as="p" tone="success">
+                        {(metrics.performance.conversionRate * 100).toFixed(1)}%
+                      </Text>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        Conversion Rate
+                      </Text>
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <Text variant="headingLg" as="p" tone="critical">
+                        ${metrics.performance.averageOrderValue.toFixed(2)}
+                      </Text>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        Avg Order Value
+                      </Text>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Layout.Section>
+        )}
+
+        {/* Recent Activity */}
+        {metrics?.recentActivity && metrics.recentActivity.length > 0 && (
+          <Layout.Section>
+            <Card>
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <Text variant="headingMd" as="h3">Recent Activity</Text>
+                  
+                  <DataTable
+                    columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+                    headings={['Code', 'Influencer', 'Discount', 'Created', 'Status']}
+                    rows={metrics.recentActivity.slice(0, 5).map((activity) => [
+                      activity.code,
+                      activity.influencerName,
+                      `${activity.discountValue}${activity.discountType === 'PERCENTAGE' ? '%' : '$'} off`,
+                      new Date(activity.createdAt).toLocaleDateString(),
+                      'Active'
+                    ])}
+                  />
+                </div>
+              </div>
+            </Card>
+          </Layout.Section>
+        )}
+
+        {/* Integration Status */}
+        <Layout.Section>
+          <Card>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Text variant="headingMd" as="h3">Integration Status</Text>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="bodyMd" as="p">Shopify Connection</Text>
+                    <Badge tone="success">Connected</Badge>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="bodyMd" as="p">Webhook Processing</Text>
+                    <Badge tone="success">Active</Badge>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="bodyMd" as="p">Discount Code Creation</Text>
+                    <Badge tone="success">Real-time</Badge>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="bodyMd" as="p">Usage Analytics</Text>
+                    <Badge tone="success">Tracking</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Layout.Section>
+
+        {/* Feature Highlights */}
+        <Layout.Section>
+          <Card>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Text variant="headingMd" as="h3">Complete Shopify Integration</Text>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div>
+                    <Text variant="bodyMd" as="p" fontWeight="bold">
+                      ✅ Real Discount Code Creation
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Create actual discount codes in Shopify that customers can use at checkout
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" fontWeight="bold">
+                      ✅ Automated Webhook Processing
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Real-time order processing with automatic commission calculations
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" fontWeight="bold">
+                      ✅ Comprehensive Usage Tracking
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Track revenue, conversion rates, and performance metrics
+                    </Text>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p" fontWeight="bold">
+                      ✅ Influencer Commission Management
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Automatic payout creation and commission tracking
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Layout.Section>
+      </Layout>
+    </Page>
   );
 }

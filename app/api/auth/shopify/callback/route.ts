@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ShopifyAPI } from '@/lib/shopify';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -55,61 +56,52 @@ export async function GET(request: NextRequest) {
     });
 
     if (!shopResponse.ok) {
-      const errorText = await shopResponse.text();
-      console.error('❌ Failed to fetch shop data:', errorText);
+      console.error('❌ Failed to fetch shop data');
       return NextResponse.json({ error: 'Failed to fetch shop data' }, { status: 500 });
     }
 
     const shopData = await shopResponse.json();
     const shopInfo = shopData.shop;
-    
+
     console.log('✅ Shop data fetched:', { 
-      shopId: shopInfo.id, 
-      shopName: shopInfo.name,
-      shopDomain: shopInfo.domain 
+      name: shopInfo.name, 
+      email: shopInfo.email, 
+      domain: shopInfo.domain 
     });
 
-    // Create or update merchant with Shopify data
+    // Create or update merchant in database
     let merchant;
     try {
       merchant = await prisma.merchant.upsert({
         where: { shop },
         update: {
           accessToken,
-          scope,
-          isActive: true,
-          shopifyShopId: shopInfo.id.toString(),
           shopName: shopInfo.name,
           shopEmail: shopInfo.email,
           shopDomain: shopInfo.domain,
           shopCurrency: shopInfo.currency,
-          shopTimezone: shopInfo.iana_timezone,
-          shopLocale: shopInfo.locale,
+          isActive: true,
         },
         create: {
           shop,
           accessToken,
           scope,
-          isActive: true,
-          shopifyShopId: shopInfo.id.toString(),
           shopName: shopInfo.name,
           shopEmail: shopInfo.email,
           shopDomain: shopInfo.domain,
           shopCurrency: shopInfo.currency,
-          shopTimezone: shopInfo.iana_timezone,
-          shopLocale: shopInfo.locale,
+          isActive: true,
           onboardingCompleted: false,
-          onboardingStep: 0,
         },
       });
-      console.log('Merchant created/updated:', {
+
+      console.log('✅ Merchant created/updated:', {
+        id: merchant.id,
         shop: merchant.shop,
-        shopName: merchant.shopName,
         shopEmail: merchant.shopEmail,
         shopDomain: merchant.shopDomain,
         shopCurrency: merchant.shopCurrency,
         onboardingCompleted: merchant.onboardingCompleted,
-        id: merchant.id
       });
     } catch (error) {
       console.error('Failed to create/update merchant:', error);
@@ -207,6 +199,20 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Failed to create merchant settings:', error);
       // Continue with onboarding even if settings creation fails
+    }
+
+    // Register webhooks for real-time order processing
+    try {
+      const shopifyAPI = new ShopifyAPI(accessToken, shop);
+      const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : (process.env.HOST || 'https://socialboost-blue.vercel.app');
+      
+      await shopifyAPI.registerWebhooks(baseUrl);
+      console.log('✅ Webhooks registered successfully');
+    } catch (error) {
+      console.error('Failed to register webhooks:', error);
+      // Continue with onboarding even if webhook registration fails
     }
 
     // Handle embedded app redirect

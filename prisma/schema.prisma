@@ -43,6 +43,9 @@ model Merchant {
   payouts         Payout[]
   socialMediaAccounts SocialMediaAccount[]
   brandMentions   BrandMention[]
+  orderMetrics    OrderMetric[]
+  ugcRejections   UgcRejection[]
+  ugcWorkflowRules UgcWorkflowRules[]
   
   @@map("merchants")
 }
@@ -103,6 +106,7 @@ model Influencer {
   ugcPosts        UgcPost[]
   payouts         Payout[]
   discountCodes   DiscountCode[]
+  ugcRejections   UgcRejection[]
   
   @@map("influencers")
 }
@@ -119,6 +123,8 @@ model UgcPost {
   engagement      Int      @default(0)
   isApproved      Boolean  @default(false)
   isRewarded      Boolean  @default(false)
+  isRejected      Boolean  @default(false)
+  rejectionReason String?
   rewardAmount    Int?     // in cents
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -127,6 +133,9 @@ model UgcPost {
   merchant        Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   influencer      Influencer? @relation(fields: [influencerId], references: [id])
   discountCodes   DiscountCode[]
+  rejection       UgcRejection?
+  contentAnalysis UgcContentAnalysis?
+  workflowHistory UgcWorkflowHistory[]
   
   @@map("ugc_posts")
 }
@@ -153,6 +162,7 @@ model DiscountCode {
   usageCount      Int      @default(0)
   isActive        Boolean  @default(true)
   expiresAt       DateTime?
+  shopifyPriceRuleId String? // Store Shopify price rule ID for real discount codes
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -190,6 +200,8 @@ model Payout {
   // Relations
   merchant        Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   influencer      Influencer  @relation(fields: [influencerId], references: [id])
+  commissionPerformance CommissionPerformance?
+  commissionInsights CommissionInsights?
   
   @@map("payouts")
 }
@@ -300,4 +312,124 @@ enum JobStatus {
   PROCESSING
   COMPLETED
   FAILED
+} 
+
+model OrderMetric {
+  id                String   @id @default(cuid())
+  merchantId        String
+  orderId           String
+  totalAmount       Int      // in cents
+  currency          String   @default("USD")
+  discountCodesUsed Int      @default(0)
+  customerEmail     String?
+  processedAt       DateTime @default(now())
+  
+  // Relations
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  
+  @@map("order_metrics")
+} 
+
+model UgcRejection {
+  id              String   @id @default(cuid())
+  ugcPostId       String   @unique
+  merchantId      String
+  influencerId    String?
+  reason          String
+  platform        Platform
+  engagement      Int
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  ugcPost         UgcPost  @relation(fields: [ugcPostId], references: [id], onDelete: Cascade)
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  influencer      Influencer? @relation(fields: [influencerId], references: [id])
+  
+  @@map("ugc_rejections")
+} 
+
+model CommissionPerformance {
+  id                    String   @id @default(cuid())
+  payoutId              String   @unique
+  baseAmount            Int      // in cents
+  bonusAmount           Int      // in cents
+  performanceMultiplier Float    @default(1.0)
+  totalSales            Int      // in cents
+  totalOrders           Int      @default(0)
+  averageOrderValue     Int      // in cents
+  createdAt             DateTime @default(now())
+  
+  // Relations
+  payout                Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  
+  @@map("commission_performance")
+}
+
+model CommissionInsights {
+  id                    String   @id @default(cuid())
+  payoutId              String   @unique
+  performanceTrend      String   // 'improving' | 'stable' | 'declining'
+  recommendedActions    String[] // JSON array of recommended actions
+  riskFactors          String[] // JSON array of risk factors
+  opportunityAreas     String[] // JSON array of opportunity areas
+  confidenceScore      Float    @default(0.8)
+  projectedEarnings    Int      // in cents
+  growthRate           Float    @default(0.0)
+  churnRisk            Float    @default(0.1)
+  optimalCommissionRate Float   @default(0.1)
+  recommendedStrategies String[] // JSON array of recommended strategies
+  createdAt            DateTime @default(now())
+  
+  // Relations
+  payout                Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  
+  @@map("commission_insights")
+}
+
+model UgcContentAnalysis {
+  id                    String   @id @default(cuid())
+  ugcPostId             String   @unique
+  sentimentScore        Float    @default(0.0)
+  overallQualityScore   Float    @default(0.0)
+  brandSafetyScore      Float    @default(0.0)
+  contentQualityScore   Float    @default(0.0)
+  engagementPotentialScore Float @default(0.0)
+  analysisData          Json?
+  createdAt             DateTime @default(now())
+  
+  // Relations
+  ugcPost               UgcPost  @relation(fields: [ugcPostId], references: [id], onDelete: Cascade)
+  
+  @@map("ugc_content_analysis")
+}
+
+model UgcWorkflowHistory {
+  id              String   @id @default(cuid())
+  ugcPostId       String
+  action          String   // 'approved', 'rejected', 'flagged', 'reviewed'
+  performedBy     String?  // User ID or system
+  performedAt     DateTime @default(now())
+  notes           String?
+  metadata        Json?
+  
+  // Relations
+  ugcPost         UgcPost  @relation(fields: [ugcPostId], references: [id], onDelete: Cascade)
+  
+  @@map("ugc_workflow_history")
+}
+
+model UgcWorkflowRules {
+  id              String   @id @default(cuid())
+  merchantId      String
+  ruleType        String   // 'auto_approve', 'auto_reject', 'flag_for_review'
+  conditions      Json     // Rule conditions
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  
+  @@map("ugc_workflow_rules")
 } 
