@@ -18,20 +18,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate OAuth URL
-    const nonce = Math.random().toString(36).substring(2, 15);
     const scopes = 'read_analytics,read_customers,read_inventory,read_marketing_events,read_orders,read_products,write_discounts,write_inventory,write_marketing_events,write_products';
     const redirectUri = `https://socialboost-blue.vercel.app/api/auth/shopify/callback`;
     
     const authUrl = `https://${shop}/admin/oauth/authorize?` +
       `client_id=${process.env.SHOPIFY_API_KEY}&` +
       `scope=${scopes}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `state=${nonce}`;
+      `redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-    console.log('🔐 OAuth URL generated:', authUrl);
-    return NextResponse.redirect(authUrl);
+    // Return HTML that will redirect the parent window
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Redirecting to OAuth...</title>
+        </head>
+        <body>
+          <script>
+            console.log('🔄 Redirecting parent window to OAuth...');
+            window.parent.location.href = '${authUrl}';
+          </script>
+          <p>Redirecting to Shopify OAuth...</p>
+        </body>
+      </html>
+    `;
+
+    return new NextResponse(html, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    });
   } catch (error) {
-    console.error('Shopify auth error:', error);
+    console.error('Shopify embedded redirect error:', error);
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
   }
 } 

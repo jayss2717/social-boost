@@ -103,7 +103,15 @@ export default function Dashboard() {
                 // Check if credentials are valid
                 if (data.accessToken === 'pending' || !data.shopifyShopId) {
                   console.log('⚠️ Invalid credentials detected, redirecting to OAuth...');
-                  window.location.href = `/api/auth/shopify?shop=${shop}`;
+                  
+                  // For embedded apps, we need to redirect the parent window
+                  if (window.parent !== window) {
+                    // We're in an iframe, use the embedded redirect
+                    window.location.href = `/api/auth/shopify/embedded-redirect?shop=${shop}`;
+                  } else {
+                    // We're not in an iframe, redirect normally
+                    window.location.href = `/api/auth/shopify?shop=${shop}`;
+                  }
                   return;
                 }
                 
