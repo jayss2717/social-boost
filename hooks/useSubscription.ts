@@ -1,7 +1,18 @@
 import useSWR from 'swr';
 import { apiFetch } from '@/utils/api';
+import { useMerchantId } from './useMerchantId';
 
 const fetcher = async (url: string) => {
+  // Check if merchantId is available
+  const merchantId = typeof window !== 'undefined' 
+    ? localStorage.getItem('merchantId')
+    : null;
+
+  if (!merchantId) {
+    console.log('No merchantId available, skipping subscription fetch');
+    return null;
+  }
+
   const result = await apiFetch(url);
   if (result === null) {
     // Return default subscription structure to prevent React errors
@@ -20,7 +31,12 @@ const fetcher = async (url: string) => {
 };
 
 export function useSubscription() {
-  const { data, error, isLoading, mutate } = useSWR('/api/subscription', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/subscription' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,
@@ -31,7 +47,12 @@ export function useSubscription() {
 }
 
 export function useInfluencers() {
-  const { data, error, isLoading, mutate } = useSWR('/api/influencers', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/influencers' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,
@@ -42,7 +63,12 @@ export function useInfluencers() {
 }
 
 export function useUgcPosts() {
-  const { data, error, isLoading, mutate } = useSWR('/api/ugc-posts', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/ugc-posts' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,
@@ -53,7 +79,12 @@ export function useUgcPosts() {
 }
 
 export function usePayouts() {
-  const { data, error, isLoading, mutate } = useSWR('/api/payouts', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/payouts' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,
@@ -64,7 +95,12 @@ export function usePayouts() {
 }
 
 export function usePayoutSummary() {
-  const { data, error, isLoading, mutate } = useSWR('/api/payouts/summary', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/payouts/summary' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,
@@ -75,7 +111,12 @@ export function usePayoutSummary() {
 }
 
 export function useSettings() {
-  const { data, error, isLoading, mutate } = useSWR('/api/settings', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/settings' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,

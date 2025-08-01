@@ -1,7 +1,18 @@
 import useSWR from 'swr';
 import { apiFetch } from '@/utils/api';
+import { useMerchantId } from './useMerchantId';
 
 const fetcher = async (url: string) => {
+  // Check if merchantId is available
+  const merchantId = typeof window !== 'undefined' 
+    ? localStorage.getItem('merchantId')
+    : null;
+
+  if (!merchantId) {
+    console.log('No merchantId available, skipping metrics fetch');
+    return null;
+  }
+
   const result = await apiFetch(url);
   if (result === null) {
     // Return default metrics structure to prevent React errors
@@ -20,7 +31,12 @@ const fetcher = async (url: string) => {
 };
 
 export function useMetrics() {
-  const { data, error, isLoading, mutate } = useSWR('/api/metrics', fetcher);
+  const merchantId = useMerchantId();
+
+  const { data, error, isLoading, mutate } = useSWR(
+    merchantId ? '/api/metrics' : null, // Only fetch if merchantId exists
+    fetcher
+  );
 
   return {
     data,

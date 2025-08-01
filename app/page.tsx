@@ -87,6 +87,9 @@ export default function Dashboard() {
                 localStorage.setItem('shop', shop);
                 console.log('Stored merchant ID:', data.id);
                 console.log('Stored shop:', shop);
+                
+                // Dispatch custom event to notify hooks that merchantId is available
+                window.dispatchEvent(new CustomEvent('merchantIdSet', { detail: data.id }));
               } else {
                 console.error('No merchant ID in response:', data);
                 setOnboardingError('Invalid merchant data received');
