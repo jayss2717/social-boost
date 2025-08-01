@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     // const state = searchParams.get('state'); // Unused for now
 
+    console.log('🔐 OAuth Callback triggered:', { shop, code: code ? '***' : 'missing' });
+
     if (!shop || !code) {
+      console.error('❌ Missing required parameters:', { shop, hasCode: !!code });
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
@@ -29,13 +32,20 @@ export async function GET(request: NextRequest) {
     });
 
     if (!tokenResponse.ok) {
-      console.error('Token exchange failed:', await tokenResponse.text());
+      const errorText = await tokenResponse.text();
+      console.error('❌ Token exchange failed:', errorText);
       return NextResponse.json({ error: 'Failed to exchange code for token' }, { status: 401 });
     }
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
     const scope = tokenData.scope;
+    
+    console.log('✅ Token exchange successful:', { 
+      shop, 
+      hasAccessToken: !!accessToken, 
+      scope: scope?.substring(0, 50) + '...' 
+    });
 
     // Fetch shop data from Shopify
     const shopResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
@@ -45,12 +55,19 @@ export async function GET(request: NextRequest) {
     });
 
     if (!shopResponse.ok) {
-      console.error('Failed to fetch shop data:', await shopResponse.text());
+      const errorText = await shopResponse.text();
+      console.error('❌ Failed to fetch shop data:', errorText);
       return NextResponse.json({ error: 'Failed to fetch shop data' }, { status: 500 });
     }
 
     const shopData = await shopResponse.json();
     const shopInfo = shopData.shop;
+    
+    console.log('✅ Shop data fetched:', { 
+      shopId: shopInfo.id, 
+      shopName: shopInfo.name,
+      shopDomain: shopInfo.domain 
+    });
 
     // Create or update merchant with Shopify data
     let merchant;
