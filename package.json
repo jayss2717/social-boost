@@ -10,6 +10,7 @@
     "lint": "next lint",
     "vercel-build": "prisma generate && next build",
     "db:seed": "tsx scripts/seed.ts",
+    "fix:credentials": "tsx scripts/fix-merchant-credentials.ts",
     "test:app": "node scripts/test-app.js",
     "test:shopify": "node scripts/test-shopify.js",
     "test:install": "node scripts/test-shopify-install.js"

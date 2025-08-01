@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
             shop,
             accessToken: 'pending', // Will be updated during OAuth
             scope: 'read_products,write_products',
+            shopifyShopId: null, // Will be updated during OAuth
             shopName: shop.replace('.myshopify.com', ''),
             shopEmail: `admin@${shop}`,
             shopDomain: shop,

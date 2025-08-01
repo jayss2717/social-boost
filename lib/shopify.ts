@@ -19,7 +19,7 @@ const shopify = {
       'read_marketing_events',
       'write_marketing_events'
     ],
-    hostName: process.env.HOST!.replace(/https:\/\//, ''),
+    hostName: process.env.HOST?.replace(/https:\/\//, '') || 'localhost:3000',
     isEmbeddedApp: true,
   },
   sessionStorage: new PrismaSessionStorage(prisma),
