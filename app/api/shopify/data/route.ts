@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       if (recentOrdersResponse.ok) {
         const ordersData = await recentOrdersResponse.json();
         const totalRevenue = ordersData.orders.reduce((sum: number, order: Record<string, unknown>) => {
-          return sum + parseFloat(order.total_price || 0);
+          return sum + parseFloat(String(order.total_price || 0));
         }, 0);
         shopifyData.recentRevenue = totalRevenue;
         shopifyData.recentOrders = ordersData.orders.length;

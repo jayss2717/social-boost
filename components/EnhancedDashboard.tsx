@@ -12,6 +12,14 @@ interface EnhancedDashboardProps {
   shop?: string;
 }
 
+interface MetricCard {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  description: string;
+}
+
 export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
   const { shopifyData, isLoading, error, mutate } = useShopifyData(shop);
   const { data: subscription } = useSubscription();
@@ -82,7 +90,7 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
   }
 
   // Shopify Store Metrics
-  const shopifyMetrics = [
+  const shopifyMetrics: MetricCard[] = [
     {
       title: 'Total Products',
       value: shopifyData?.productsCount || 0,
@@ -114,7 +122,7 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
   ];
 
   // App Metrics
-  const appMetrics = [
+  const appMetrics: MetricCard[] = [
     {
       title: 'Total UGC Posts',
       value: shopifyData?.appMetrics?.totalUgcPosts || 0,
@@ -152,7 +160,7 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
     }
   ];
 
-  const renderMetricCard = (metric: Record<string, unknown>, index: number) => {
+  const renderMetricCard = (metric: MetricCard, index: number) => {
     const IconComponent = metric.icon;
     return (
       <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 4, lg: 4, xl: 4 }} key={index}>

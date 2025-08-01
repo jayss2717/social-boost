@@ -4,10 +4,10 @@ import { prisma } from './prisma';
  * Validates if a merchant has proper Shopify credentials
  */
 export function validateMerchantCredentials(merchant: Record<string, unknown>): boolean {
-  return merchant.accessToken && 
+  return Boolean(merchant.accessToken) && 
          merchant.accessToken !== 'pending' && 
          merchant.accessToken !== 'test-access-token' &&
-         merchant.shopifyShopId &&
+         Boolean(merchant.shopifyShopId) &&
          merchant.shopifyShopId !== 'NULL';
 }
 
