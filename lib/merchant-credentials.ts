@@ -1,9 +1,10 @@
 import { prisma } from './prisma';
+import type { Merchant } from '../types';
 
 /**
  * Validates if a merchant has proper Shopify credentials
  */
-export function validateMerchantCredentials(merchant: any): boolean {
+export function validateMerchantCredentials(merchant: Merchant): boolean {
   return merchant.accessToken && 
          merchant.accessToken !== 'pending' && 
          merchant.accessToken !== 'test-access-token' &&

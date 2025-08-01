@@ -1,12 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Button, Text, Banner, Spinner } from '@shopify/polaris';
+import { Card, Button, Text, Banner } from '@shopify/polaris';
+
+interface ResultType {
+  success?: boolean;
+  isValid?: boolean;
+  merchant?: {
+    id: string;
+    shop: string;
+    accessToken?: string | null;
+    shopifyShopId?: string | null;
+    shopName?: string | null;
+    isActive?: boolean;
+    needsOAuth?: boolean;
+  };
+  requiresOAuth?: boolean;
+  oauthUrl?: string;
+  message?: string;
+  error?: string;
+}
 
 export default function TestCredentialsPage() {
   const [shop, setShop] = useState('teststorev102.myshopify.com');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ResultType | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const checkCredentials = async () => {
