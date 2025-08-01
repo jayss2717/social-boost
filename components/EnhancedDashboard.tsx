@@ -152,7 +152,7 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
     }
   ];
 
-  const renderMetricCard = (metric: any, index: number) => {
+  const renderMetricCard = (metric: Record<string, unknown>, index: number) => {
     const IconComponent = metric.icon;
     return (
       <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 4, lg: 4, xl: 4 }} key={index}>
@@ -242,9 +242,9 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
         {isOverLimit && (
           <Layout.Section>
             <Banner tone="warning">
-              <Text variant="bodyMd" as="p">
-                You're approaching your plan limits. Consider upgrading to unlock more features.
-              </Text>
+                                <Text variant="bodyMd" as="p">
+                    You&apos;re approaching your plan limits. Consider upgrading to unlock more features.
+                  </Text>
               <div className="mt-2">
                 <Button variant="primary" onClick={() => setShowPaywall(true)}>
                   Upgrade Plan
@@ -254,32 +254,7 @@ export default function EnhancedDashboard({ shop }: EnhancedDashboardProps) {
           </Layout.Section>
         )}
 
-        {/* Quick Actions */}
-        <Layout.Section>
-          <Card>
-            <div className="p-6">
-              <BlockStack gap="400">
-                <Text variant="headingMd" as="h3">
-                  Quick Actions
-                </Text>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="primary" fullWidth>
-                    Add Influencer
-                  </Button>
-                  <Button variant="primary" fullWidth>
-                    Review Posts
-                  </Button>
-                  <Button variant="primary" fullWidth>
-                    Generate Codes
-                  </Button>
-                  <Button variant="primary" fullWidth>
-                    View Analytics
-                  </Button>
-                </div>
-              </BlockStack>
-            </div>
-          </Card>
-        </Layout.Section>
+
       </Layout>
 
       <PaywallModal 

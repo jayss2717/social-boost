@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch real Shopify data
-    const shopifyData: any = {};
+    const shopifyData: Record<string, unknown> = {};
 
     try {
       // 1. Get shop information
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
       if (recentOrdersResponse.ok) {
         const ordersData = await recentOrdersResponse.json();
-        const totalRevenue = ordersData.orders.reduce((sum: number, order: any) => {
+        const totalRevenue = ordersData.orders.reduce((sum: number, order: Record<string, unknown>) => {
           return sum + parseFloat(order.total_price || 0);
         }, 0);
         shopifyData.recentRevenue = totalRevenue;

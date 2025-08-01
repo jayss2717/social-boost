@@ -1,18 +1,16 @@
 'use client';
 
-import { Page, Layout, Card, Text, Badge, Button, Grid, Spinner, BlockStack, Banner } from '@shopify/polaris';
-import { Users, Hash, Gift, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Page, Layout, Card, Text, Spinner, Banner, Button } from '@shopify/polaris';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';
-import PaywallModal from '@/components/PaywallModal';
 import EnhancedDashboard from '@/components/EnhancedDashboard';
 import { useState, useEffect } from 'react';
 import React from 'react';
 
 export default function Dashboard() {
-  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useMetrics();
-  const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
-  const [showPaywall, setShowPaywall] = useState(false);
+  const { isLoading: metricsLoading, error: metricsError } = useMetrics();
+  const { isLoading: subscriptionLoading, error: subscriptionError } = useSubscription();
+
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -331,57 +329,7 @@ export default function Dashboard() {
     );
   }
 
-  // Provide default values for usage
-  const usage = subscription?.usage || {
-    ugcCount: 0,
-    influencerCount: 0,
-    ugcLimit: 20,
-    influencerLimit: 5,
-  };
 
-  const isOverLimit = (
-    (usage.ugcCount >= usage.ugcLimit && usage.ugcLimit !== -1) ||
-    (usage.influencerCount >= usage.influencerLimit && usage.influencerLimit !== -1)
-  );
-
-  const metricCards = [
-    {
-      title: 'Total UGC Posts',
-      value: metrics?.totalUgcPosts || 0,
-      icon: Hash,
-      color: 'success',
-    },
-    {
-      title: 'Active Influencers',
-      value: metrics?.totalInfluencers || 0,
-      icon: Users,
-      color: 'info',
-    },
-    {
-      title: 'Total Revenue',
-      value: `$${Math.round((metrics?.totalRevenue || 0) / 100)}`,
-      icon: DollarSign,
-      color: 'success',
-    },
-    {
-      title: 'Pending Payouts',
-      value: `$${Math.round((metrics?.pendingPayouts || 0) / 100)}`,
-      icon: Gift,
-      color: 'warning',
-    },
-    {
-      title: 'Approved Posts',
-      value: metrics?.approvedPosts || 0,
-      icon: TrendingUp,
-      color: 'success',
-    },
-    {
-      title: 'Pending Approval',
-      value: metrics?.pendingApproval || 0,
-      icon: Clock,
-      color: 'attention',
-    },
-  ];
 
   // Get shop from localStorage or URL params
   const shop = typeof window !== 'undefined' ? (localStorage.getItem('shop') || new URLSearchParams(window.location.search).get('shop') || undefined) : undefined;
