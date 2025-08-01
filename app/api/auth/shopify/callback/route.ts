@@ -209,6 +209,15 @@ export async function GET(request: NextRequest) {
       // Continue with onboarding even if settings creation fails
     }
 
+    // Handle embedded app redirect
+    const state = searchParams.get('state');
+    if (state) {
+      // This is an embedded app installation, redirect back to Shopify
+      const redirectUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`;
+      console.log('🔄 Embedded app: redirecting to Shopify:', redirectUrl);
+      return NextResponse.redirect(redirectUrl);
+    }
+
     // Redirect to onboarding if not completed, otherwise to app
     // For new installations, always redirect to onboarding
     if (!merchant || !merchant.onboardingCompleted) {

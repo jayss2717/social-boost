@@ -68,6 +68,7 @@ export default function Dashboard() {
         
         if (shop) {
           try {
+            // First check if merchant exists and has valid credentials
             const response = await fetch(`/api/merchant?shop=${shop}`);
             if (response.ok) {
               let data;
@@ -98,6 +99,13 @@ export default function Dashboard() {
                 localStorage.setItem('shop', shop);
                 console.log('Stored merchant ID:', data.id);
                 console.log('Stored shop:', shop);
+                
+                // Check if credentials are valid
+                if (data.accessToken === 'pending' || !data.shopifyShopId) {
+                  console.log('⚠️ Invalid credentials detected, redirecting to OAuth...');
+                  window.location.href = `/api/auth/shopify?shop=${shop}`;
+                  return;
+                }
                 
                 // Dispatch custom event to notify hooks that merchantId is available
                 window.dispatchEvent(new CustomEvent('merchantIdSet', { detail: data.id }));
