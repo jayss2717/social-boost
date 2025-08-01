@@ -5,6 +5,7 @@ import { Users, Hash, Gift, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { useMetrics } from '@/hooks/useMetrics';
 import { useSubscription } from '@/hooks/useSubscription';
 import PaywallModal from '@/components/PaywallModal';
+import EnhancedDashboard from '@/components/EnhancedDashboard';
 import { useState, useEffect } from 'react';
 import React from 'react';
 
@@ -382,120 +383,10 @@ export default function Dashboard() {
     },
   ];
 
+  // Get shop from localStorage or URL params
+  const shop = typeof window !== 'undefined' ? (localStorage.getItem('shop') || new URLSearchParams(window.location.search).get('shop') || undefined) : undefined;
+
   return (
-    <Page title="Dashboard">
-      <Layout>
-        <Layout.Section>
-          <Grid>
-            {metricCards.map((card, index) => {
-              const IconComponent = card.icon;
-              return (
-                <Grid.Cell columnSpan={{ xs: 6, sm: 3, md: 4, lg: 4, xl: 4 }} key={index}>
-                  <Card>
-                    <div className="p-6">
-                      <BlockStack gap="400">
-                        <div className="flex items-center space-x-3">
-                          {React.createElement(IconComponent, { className: "w-6 h-6 text-sb-primary" })}
-                          <div>
-                            <Text variant="bodyMd" tone="subdued" as="p">
-                              {card.title}
-                            </Text>
-                            <Text variant="headingLg" as="h2">
-                              {card.value}
-                            </Text>
-                          </div>
-                        </div>
-                      </BlockStack>
-                    </div>
-                  </Card>
-                </Grid.Cell>
-              );
-            })}
-          </Grid>
-        </Layout.Section>
-
-        {isOverLimit && (
-          <Layout.Section>
-            <Card>
-              <div className="p-6 text-center">
-                <Banner tone="warning">
-                  <Text variant="headingLg" as="h2">
-                    You&apos;ve reached your plan limits
-                  </Text>
-                  <Text variant="bodyMd" tone="subdued" as="p">
-                    Upgrade your plan to continue growing your influencer marketing program
-                  </Text>
-                  <div className="mt-4">
-                    <Button variant="primary" onClick={() => setShowPaywall(true)}>
-                      Upgrade Plan
-                    </Button>
-                  </div>
-                </Banner>
-              </div>
-            </Card>
-          </Layout.Section>
-        )}
-
-        <Layout.Section>
-          <Card>
-            <div className="p-6">
-              <Text variant="headingMd" as="h3">
-                Recent Activity
-              </Text>
-              {metrics?.recentActivity ? (
-                <Text variant="bodyMd" as="span">
-                  {metrics.recentActivity} new posts in the last 7 days
-                </Text>
-              ) : (
-                <Text variant="bodyMd" tone="subdued" as="p">
-                  No recent activity to display
-                </Text>
-              )}
-            </div>
-          </Card>
-        </Layout.Section>
-
-        {metrics?.topPosts && Array.isArray(metrics.topPosts) && metrics.topPosts.length > 0 && (
-          <Layout.Section>
-            <Card>
-              <div className="p-6">
-                <Text variant="headingMd" as="h3">
-                  Top Performing Posts
-                </Text>
-                <div className="mt-4 space-y-2">
-                  {metrics.topPosts.slice(0, 3).map((post: Record<string, unknown>, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div>
-                        <Text variant="bodyMd" as="p">
-                          {String(post.platform || 'Unknown')} - {String(post.influencerName || 'Unknown')}
-                        </Text>
-                        <Text variant="bodySm" tone="subdued" as="p">
-                          {String(post.content || 'No content')}
-                        </Text>
-                      </div>
-                      <Badge tone="success">
-                        {`${post.engagement || 0} engagement`}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </Layout.Section>
-        )}
-      </Layout>
-
-      {showPaywall && (
-        <PaywallModal
-          open={showPaywall}
-          onClose={() => setShowPaywall(false)}
-          onSubscribe={(planId, billingCycle) => {
-            console.log('Subscribing to plan:', planId, billingCycle);
-            setShowPaywall(false);
-          }}
-          usage={usage}
-        />
-      )}
-    </Page>
+    <EnhancedDashboard shop={shop} />
   );
 }
