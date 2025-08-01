@@ -9,23 +9,23 @@ const fetcher = async (url: string) => {
     : null;
 
   if (!merchantId) {
-    console.log('No merchantId available, skipping influencers fetch');
+    console.log('No merchantId available, skipping settings fetch');
     return null;
   }
 
   const result = await apiFetch(url);
   if (result === null) {
     // Return default structure to prevent React errors
-    return [];
+    return {};
   }
   return result;
 };
 
-export function useInfluencers() {
+export function useSettings() {
   const merchantId = useMerchantId();
 
   const { data, error, isLoading, mutate } = useSWR(
-    merchantId ? '/api/influencers' : null, // Only fetch if merchantId exists
+    merchantId ? '/api/settings' : null, // Only fetch if merchantId exists
     fetcher
   );
 

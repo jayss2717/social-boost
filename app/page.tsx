@@ -14,8 +14,14 @@ export default function Dashboard() {
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const isLoading = metricsLoading || subscriptionLoading || isCheckingOnboarding;
+
+  // Ensure client-side rendering to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Error boundary for React errors
   useEffect(() => {
@@ -40,6 +46,8 @@ export default function Dashboard() {
 
   // Check onboarding status
   useEffect(() => {
+    if (!isClient) return;
+
     const checkOnboarding = async () => {
       try {
         // Get shop from URL or localStorage
@@ -153,7 +161,31 @@ export default function Dashboard() {
     };
 
     checkOnboarding();
-  }, []);
+  }, [isClient]);
+
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <Page title="Dashboard">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                  <Spinner size="large" />
+                  <div className="mt-4">
+                    <Text variant="bodyMd" as="p">
+                      Initializing...
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   if (isLoading) {
     return (

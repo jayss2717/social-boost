@@ -8,8 +8,16 @@ interface ShopifyProviderProps {
 
 export function ShopifyProvider({ children }: ShopifyProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
+    if (!isClient) return;
+
     console.log('ShopifyProvider: Initializing...');
     console.log('Current hostname:', window.location.hostname);
     console.log('Current URL:', window.location.href);
@@ -118,7 +126,19 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
         setIsLoaded(true);
       }
     }
-  }, []);
+  }, [isClient]);
+
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Production-ready loading state
   if (!isLoaded) {
