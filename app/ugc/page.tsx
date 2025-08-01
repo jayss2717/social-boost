@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { Hash, Instagram, Eye, CheckCircle, Send, Filter, Youtube, Twitter, MessageCircle } from 'lucide-react';
+import React from 'react';
 
 interface UgcPost {
   id: string;
@@ -137,15 +138,15 @@ export default function UgcPage() {
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'INSTAGRAM':
-        return <Instagram className="w-4 h-4" />;
+        return React.createElement(Instagram, { className: "w-4 h-4" });
       case 'TIKTOK':
-        return <Hash className="w-4 h-4" />;
+        return React.createElement(Hash, { className: "w-4 h-4" });
       case 'YOUTUBE':
-        return <Youtube className="w-4 h-4" />;
+        return React.createElement(Youtube, { className: "w-4 h-4" });
       case 'TWITTER':
-        return <Twitter className="w-4 h-4" />;
+        return React.createElement(Twitter, { className: "w-4 h-4" });
       default:
-        return <MessageCircle className="w-4 h-4" />;
+        return React.createElement(MessageCircle, { className: "w-4 h-4" });
     }
   };
 

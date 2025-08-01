@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, Banner } from '@shopify/polaris';
 import { useState } from 'react';
 import { ExternalLink, CheckCircle } from 'lucide-react';
+import React from 'react';
 
 export default function InstallPage() {
   const [shopDomain, setShopDomain] = useState('');
@@ -30,7 +31,7 @@ export default function InstallPage() {
             <div className="p-6">
               <BlockStack gap="400">
                 <div className="text-center">
-                  <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+                  {React.createElement(CheckCircle, { className: "w-16 h-16 text-green-600 mx-auto mb-4" })}
                   <Text variant="headingLg" as="h2">
                     Welcome to SocialBoost
                   </Text>
@@ -77,7 +78,7 @@ export default function InstallPage() {
                       variant="primary"
                       onClick={handleInstall}
                       disabled={!shopDomain || isInstalling}
-                      icon={<ExternalLink className="w-4 h-4" />}
+                      icon={() => React.createElement(ExternalLink, { className: "w-4 h-4" })}
                     >
                       {isInstalling ? 'Installing...' : 'Install App'}
                     </Button>

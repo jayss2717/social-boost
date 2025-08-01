@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, Badge, Banner, Modal, Select, Pagination, DataTable } from '@shopify/polaris';
 import { useState, useEffect, useCallback } from 'react';
 import { Hash, Instagram, Youtube, Twitter, Users, TrendingUp, Gift } from 'lucide-react';
+import React from 'react';
 
 interface BrandMention {
   id: string;
@@ -111,15 +112,15 @@ export default function BrandMentionsPage() {
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case 'INSTAGRAM':
-        return <Instagram className="w-4 h-4 text-pink-600" />;
+        return React.createElement(Instagram, { className: "w-4 h-4 text-pink-600" });
       case 'TIKTOK':
-        return <Hash className="w-4 h-4 text-black" />;
+        return React.createElement(Hash, { className: "w-4 h-4 text-black" });
       case 'YOUTUBE':
-        return <Youtube className="w-4 h-4 text-red-600" />;
+        return React.createElement(Youtube, { className: "w-4 h-4 text-red-600" });
       case 'TWITTER':
-        return <Twitter className="w-4 h-4 text-blue-400" />;
+        return React.createElement(Twitter, { className: "w-4 h-4 text-blue-400" });
       default:
-        return <Hash className="w-4 h-4" />;
+        return React.createElement(Hash, { className: "w-4 h-4" });
     }
   };
 
@@ -233,7 +234,7 @@ export default function BrandMentionsPage() {
                         {card.title}
                       </Text>
                     </div>
-                    <card.icon className={`w-8 h-8 text-${card.color}-600`} />
+                    {React.createElement(card.icon, { className: `w-8 h-8 text-${card.color}-600` })}
                   </div>
                 </div>
               </Card>
@@ -308,7 +309,7 @@ export default function BrandMentionsPage() {
 
                 {mentions?.mentions.length === 0 ? (
                   <div className="text-center py-8">
-                    <Hash className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    {React.createElement(Hash, { className: "w-12 h-12 mx-auto mb-4 text-gray-400" })}
                     <Text variant="headingMd" as="h3">
                       No brand mentions found
                     </Text>

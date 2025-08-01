@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { DollarSign, CreditCard, Clock, CheckCircle, Filter, Download, Eye, Send } from 'lucide-react';
+import React from 'react';
 
 interface Payout {
   id: string;
@@ -235,7 +236,7 @@ export default function PayoutsPage() {
                         ${summary?.totalAmount?.toFixed(2) || '0.00'}
                       </Text>
                     </div>
-                    <DollarSign className="w-8 h-8 text-blue-600" />
+                    {React.createElement(DollarSign, { className: "w-8 h-8 text-blue-600" })}
                   </div>
                 </div>
               </Card>
@@ -251,7 +252,7 @@ export default function PayoutsPage() {
                         ${summary?.pendingAmount?.toFixed(2) || '0.00'}
                       </Text>
                     </div>
-                    <Clock className="w-8 h-8 text-orange-600" />
+                    {React.createElement(Clock, { className: "w-8 h-8 text-orange-600" })}
                   </div>
                 </div>
               </Card>
@@ -267,7 +268,7 @@ export default function PayoutsPage() {
                         ${summary?.completedAmount?.toFixed(2) || '0.00'}
                       </Text>
                     </div>
-                    <CheckCircle className="w-8 h-8 text-green-600" />
+                    {React.createElement(CheckCircle, { className: "w-8 h-8 text-green-600" })}
                   </div>
                 </div>
               </Card>
@@ -283,7 +284,7 @@ export default function PayoutsPage() {
                         {summary?.totalPayouts || 0}
                       </Text>
                     </div>
-                    <CreditCard className="w-8 h-8 text-purple-600" />
+                    {React.createElement(CreditCard, { className: "w-8 h-8 text-purple-600" })}
                   </div>
                 </div>
               </Card>

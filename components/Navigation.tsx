@@ -3,6 +3,7 @@
 import { Navigation } from '@shopify/polaris';
 import { Home, Users, Hash, DollarSign, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import React from 'react';
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -14,27 +15,27 @@ export function AppNavigation() {
           {
             label: 'Dashboard',
             url: '/',
-            icon: () => <Home size={20} />,
+            icon: () => React.createElement(Home, { size: 20 }),
           },
           {
             label: 'Influencers',
             url: '/influencers',
-            icon: () => <Users size={20} />,
+            icon: () => React.createElement(Users, { size: 20 }),
           },
           {
             label: 'UGC Posts',
             url: '/ugc',
-            icon: () => <Hash size={20} />,
+            icon: () => React.createElement(Hash, { size: 20 }),
           },
           {
             label: 'Payouts',
             url: '/payouts',
-            icon: () => <DollarSign size={20} />,
+            icon: () => React.createElement(DollarSign, { size: 20 }),
           },
           {
             label: 'Settings',
             url: '/settings',
-            icon: () => <Settings size={20} />,
+            icon: () => React.createElement(Settings, { size: 20 }),
           },
         ]}
       />

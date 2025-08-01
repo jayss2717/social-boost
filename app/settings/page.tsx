@@ -3,6 +3,7 @@
 import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge, Banner, Avatar, Tag } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
 import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
+import React from 'react';
 
 export default function SettingsPage() {
   const [socialMediaAccounts] = useState<Array<{
@@ -771,7 +772,7 @@ export default function SettingsPage() {
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <Instagram className="w-5 h-5 text-pink-600" />
+                          {React.createElement(Instagram, { className: "w-5 h-5 text-pink-600" })}
                           <Text variant="bodyMd" fontWeight="semibold" as="p">
                             Instagram
                           </Text>
@@ -800,7 +801,7 @@ export default function SettingsPage() {
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <Hash className="w-5 h-5 text-black" />
+                          {React.createElement(Hash, { className: "w-5 h-5 text-black" })}
                           <Text variant="bodyMd" fontWeight="semibold" as="p">
                             TikTok
                           </Text>
@@ -843,9 +844,9 @@ export default function SettingsPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               {account.platform === 'INSTAGRAM' ? (
-                                <Instagram className="w-5 h-5 text-pink-600" />
+                                React.createElement(Instagram, { className: "w-5 h-5 text-pink-600" })
                               ) : (
-                                <Hash className="w-5 h-5 text-black" />
+                                React.createElement(Hash, { className: "w-5 h-5 text-black" })
                               )}
                               <div>
                                 <Text variant="bodyMd" fontWeight="semibold" as="p">
@@ -1577,7 +1578,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Shield className="w-4 h-4 text-blue-600" />
+                        {React.createElement(Shield, { className: "w-4 h-4 text-blue-600" })}
                         <Text variant="bodyMd" fontWeight="semibold" as="p">
                           Admin
                         </Text>
@@ -1588,7 +1589,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Users className="w-4 h-4 text-green-600" />
+                        {React.createElement(Users, { className: "w-4 h-4 text-green-600" })}
                         <Text variant="bodyMd" fontWeight="semibold" as="p">
                           Manager
                         </Text>
@@ -1599,7 +1600,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="border rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-2">
-                        <Activity className="w-4 h-4 text-gray-600" />
+                        {React.createElement(Activity, { className: "w-4 h-4 text-gray-600" })}
                         <Text variant="bodyMd" fontWeight="semibold" as="p">
                           Viewer
                         </Text>
@@ -1627,7 +1628,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-2 border rounded">
                       <div className="flex items-center space-x-2">
-                        <Activity className="w-4 h-4 text-blue-600" />
+                        {React.createElement(Activity, { className: "w-4 h-4 text-blue-600" })}
                         <Text variant="bodySm" as="p">
                           Sarah Wilson approved UGC post
                         </Text>
@@ -1638,7 +1639,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center justify-between p-2 border rounded">
                       <div className="flex items-center space-x-2">
-                        <Activity className="w-4 h-4 text-green-600" />
+                        {React.createElement(Activity, { className: "w-4 h-4 text-green-600" })}
                         <Text variant="bodySm" as="p">
                           Discount code sent to influencer
                         </Text>
@@ -1652,7 +1653,7 @@ export default function SettingsPage() {
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
+                    {React.createElement(Shield, { className: "w-4 h-4 text-blue-600" })}
                     <Text variant="bodyMd" fontWeight="semibold" as="p">
                       Upgrade to Pro
                     </Text>
@@ -1738,7 +1739,7 @@ export default function SettingsPage() {
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Globe className="w-4 h-4 text-blue-600" />
+                    {React.createElement(Globe, { className: "w-4 h-4 text-blue-600" })}
                     <Text variant="bodyMd" fontWeight="semibold" as="p">
                       Premium Feature
                     </Text>
