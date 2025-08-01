@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
           onboardingCompleted: true,
           onboardingStep: 5,
           onboardingData: onboardingData,
+          // Don't override OAuth credentials if they exist
         },
         create: {
           shop,

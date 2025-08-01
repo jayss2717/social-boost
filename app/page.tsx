@@ -101,18 +101,32 @@ export default function Dashboard() {
                 console.log('Stored shop:', shop);
                 
                 // Check if credentials are valid
+                console.log('🔍 Checking credentials:', {
+                  accessToken: data.accessToken ? '***' : 'null',
+                  shopifyShopId: data.shopifyShopId,
+                  onboardingCompleted: data.onboardingCompleted
+                });
+                
                 if (data.accessToken === 'pending' || !data.shopifyShopId) {
-                  console.log('⚠️ Invalid credentials detected, redirecting to OAuth...');
-                  
-                  // For embedded apps, we need to redirect the parent window
-                  if (window.parent !== window) {
-                    // We're in an iframe, use the embedded redirect
-                    window.location.href = `/api/auth/shopify/embedded-redirect?shop=${shop}`;
+                  // Check if we've already tried OAuth to prevent infinite loops
+                  const oauthAttempted = sessionStorage.getItem('oauth_attempted');
+                  if (oauthAttempted) {
+                    console.log('⚠️ OAuth already attempted, proceeding with onboarding...');
+                    sessionStorage.removeItem('oauth_attempted');
                   } else {
-                    // We're not in an iframe, redirect normally
-                    window.location.href = `/api/auth/shopify?shop=${shop}`;
+                    console.log('⚠️ Invalid credentials detected, redirecting to OAuth...');
+                    sessionStorage.setItem('oauth_attempted', 'true');
+                    
+                    // For embedded apps, we need to redirect the parent window
+                    if (window.parent !== window) {
+                      // We're in an iframe, use the embedded redirect
+                      window.location.href = `/api/auth/shopify/embedded-redirect?shop=${shop}`;
+                    } else {
+                      // We're not in an iframe, redirect normally
+                      window.location.href = `/api/auth/shopify?shop=${shop}`;
+                    }
+                    return;
                   }
-                  return;
                 }
                 
                 // Dispatch custom event to notify hooks that merchantId is available
