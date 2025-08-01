@@ -10,9 +10,15 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    console.log('ShopifyProvider: Initializing...');
+    console.log('Current hostname:', window.location.hostname);
+    console.log('Current URL:', window.location.href);
+    
     // Check if we're in a Shopify admin context
     const isShopifyAdmin = window.location.hostname.includes('myshopify.com') || 
                           window.location.hostname.includes('shopify.com');
+
+    console.log('Is Shopify admin context:', isShopifyAdmin);
 
     if (isShopifyAdmin) {
       // Initialize Shopify App Bridge with better error handling
@@ -64,6 +70,8 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
     } else {
       // Check if we're in an iframe (Shopify admin context)
       const isInIframe = window !== window.top;
+      console.log('Is in iframe:', isInIframe);
+      
       if (isInIframe) {
         console.log('Detected iframe context, attempting App Bridge initialization');
         // Try to initialize anyway for iframe contexts
@@ -105,6 +113,8 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
         document.head.appendChild(script);
       } else {
         console.log('Not in Shopify admin context, skipping App Bridge initialization');
+        console.log('Setting isLoaded to true for development/testing');
+        // For development/testing, still set as loaded
         setIsLoaded(true);
       }
     }

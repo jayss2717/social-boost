@@ -80,6 +80,28 @@ export default function OnboardingPage() {
     payoutSchedule: 'WEEKLY',
     teamSize: '1-5',
   });
+  const [hasError, setHasError] = useState(false);
+
+  // Error boundary for React errors
+  useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('Global error caught in onboarding:', error);
+      setHasError(true);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection in onboarding:', event.reason);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   useEffect(() => {
     console.log('Onboarding page loaded');
@@ -744,6 +766,35 @@ export default function OnboardingPage() {
         return null;
     }
   };
+
+  // Handle React errors gracefully
+  if (hasError) {
+    return (
+      <Page>
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <div className="p-6 text-center">
+                <Banner tone="critical">
+                  <Text variant="headingLg" as="h2">
+                    Application Error
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Something went wrong with the onboarding. Please refresh the page to try again.
+                  </Text>
+                  <div className="mt-4">
+                    <Button variant="primary" onClick={() => window.location.reload()}>
+                      Refresh Page
+                    </Button>
+                  </div>
+                </Banner>
+              </div>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   return (
     <Page>
