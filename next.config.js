@@ -33,7 +33,7 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'ALLOWALL' },
           { 
             key: 'Content-Security-Policy', 
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://admin.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-ancestors 'self' https://*.myshopify.com https://admin.shopify.com;" 
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.shopify.com https://admin.shopify.com https://*.shopify.com https://monorail-edge.shopifysvc.com https://cdn.shopify.com https://shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https: https://fonts.gstatic.com; connect-src 'self' https: https://*.shopify.com https://monorail-edge.shopifysvc.com https://api.shopify.com; frame-ancestors 'self' https://*.myshopify.com https://admin.shopify.com https://*.shopify.com; object-src 'none'; base-uri 'self'; form-action 'self';" 
           },
         ],
       },
