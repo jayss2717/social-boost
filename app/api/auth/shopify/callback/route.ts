@@ -16,7 +16,9 @@ export async function GET(request: NextRequest) {
 
     if (!shop || !code) {
       console.error('❌ Missing required parameters:', { shop, hasCode: !!code });
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+      // Instead of returning error, redirect to app with error message
+      const errorUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed`;
+      return NextResponse.redirect(errorUrl);
     }
 
     // Exchange code for access token
@@ -268,8 +270,10 @@ export async function GET(request: NextRequest) {
     const onboardingUrl = `${baseUrl}/onboarding?shop=${shop}`;
     console.log('Fallback: redirecting to onboarding:', onboardingUrl);
     return NextResponse.redirect(onboardingUrl);
-  } catch (error) {
-    console.error('Shopify OAuth error:', error);
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
-  }
+      } catch (error) {
+      console.error('Shopify OAuth error:', error);
+      // Redirect to app with error instead of returning JSON
+      const errorUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed`;
+      return NextResponse.redirect(errorUrl);
+    }
 } 

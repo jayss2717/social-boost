@@ -39,9 +39,9 @@ export function useMerchantData(shop?: string) {
     shop ? `/api/merchant?shop=${shop}` : null,
     fetcher,
     {
-      refreshInterval: 10000, // Refresh every 10 seconds during setup
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
+      refreshInterval: 0, // Disable automatic refresh to prevent loops
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
     }
   );
 
@@ -50,25 +50,25 @@ export function useMerchantData(shop?: string) {
     merchantData.accessToken !== 'pending' && 
     merchantData.shopifyShopId;
 
-  // Auto-refresh when OAuth completes
-  useEffect(() => {
-    if (merchantData && !isOAuthCompleted) {
-      // If OAuth is not completed, refresh more frequently
-      const interval = setInterval(() => {
-        mutate();
-      }, 5000); // Check every 5 seconds (less aggressive)
+  // Disable auto-refresh to prevent loops
+  // useEffect(() => {
+  //   if (merchantData && !isOAuthCompleted) {
+  //     // If OAuth is not completed, refresh more frequently
+  //     const interval = setInterval(() => {
+  //       mutate();
+  //     }, 5000); // Check every 5 seconds (less aggressive)
 
-      // Add timeout to prevent infinite loop
-      const timeout = setTimeout(() => {
-        console.log('OAuth timeout reached, stopping refresh');
-      }, 30000); // Stop after 30 seconds (shorter timeout)
+  //     // Add timeout to prevent infinite loop
+  //     const timeout = setTimeout(() => {
+  //       console.log('OAuth timeout reached, stopping refresh');
+  //     }, 30000); // Stop after 30 seconds (shorter timeout)
 
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    }
-  }, [merchantData, isOAuthCompleted, mutate]);
+  //     return () => {
+  //       clearInterval(interval);
+  //       clearTimeout(timeout);
+  //     };
+  //   }
+  // }, [merchantData, isOAuthCompleted, mutate]);
 
   return {
     merchantData,

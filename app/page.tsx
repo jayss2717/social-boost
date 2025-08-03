@@ -71,68 +71,19 @@ export default function DashboardPage() {
               <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
                 <Text variant="headingLg" as="h2">
-                  {isOAuthCompleted ? 'Setting up your store...' : 'Completing Shopify integration...'}
+                  Setting up your SocialBoost account...
                 </Text>
                 <Text variant="bodyMd" as="p" tone="subdued">
-                  {isOAuthCompleted 
-                    ? 'Please wait while we configure your SocialBoost account'
-                    : 'We\'re finalizing your Shopify connection. This may take a few moments...'
-                  }
+                  We're configuring your Shopify integration. This will just take a moment.
                 </Text>
-                {merchantData && !isOAuthCompleted && (
-                  <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
-                    <Text variant="bodySm" as="p" tone="subdued">
-                      <strong>Status:</strong> Waiting for Shopify OAuth completion...
-                    </Text>
-                    <Text variant="bodySm" as="p" tone="subdued">
-                      Access Token: {merchantData.accessToken === 'pending' ? '⏳ Pending' : '✅ Set'}
-                    </Text>
-                    <Text variant="bodySm" as="p" tone="subdued">
-                      Shop ID: {merchantData.shopifyShopId ? '✅ Set' : '⏳ Pending'}
-                    </Text>
-                    <div style={{ marginTop: '1rem' }}>
-                      <Text variant="bodySm" as="p" tone="subdued">
-                        If this takes longer than expected, you can:
-                      </Text>
-                      <div style={{ marginTop: '0.5rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <Button 
-                            size="micro" 
-                            onClick={() => window.location.reload()}
-                            variant="secondary"
-                          >
-                            Refresh Page
-                          </Button>
-                          <Button 
-                            size="micro" 
-                            onClick={() => window.location.href = '/install'}
-                            variant="secondary"
-                          >
-                            Try Again
-                          </Button>
-                          <Button 
-                            size="micro" 
-                            onClick={async () => {
-                              try {
-                                const response = await fetch(`/api/merchant/force-complete?shop=${shop}`, {
-                                  method: 'POST'
-                                });
-                                if (response.ok) {
-                                  window.location.reload();
-                                }
-                              } catch (error) {
-                                console.error('Force complete failed:', error);
-                              }
-                            }}
-                            variant="primary"
-                          >
-                            Skip OAuth (Demo)
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <div style={{ marginTop: '2rem' }}>
+                  <Button 
+                    onClick={() => window.location.reload()}
+                    variant="secondary"
+                  >
+                    Refresh Page
+                  </Button>
+                </div>
               </div>
             </Card>
           </Layout.Section>
