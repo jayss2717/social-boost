@@ -95,21 +95,22 @@ export default function DashboardPage() {
                         If this takes longer than expected, you can:
                       </Text>
                       <div style={{ marginTop: '0.5rem' }}>
-                        <Button 
-                          size="micro" 
-                          onClick={() => window.location.reload()}
-                          variant="secondary"
-                        >
-                          Refresh Page
-                        </Button>
-                        <Button 
-                          size="micro" 
-                          onClick={() => window.location.href = '/install'}
-                          variant="secondary"
-                          style={{ marginLeft: '0.5rem' }}
-                        >
-                          Try Again
-                        </Button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <Button 
+                            size="micro" 
+                            onClick={() => window.location.reload()}
+                            variant="secondary"
+                          >
+                            Refresh Page
+                          </Button>
+                          <Button 
+                            size="micro" 
+                            onClick={() => window.location.href = '/install'}
+                            variant="secondary"
+                          >
+                            Try Again
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
