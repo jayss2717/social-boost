@@ -10,27 +10,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 });
     }
 
-    // Soft delete the merchant (mark as inactive)
-    await prisma.merchant.update({
-      where: { shop },
-      data: { isActive: false },
-    });
+    console.log(`App uninstalled webhook received for shop: ${shop}`);
 
-    // Cancel any active subscriptions
+    // Find the merchant first
     const merchant = await prisma.merchant.findUnique({
       where: { shop },
-      include: { subscription: true },
+      include: { 
+        subscription: true,
+        influencers: true,
+        ugcPosts: true,
+        discountCodes: true,
+        payouts: true,
+        socialMediaAccounts: true,
+        brandMentions: true,
+      },
     });
 
-    if (merchant?.subscription) {
+    if (!merchant) {
+      console.log(`No merchant found for shop: ${shop}`);
+      return NextResponse.json({ success: true, message: 'No merchant found' });
+    }
+
+    // Cancel any active subscriptions
+    if (merchant.subscription) {
       await prisma.subscription.update({
         where: { id: merchant.subscription.id },
         data: { status: 'CANCELED' },
       });
+      console.log(`Cancelled subscription for shop: ${shop}`);
     }
 
-    console.log(`App uninstalled for shop: ${shop}`);
-    return NextResponse.json({ success: true });
+    // Soft delete the merchant (mark as inactive and clear sensitive data)
+    await prisma.merchant.update({
+      where: { shop },
+      data: { 
+        isActive: false,
+        accessToken: null, // Clear sensitive OAuth data
+        scope: null,
+        shopifyShopId: null,
+        // Keep basic info for potential reinstallation
+      },
+    });
+
+    // Log the uninstallation for analytics
+    console.log(`App uninstalled for shop: ${shop} - Merchant ID: ${merchant.id}`);
+    console.log(`Data summary: ${merchant.influencers.length} influencers, ${merchant.ugcPosts.length} UGC posts, ${merchant.discountCodes.length} discount codes`);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'App uninstalled successfully',
+      dataCleared: {
+        accessToken: true,
+        scope: true,
+        shopifyShopId: true,
+      }
+    });
   } catch (error) {
     console.error('App uninstalled webhook error:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
