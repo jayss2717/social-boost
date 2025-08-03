@@ -74,7 +74,7 @@ export default function DashboardPage() {
                   Setting up your SocialBoost account...
                 </Text>
                 <Text variant="bodyMd" as="p" tone="subdued">
-                  We're configuring your Shopify integration. This will just take a moment.
+                  We&apos;re configuring your Shopify integration. This will just take a moment.
                 </Text>
                 <div style={{ marginTop: '2rem' }}>
                   <Button 
