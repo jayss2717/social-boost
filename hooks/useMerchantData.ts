@@ -39,7 +39,7 @@ export function useMerchantData(shop?: string) {
     shop ? `/api/merchant?shop=${shop}` : null,
     fetcher,
     {
-      refreshInterval: 5000, // Refresh every 5 seconds during setup
+      refreshInterval: 10000, // Refresh every 10 seconds during setup
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
     }
@@ -56,12 +56,12 @@ export function useMerchantData(shop?: string) {
       // If OAuth is not completed, refresh more frequently
       const interval = setInterval(() => {
         mutate();
-      }, 2000); // Check every 2 seconds
+      }, 5000); // Check every 5 seconds (less aggressive)
 
       // Add timeout to prevent infinite loop
       const timeout = setTimeout(() => {
         console.log('OAuth timeout reached, stopping refresh');
-      }, 60000); // Stop after 1 minute
+      }, 30000); // Stop after 30 seconds (shorter timeout)
 
       return () => {
         clearInterval(interval);

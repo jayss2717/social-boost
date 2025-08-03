@@ -95,7 +95,7 @@ export default function DashboardPage() {
                         If this takes longer than expected, you can:
                       </Text>
                       <div style={{ marginTop: '0.5rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                           <Button 
                             size="micro" 
                             onClick={() => window.location.reload()}
@@ -109,6 +109,24 @@ export default function DashboardPage() {
                             variant="secondary"
                           >
                             Try Again
+                          </Button>
+                          <Button 
+                            size="micro" 
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/merchant/force-complete?shop=${shop}`, {
+                                  method: 'POST'
+                                });
+                                if (response.ok) {
+                                  window.location.reload();
+                                }
+                              } catch (error) {
+                                console.error('Force complete failed:', error);
+                              }
+                            }}
+                            variant="primary"
+                          >
+                            Skip OAuth (Demo)
                           </Button>
                         </div>
                       </div>
