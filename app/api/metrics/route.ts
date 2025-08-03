@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
         ugcPosts: true,
         discountCodes: true,
         payouts: true,
+        subscription: {
+          include: {
+            plan: true,
+          },
+        },
       },
     });
 
@@ -46,18 +51,38 @@ export async function GET(request: NextRequest) {
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
 
+    // Get subscription data for limits
+    const subscription = merchant.subscription;
+    const plan = subscription?.plan;
+    
+    // Calculate usage metrics
+    const ugcCount = merchant.ugcPosts.length;
+    const influencerCount = merchant.influencers.filter(i => i.isActive).length;
+    const ugcLimit = plan?.ugcLimit || 20;
+    const influencerLimit = plan?.influencerLimit || 5;
+
     // Get metrics for the period
     const metrics = {
-      totalInfluencers: merchant.influencers.length,
-      activeInfluencers: merchant.influencers.filter(i => i.isActive).length,
-      totalUgcPosts: merchant.ugcPosts.length,
-      approvedUgcPosts: merchant.ugcPosts.filter(p => p.isApproved).length,
-      pendingUgcPosts: merchant.ugcPosts.filter(p => !p.isApproved && !p.isRejected).length,
-      rejectedUgcPosts: merchant.ugcPosts.filter(p => p.isRejected).length,
-      totalDiscountCodes: merchant.discountCodes.length,
-      usedDiscountCodes: merchant.discountCodes.filter(c => c.usageCount > 0).length,
-      totalPayouts: merchant.payouts.length,
-      totalPayoutAmount: merchant.payouts.reduce((sum, p) => sum + (p.amount || 0), 0),
+      summary: {
+        totalDiscountCodes: merchant.discountCodes.length,
+        activeDiscountCodes: merchant.discountCodes.filter(c => c.usageCount > 0).length,
+        totalUsage: merchant.discountCodes.reduce((sum, c) => sum + (c.usageCount || 0), 0),
+        totalRevenue: merchant.payouts.reduce((sum, p) => sum + (p.amount || 0), 0),
+        influencerCount: influencerCount,
+        ugcCount: ugcCount,
+        ugcLimit: ugcLimit,
+        influencerLimit: influencerLimit,
+        totalPayouts: merchant.payouts.length,
+        totalPayoutAmount: merchant.payouts.reduce((sum, p) => sum + (p.amount || 0), 0),
+      },
+      performance: {
+        conversionRate: merchant.discountCodes.length > 0 ? 
+          (merchant.discountCodes.filter(c => c.usageCount > 0).length / merchant.discountCodes.length) : 0,
+        averageOrderValue: merchant.payouts.length > 0 ? 
+          (merchant.payouts.reduce((sum, p) => sum + (p.amount || 0), 0) / merchant.payouts.length) : 0,
+        averagePayoutAmount: merchant.payouts.length > 0 ? 
+          (merchant.payouts.reduce((sum, p) => sum + (p.amount || 0), 0) / merchant.payouts.length) : 0,
+      },
       period: period,
       startDate: startDate.toISOString(),
       endDate: now.toISOString(),
