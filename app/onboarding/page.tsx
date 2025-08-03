@@ -70,6 +70,8 @@ export default function OnboardingPage() {
     shopEmail?: string;
     shopDomain?: string;
     shopCurrency?: string;
+    accessToken?: string;
+    shopifyShopId?: string;
   } | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessType: 'ECOMMERCE',
@@ -126,6 +128,14 @@ export default function OnboardingPage() {
           const data = await response.json();
           console.log('Found merchant data:', data);
           
+          // Check if OAuth has been completed
+          if (data.accessToken === 'pending' || !data.shopifyShopId) {
+            console.log('OAuth not completed, redirecting to OAuth flow...');
+            // Redirect to OAuth flow to complete the installation
+            window.location.href = `/api/auth/shopify?shop=${shop}`;
+            return;
+          }
+          
           // Store merchant ID in localStorage if not already set
           if (data.id && !localStorage.getItem('merchantId')) {
             localStorage.setItem('merchantId', data.id);
@@ -147,12 +157,17 @@ export default function OnboardingPage() {
         }
       }
       
-      // If all attempts failed, show error
-      console.error('Failed to fetch merchant data after all attempts');
-      setMerchantData(null);
+      // If all attempts failed, redirect to OAuth flow
+      console.log('Merchant not found after all attempts, redirecting to OAuth flow...');
+      window.location.href = `/api/auth/shopify?shop=${shop}`;
     } catch (error) {
       console.error('Error fetching merchant data:', error);
-      setMerchantData(null);
+      // Redirect to OAuth flow on error
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop');
+      if (shop) {
+        window.location.href = `/api/auth/shopify?shop=${shop}`;
+      }
     }
   };
 
