@@ -90,6 +90,28 @@ export default function DashboardPage() {
                     <Text variant="bodySm" as="p" tone="subdued">
                       Shop ID: {merchantData.shopifyShopId ? '✅ Set' : '⏳ Pending'}
                     </Text>
+                    <div style={{ marginTop: '1rem' }}>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        If this takes longer than expected, you can:
+                      </Text>
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <Button 
+                          size="small" 
+                          onClick={() => window.location.reload()}
+                          variant="secondary"
+                        >
+                          Refresh Page
+                        </Button>
+                        <Button 
+                          size="small" 
+                          onClick={() => window.location.href = '/install'}
+                          variant="secondary"
+                          style={{ marginLeft: '0.5rem' }}
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

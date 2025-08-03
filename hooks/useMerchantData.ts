@@ -58,7 +58,15 @@ export function useMerchantData(shop?: string) {
         mutate();
       }, 2000); // Check every 2 seconds
 
-      return () => clearInterval(interval);
+      // Add timeout to prevent infinite loop
+      const timeout = setTimeout(() => {
+        console.log('OAuth timeout reached, stopping refresh');
+      }, 60000); // Stop after 1 minute
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [merchantData, isOAuthCompleted, mutate]);
 
