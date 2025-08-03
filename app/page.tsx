@@ -96,14 +96,14 @@ export default function DashboardPage() {
                       </Text>
                       <div style={{ marginTop: '0.5rem' }}>
                         <Button 
-                          size="small" 
+                          size="micro" 
                           onClick={() => window.location.reload()}
                           variant="secondary"
                         >
                           Refresh Page
                         </Button>
                         <Button 
-                          size="small" 
+                          size="micro" 
                           onClick={() => window.location.href = '/install'}
                           variant="secondary"
                           style={{ marginLeft: '0.5rem' }}
