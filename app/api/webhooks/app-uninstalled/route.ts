@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
       where: { shop },
       data: { 
         isActive: false,
-        accessToken: null, // Clear sensitive OAuth data
-        scope: null,
-        shopifyShopId: null,
+        accessToken: 'UNINSTALLED', // Clear sensitive OAuth data with placeholder
+        scope: 'UNINSTALLED',
+        shopifyShopId: null, // This field is optional, so null is allowed
         // Keep basic info for potential reinstallation
       },
     });
