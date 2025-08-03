@@ -23,7 +23,7 @@ export default function DashboardPage() {
   }, []);
   
   // Use the new merchant data hook
-  const { merchantData, isLoading: merchantLoading, isOAuthCompleted } = useMerchantData(shop);
+  const { merchantData, isLoading: merchantLoading, isOAuthCompleted } = useMerchantData(shop || undefined);
 
   // Check for new installations and redirect to onboarding
   useEffect(() => {
