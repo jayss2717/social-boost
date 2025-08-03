@@ -6,20 +6,21 @@ import { ShopifyAPI } from '@/lib/shopify';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const shop = searchParams.get('shop');
+  const code = searchParams.get('code');
+  // const state = searchParams.get('state'); // Unused for now
+
+  console.log('🔐 OAuth Callback triggered:', { shop, code: code ? '***' : 'missing' });
+
+  if (!shop || !code) {
+    console.error('❌ Missing required parameters:', { shop, hasCode: !!code });
+    // Instead of returning error, redirect to app with error message
+    const errorUrl = shop ? `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed` : '/install';
+    return NextResponse.redirect(errorUrl);
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const shop = searchParams.get('shop');
-    const code = searchParams.get('code');
-    // const state = searchParams.get('state'); // Unused for now
-
-    console.log('🔐 OAuth Callback triggered:', { shop, code: code ? '***' : 'missing' });
-
-    if (!shop || !code) {
-      console.error('❌ Missing required parameters:', { shop, hasCode: !!code });
-      // Instead of returning error, redirect to app with error message
-      const errorUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed`;
-      return NextResponse.redirect(errorUrl);
-    }
 
     // Exchange code for access token
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
