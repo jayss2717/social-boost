@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
       } catch (error) {
       console.error('Shopify OAuth error:', error);
       // Redirect to app with error instead of returning JSON
-      const errorUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed`;
+      const errorUrl = shop ? `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed` : '/install';
       return NextResponse.redirect(errorUrl);
     }
 } 
