@@ -53,8 +53,17 @@ export function useMetrics(period: string = '30d') {
   const [error, setError] = useState<string | null>(null);
   const merchantId = useMerchantId();
 
+  // Get shop from URL params
+  const [shop, setShop] = useState<string | null>(null);
+  
   useEffect(() => {
-    if (!merchantId) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopParam = urlParams.get('shop');
+    setShop(shopParam);
+  }, []);
+
+  useEffect(() => {
+    if (!merchantId || !shop) {
       setIsLoading(false);
       return;
     }
@@ -64,7 +73,7 @@ export function useMetrics(period: string = '30d') {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/metrics?period=${period}`, {
+        const response = await fetch(`/api/metrics?shop=${shop}&period=${period}`, {
           headers: {
             'x-merchant-id': merchantId,
           },
@@ -85,7 +94,7 @@ export function useMetrics(period: string = '30d') {
     };
 
     fetchMetrics();
-  }, [merchantId, period]);
+  }, [merchantId, shop, period]);
 
   return {
     data,

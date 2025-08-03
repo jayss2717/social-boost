@@ -1,6 +1,7 @@
 import useSWR from 'swr';
 import { apiFetch } from '@/utils/api';
 import { useMerchantId } from './useMerchantId';
+import { useState, useEffect } from 'react';
 
 const fetcher = async (url: string) => {
   // Check if merchantId is available
@@ -32,9 +33,17 @@ const fetcher = async (url: string) => {
 
 export function useSubscription() {
   const merchantId = useMerchantId();
+  const [shop, setShop] = useState<string | null>(null);
+  
+  // Get shop from URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopParam = urlParams.get('shop');
+    setShop(shopParam);
+  }, []);
 
   const { data, error, isLoading, mutate } = useSWR(
-    merchantId ? '/api/subscription' : null, // Only fetch if merchantId exists
+    merchantId && shop ? `/api/subscription?shop=${shop}` : null, // Only fetch if merchantId and shop exist
     fetcher,
     {
       // Prevent SWR from running during SSR
