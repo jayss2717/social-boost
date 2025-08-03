@@ -2,6 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, Badge, DataTable } from '@shopify/polaris';
 import { useMerchantId } from '@/hooks/useMerchantId';
+import { useMerchantData } from '@/hooks/useMerchantData';
 import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
 import { useState, useEffect } from 'react';
@@ -11,6 +12,18 @@ export default function DashboardPage() {
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  
+  // Get shop from URL params
+  const [shop, setShop] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopParam = urlParams.get('shop');
+    setShop(shopParam);
+  }, []);
+  
+  // Use the new merchant data hook
+  const { merchantData, isLoading: merchantLoading, isOAuthCompleted } = useMerchantData(shop);
 
   // Check for new installations and redirect to onboarding
   useEffect(() => {
@@ -48,8 +61,8 @@ export default function DashboardPage() {
     checkForNewInstallation();
   }, [merchantId, isRedirecting]);
 
-  // Show loading state while redirecting
-  if (isRedirecting) {
+  // Show loading state while redirecting or OAuth is in progress
+  if (isRedirecting || (merchantData && !isOAuthCompleted)) {
     return (
       <Page title="Dashboard">
         <Layout>
@@ -58,11 +71,27 @@ export default function DashboardPage() {
               <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
                 <Text variant="headingLg" as="h2">
-                  Setting up your store...
+                  {isOAuthCompleted ? 'Setting up your store...' : 'Completing Shopify integration...'}
                 </Text>
                 <Text variant="bodyMd" as="p" tone="subdued">
-                  Please wait while we configure your SocialBoost account
+                  {isOAuthCompleted 
+                    ? 'Please wait while we configure your SocialBoost account'
+                    : 'We\'re finalizing your Shopify connection. This may take a few moments...'
+                  }
                 </Text>
+                {merchantData && !isOAuthCompleted && (
+                  <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f0f9ff', borderRadius: '8px' }}>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      <strong>Status:</strong> Waiting for Shopify OAuth completion...
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Access Token: {merchantData.accessToken === 'pending' ? '⏳ Pending' : '✅ Set'}
+                    </Text>
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Shop ID: {merchantData.shopifyShopId ? '✅ Set' : '⏳ Pending'}
+                    </Text>
+                  </div>
+                )}
               </div>
             </Card>
           </Layout.Section>
