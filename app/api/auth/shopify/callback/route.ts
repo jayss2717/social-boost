@@ -72,37 +72,58 @@ export async function GET(request: NextRequest) {
     // Create or update merchant in database
     let merchant;
     try {
-      merchant = await prisma.merchant.upsert({
+      // First, try to find existing merchant
+      const existingMerchant = await prisma.merchant.findUnique({
         where: { shop },
-        update: {
-          accessToken,
-          shopName: shopInfo.name,
-          shopEmail: shopInfo.email,
-          shopDomain: shopInfo.domain,
-          shopCurrency: shopInfo.currency,
-          isActive: true,
-        },
-        create: {
-          shop,
-          accessToken,
-          scope,
-          shopName: shopInfo.name,
-          shopEmail: shopInfo.email,
-          shopDomain: shopInfo.domain,
-          shopCurrency: shopInfo.currency,
-          isActive: true,
-          onboardingCompleted: false,
-        },
       });
 
-      console.log('✅ Merchant created/updated:', {
-        id: merchant.id,
-        shop: merchant.shop,
-        shopEmail: merchant.shopEmail,
-        shopDomain: merchant.shopDomain,
-        shopCurrency: merchant.shopCurrency,
-        onboardingCompleted: merchant.onboardingCompleted,
-      });
+      if (existingMerchant) {
+        // Update existing merchant with OAuth data
+        merchant = await prisma.merchant.update({
+          where: { shop },
+          data: {
+            accessToken,
+            scope,
+            shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop, // Set shopifyShopId
+            shopName: shopInfo.name,
+            shopEmail: shopInfo.email,
+            shopDomain: shopInfo.domain,
+            shopCurrency: shopInfo.currency,
+            shopTimezone: shopInfo.timezone,
+            isActive: true,
+          },
+        });
+        console.log('✅ Updated existing merchant with OAuth data');
+      } else {
+        // Create new merchant
+        merchant = await prisma.merchant.create({
+          data: {
+            shop,
+            accessToken,
+            scope,
+            shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop, // Set shopifyShopId
+            shopName: shopInfo.name,
+            shopEmail: shopInfo.email,
+            shopDomain: shopInfo.domain,
+            shopCurrency: shopInfo.currency,
+            shopTimezone: shopInfo.timezone,
+            isActive: true,
+            onboardingCompleted: false,
+          },
+        });
+        console.log('✅ Created new merchant with OAuth data');
+      }
+
+          console.log('✅ Merchant created/updated:', {
+      id: merchant.id,
+      shop: merchant.shop,
+      accessToken: merchant.accessToken ? '***SET***' : 'MISSING',
+      shopifyShopId: merchant.shopifyShopId,
+      shopEmail: merchant.shopEmail,
+      shopDomain: merchant.shopDomain,
+      shopCurrency: merchant.shopCurrency,
+      onboardingCompleted: merchant.onboardingCompleted,
+    });
     } catch (error) {
       console.error('Failed to create/update merchant:', error);
       // If database fails, still redirect to onboarding
