@@ -84,10 +84,66 @@ export function useMetrics(period: string = '30d') {
         }
 
         const metricsData = await response.json();
-        setData(metricsData);
+        
+        // Add null guards to prevent runtime errors
+        if (!metricsData || !metricsData.metrics) {
+          console.warn('No metrics data available, using defaults');
+          setData({
+            period,
+            summary: {
+              totalDiscountCodes: 0,
+              activeDiscountCodes: 0,
+              totalUsage: 0,
+              totalRevenue: 0,
+              influencerCount: 0,
+              ugcCount: 0,
+              ugcLimit: 20,
+              influencerLimit: 5,
+              totalPayouts: 0,
+              totalPayoutAmount: 0,
+            },
+            performance: {
+              conversionRate: 0,
+              averageOrderValue: 0,
+              averagePayoutAmount: 0,
+            },
+            topPerformingCodes: [],
+            recentActivity: [],
+            orderMetrics: [],
+            shopifyAnalytics: null,
+          });
+        } else {
+          setData(metricsData);
+        }
       } catch (err) {
         console.error('Error fetching metrics:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+        
+        // Set default data on error to prevent UI crashes
+        setData({
+          period,
+          summary: {
+            totalDiscountCodes: 0,
+            activeDiscountCodes: 0,
+            totalUsage: 0,
+            totalRevenue: 0,
+            influencerCount: 0,
+            ugcCount: 0,
+            ugcLimit: 20,
+            influencerLimit: 5,
+            totalPayouts: 0,
+            totalPayoutAmount: 0,
+          },
+          performance: {
+            conversionRate: 0,
+            averageOrderValue: 0,
+            averagePayoutAmount: 0,
+          },
+          topPerformingCodes: [],
+          recentActivity: [],
+          orderMetrics: [],
+          shopifyAnalytics: null,
+        });
       } finally {
         setIsLoading(false);
       }

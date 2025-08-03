@@ -131,8 +131,12 @@ export default function OnboardingPage() {
           // Check if OAuth has been completed
           if (data.accessToken === 'pending' || !data.shopifyShopId) {
             console.log('OAuth not completed, redirecting to OAuth flow...');
-            // Redirect to OAuth flow to complete the installation
-            window.location.href = `/api/auth/shopify?shop=${shop}`;
+            // Use top-level redirect to avoid iframe issues
+            if (window.top) {
+              window.top.location.href = `/api/auth/shopify?shop=${shop}`;
+            } else {
+              window.location.href = `/api/auth/shopify?shop=${shop}`;
+            }
             return;
           }
           
@@ -159,14 +163,22 @@ export default function OnboardingPage() {
       
       // If all attempts failed, redirect to OAuth flow
       console.log('Merchant not found after all attempts, redirecting to OAuth flow...');
-      window.location.href = `/api/auth/shopify?shop=${shop}`;
+      if (window.top) {
+        window.top.location.href = `/api/auth/shopify?shop=${shop}`;
+      } else {
+        window.location.href = `/api/auth/shopify?shop=${shop}`;
+      }
     } catch (error) {
       console.error('Error fetching merchant data:', error);
       // Redirect to OAuth flow on error
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       if (shop) {
-        window.location.href = `/api/auth/shopify?shop=${shop}`;
+        if (window.top) {
+          window.top.location.href = `/api/auth/shopify?shop=${shop}`;
+        } else {
+          window.location.href = `/api/auth/shopify?shop=${shop}`;
+        }
       }
     }
   };

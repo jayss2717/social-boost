@@ -6,20 +6,26 @@ import { useMerchantData } from '@/hooks/useMerchantData';
 import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
 import { useState, useEffect } from 'react';
+import { withHost } from '@/utils/withHost';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const merchantId = useMerchantId();
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const router = useRouter();
   
   // Get shop from URL params
   const [shop, setShop] = useState<string | null>(null);
+  const [host, setHost] = useState<string | null>(null);
   
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const shopParam = urlParams.get('shop');
+    const hostParam = urlParams.get('host');
     setShop(shopParam);
+    setHost(hostParam);
   }, []);
   
   // Use the new merchant data hook
@@ -46,7 +52,8 @@ export default function DashboardPage() {
             // If this is a new merchant or onboarding not completed, redirect to onboarding
             if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
               console.log('Redirecting to onboarding...');
-              window.location.href = `/onboarding?shop=${shop}`;
+              const onboardingUrl = withHost('/onboarding', { shop: shop || '', host: host || '' });
+              window.location.href = onboardingUrl;
               return;
             }
           }
@@ -59,7 +66,7 @@ export default function DashboardPage() {
     };
 
     checkForNewInstallation();
-  }, [merchantId, isRedirecting]);
+  }, [merchantId, isRedirecting, host]);
 
   // Show loading state while redirecting or OAuth is in progress
   if (isRedirecting || (merchantData && !isOAuthCompleted)) {
@@ -157,16 +164,16 @@ export default function DashboardPage() {
                 <Text variant="headingMd" as="h3">Quick Actions</Text>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                  <Button url="/influencers" variant="primary">
+                  <Button url={withHost('/influencers', { shop: shop || '', host: host || '' })} variant="primary">
                     Manage Influencers
                   </Button>
-                  <Button url="/ugc">
+                  <Button url={withHost('/ugc', { shop: shop || '', host: host || '' })}>
                     View UGC Posts
                   </Button>
-                  <Button url="/payouts">
+                  <Button url={withHost('/payouts', { shop: shop || '', host: host || '' })}>
                     Process Payouts
                   </Button>
-                  <Button url="/settings">
+                  <Button url={withHost('/settings', { shop: shop || '', host: host || '' })}>
                     Settings
                   </Button>
                 </div>
