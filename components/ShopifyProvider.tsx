@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createApp } from '@shopify/app-bridge';
 
 interface ShopifyProviderProps {
   children: React.ReactNode;
@@ -28,53 +29,37 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
 
     console.log('Is Shopify admin context:', isShopifyAdmin);
 
-    if (isShopifyAdmin) {
-      // Initialize Shopify App Bridge with better error handling
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.8/umd/index.js';
-      script.async = true;
-      
-      script.onload = () => {
-        try {
-          // @ts-ignore
-          if (typeof window.createApp === 'function') {
-            const host = new URLSearchParams(window.location.search).get('host');
-            const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
-            
-            if (!host) {
-              console.warn('No host parameter found, skipping App Bridge initialization');
-              setIsLoaded(true);
-              return;
-            }
-
-            // @ts-ignore
-            const app = window.createApp({
-              apiKey,
-              host,
-              forceRedirect: false, // Changed to false to prevent redirect loops
-            });
-            
-            // Store app instance globally
-            // @ts-ignore
-            window.shopifyApp = app;
-            console.log('Shopify App Bridge initialized successfully');
-            setIsLoaded(true);
-          } else {
-            console.warn('Shopify App Bridge createApp function not available');
-            setIsLoaded(true);
-          }
-        } catch (error) {
-          console.error('Failed to initialize Shopify App Bridge:', error);
-          setIsLoaded(true); // Continue anyway
+    const initializeAppBridge = () => {
+      try {
+        const host = new URLSearchParams(window.location.search).get('host');
+        const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
+        
+        if (!host) {
+          console.warn('No host parameter found, skipping App Bridge initialization');
+          setIsLoaded(true);
+          return;
         }
-      };
-      
-      script.onerror = () => {
-        console.warn('Failed to load Shopify App Bridge script');
+
+        const app = createApp({
+          apiKey,
+          host,
+          forceRedirect: false, // Prevent redirect loops
+        });
+        
+        // Store app instance globally
+        // @ts-ignore
+        window.shopifyApp = app;
+        console.log('Shopify App Bridge initialized successfully');
         setIsLoaded(true);
-      };
-      
-      document.head.appendChild(script);
+      } catch (error) {
+        console.error('Failed to initialize Shopify App Bridge:', error);
+        setIsLoaded(true); // Continue anyway
+      }
+    };
+
+    if (isShopifyAdmin) {
+      // Initialize immediately in Shopify admin context
+      initializeAppBridge();
     } else {
       // Check if we're in an iframe (Shopify admin context)
       const isInIframe = window !== window.top;
@@ -82,43 +67,7 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
       
       if (isInIframe) {
         console.log('Detected iframe context, attempting App Bridge initialization');
-        // Try to initialize anyway for iframe contexts
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@shopify/app-bridge@3.7.8/umd/index.js';
-        script.async = true;
-        
-        script.onload = () => {
-          try {
-            // @ts-ignore
-            if (typeof window.createApp === 'function') {
-              const host = new URLSearchParams(window.location.search).get('host');
-              const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
-              
-              if (host) {
-                // @ts-ignore
-                const app = window.createApp({
-                  apiKey,
-                  host,
-                  forceRedirect: false,
-                });
-                
-                // @ts-ignore
-                window.shopifyApp = app;
-                console.log('Shopify App Bridge initialized in iframe context');
-              }
-            }
-          } catch (error) {
-            console.error('Failed to initialize App Bridge in iframe:', error);
-          }
-          setIsLoaded(true);
-        };
-        
-        script.onerror = () => {
-          console.warn('Failed to load App Bridge script in iframe');
-          setIsLoaded(true);
-        };
-        
-        document.head.appendChild(script);
+        initializeAppBridge();
       } else {
         console.log('Not in Shopify admin context, skipping App Bridge initialization');
         console.log('Setting isLoaded to true for development/testing');
