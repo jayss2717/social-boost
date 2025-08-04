@@ -44,10 +44,13 @@ export async function POST(request: NextRequest) {
           const customer = await stripe.customers.retrieve(session.customer as string) as Stripe.Customer;
           const shop = customer.metadata?.shop;
           
+          console.log('Customer metadata:', customer.metadata);
+          console.log('Shop from metadata:', shop);
+          
           if (shop) {
             const merchant = await prisma.merchant.findUnique({
               where: { shop },
-              include: { subscription: true },
+              include: { subscription: true }
             });
 
             if (merchant) {
@@ -55,8 +58,25 @@ export async function POST(request: NextRequest) {
               const product = await stripe.products.retrieve(subscription.items.data[0].price.product as string);
               const planName = product.name;
               
+              console.log('Stripe product name:', planName);
+              
+              // Map Stripe product names to database plan names
+              const planNameMapping: { [key: string]: string } = {
+                'Pro Plan': 'Pro',
+                'Pro': 'Pro',
+                'Scale Plan': 'Scale',
+                'Scale': 'Scale',
+                'Enterprise Plan': 'Enterprise',
+                'Enterprise': 'Enterprise',
+                'Starter Plan': 'Starter',
+                'Starter': 'Starter',
+              };
+              
+              const mappedPlanName = planNameMapping[planName] || planName;
+              console.log('Mapped plan name:', mappedPlanName);
+              
               const plan = await prisma.plan.findUnique({
-                where: { name: planName },
+                where: { name: mappedPlanName },
               });
 
               if (plan) {
@@ -68,8 +88,10 @@ export async function POST(request: NextRequest) {
                       planId: plan.id,
                       status: 'ACTIVE',
                       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                      stripeSubId: subscription.id,
                     },
                   });
+                  console.log(`Updated subscription for ${merchant.shop} to ${mappedPlanName}`);
                 } else {
                   // Create new subscription
                   await prisma.subscription.create({
@@ -78,12 +100,20 @@ export async function POST(request: NextRequest) {
                       planId: plan.id,
                       status: 'ACTIVE',
                       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                      stripeSubId: subscription.id,
                     },
                   });
+                  console.log(`Created new subscription for ${merchant.shop} with ${mappedPlanName}`);
                 }
-                console.log(`Updated subscription for ${merchant.shop} to ${planName}`);
+              } else {
+                console.error(`Plan not found for name: ${mappedPlanName}`);
+                console.error('Available plans:', await prisma.plan.findMany());
               }
+            } else {
+              console.error(`Merchant not found for shop: ${shop}`);
             }
+          } else {
+            console.error('No shop found in customer metadata');
           }
         }
         break;
@@ -109,8 +139,22 @@ export async function POST(request: NextRequest) {
             const product = await stripe.products.retrieve(subscription.items.data[0].price.product as string);
             const planName = product.name;
             
+            // Map Stripe product names to database plan names
+            const planNameMapping: { [key: string]: string } = {
+              'Pro Plan': 'Pro',
+              'Pro': 'Pro',
+              'Scale Plan': 'Scale',
+              'Scale': 'Scale',
+              'Enterprise Plan': 'Enterprise',
+              'Enterprise': 'Enterprise',
+              'Starter Plan': 'Starter',
+              'Starter': 'Starter',
+            };
+            
+            const mappedPlanName = planNameMapping[planName] || planName;
+            
             const plan = await prisma.plan.findUnique({
-              where: { name: planName },
+              where: { name: mappedPlanName },
             });
 
             if (plan) {
@@ -120,9 +164,10 @@ export async function POST(request: NextRequest) {
                   planId: plan.id,
                   status: subscription.status === 'active' ? 'ACTIVE' : 'CANCELED',
                   currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                  stripeSubId: subscription.id,
                 },
               });
-              console.log(`Updated subscription for ${merchant.shop} to ${planName}`);
+              console.log(`Updated subscription for ${merchant.shop} to ${mappedPlanName}`);
             }
           }
         }
@@ -150,82 +195,10 @@ export async function POST(request: NextRequest) {
               where: { id: merchant.subscription.id },
               data: {
                 status: 'CANCELED',
+                stripeSubId: null,
               },
             });
-            console.log(`Marked subscription as canceled for ${merchant.shop}`);
-          }
-        }
-        break;
-      }
-
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.log('Invoice payment succeeded:', invoice.id);
-        
-        if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          const customers = await stripe.customers.list({
-            limit: 100,
-          });
-          
-          const customer = customers.data.find(c => c.id === subscription.customer);
-          if (customer && customer.metadata?.shop) {
-            const merchant = await prisma.merchant.findUnique({
-              where: { shop: customer.metadata.shop },
-              include: { subscription: true },
-            });
-
-            if (merchant && merchant.subscription) {
-              const product = await stripe.products.retrieve(subscription.items.data[0].price.product as string);
-              const planName = product.name;
-              
-              const plan = await prisma.plan.findUnique({
-                where: { name: planName },
-              });
-
-              if (plan) {
-                await prisma.subscription.update({
-                  where: { id: merchant.subscription.id },
-                  data: {
-                    planId: plan.id,
-                    status: 'ACTIVE',
-                    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                  },
-                });
-                console.log(`Updated subscription for ${merchant.shop} to ${planName} after payment`);
-              }
-            }
-          }
-        }
-        break;
-      }
-
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.log('Invoice payment failed:', invoice.id);
-        
-        if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          const customers = await stripe.customers.list({
-            limit: 100,
-          });
-          
-          const customer = customers.data.find(c => c.id === subscription.customer);
-          if (customer && customer.metadata?.shop) {
-            const merchant = await prisma.merchant.findUnique({
-              where: { shop: customer.metadata.shop },
-              include: { subscription: true },
-            });
-
-            if (merchant && merchant.subscription) {
-              await prisma.subscription.update({
-                where: { id: merchant.subscription.id },
-                data: {
-                  status: 'CANCELED',
-                },
-              });
-              console.log(`Marked subscription as canceled for ${merchant.shop} after failed payment`);
-            }
+            console.log(`Canceled subscription for ${merchant.shop}`);
           }
         }
         break;
@@ -238,6 +211,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Webhook handler failed' },
+      { status: 500 }
+    );
   }
 } 

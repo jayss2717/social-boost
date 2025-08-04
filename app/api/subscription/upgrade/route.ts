@@ -44,7 +44,40 @@ export async function POST(request: NextRequest) {
     // Get the app URL for proper redirects
     const appUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
     
+    // Create or find customer with proper metadata
+    let customer;
+    const existingCustomers = await stripe.customers.list({
+      limit: 100,
+    });
+    
+    customer = existingCustomers.data.find(c => c.metadata?.shop === shop);
+    
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email: merchant.shopEmail || `${storeName}@example.com`,
+        metadata: {
+          shop,
+          merchantId,
+        },
+        name: merchant.shopName || storeName,
+      });
+      console.log(`Created new Stripe customer for ${shop}`);
+    } else {
+      // Update existing customer metadata if needed
+      if (customer.metadata?.shop !== shop) {
+        customer = await stripe.customers.update(customer.id, {
+          metadata: {
+            ...customer.metadata,
+            shop,
+            merchantId,
+          },
+        });
+        console.log(`Updated Stripe customer metadata for ${shop}`);
+      }
+    }
+    
     const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
       payment_method_types: ['card'],
       line_items: [
         {
@@ -62,6 +95,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log(`Created checkout session for ${shop} to upgrade to ${plan}`);
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error('Subscription upgrade error:', error);
