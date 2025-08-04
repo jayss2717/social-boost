@@ -32,12 +32,25 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
 
     const initializeAppBridge = () => {
       try {
-        const host = new URLSearchParams(window.location.search).get('host');
+        // Try to get host from URL params first
+        let host = new URLSearchParams(window.location.search).get('host');
+        
+        // If no host in URL, try to get it from parent window (for iframe scenarios)
+        if (!host && window !== window.top) {
+          try {
+            const parentUrl = new URL(window.parent.location.href);
+            host = parentUrl.searchParams.get('host');
+          } catch (e) {
+            console.log('Could not access parent window for host parameter');
+          }
+        }
+        
         const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
         
         if (!host) {
           console.warn('No host parameter found, skipping App Bridge initialization');
           console.log('This is normal when running outside Shopify admin context');
+          console.log('App will still function normally without App Bridge features');
           setIsLoaded(true);
           return;
         }
@@ -71,10 +84,17 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
         console.log('Detected iframe context, attempting App Bridge initialization');
         initializeAppBridge();
       } else {
-        console.log('Not in Shopify admin context, skipping App Bridge initialization');
-        console.log('Setting isLoaded to true for development/testing');
-        // For development/testing, still set as loaded
-        setIsLoaded(true);
+        // Check if we have shop parameter (indicates Shopify context)
+        const shop = new URLSearchParams(window.location.search).get('shop');
+        if (shop) {
+          console.log('Shop parameter found, attempting App Bridge initialization');
+          initializeAppBridge();
+        } else {
+          console.log('Not in Shopify admin context, skipping App Bridge initialization');
+          console.log('Setting isLoaded to true for development/testing');
+          // For development/testing, still set as loaded
+          setIsLoaded(true);
+        }
       }
     }
   }, [isClient]);
