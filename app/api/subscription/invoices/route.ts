@@ -55,35 +55,47 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get all invoices for the customer
-    if (stripe && merchant.subscription.stripeCustomerId) {
+    // Get all invoices for the customer - try to find Stripe customer by shop
+    if (stripe) {
       try {
-        const invoices = await stripe.invoices.list({
-          customer: merchant.subscription.stripeCustomerId,
-          limit: 10,
+        // Try to find Stripe customer by shop domain
+        const customers = await stripe.customers.list({
+          limit: 100,
         });
+        
+        const customer = customers.data.find(c => 
+          c.metadata?.shop === merchant.shop || 
+          c.email === merchant.shopEmail
+        );
 
-        const formattedInvoices = invoices.data.map(invoice => ({
-          id: invoice.id,
-          number: invoice.number,
-          amount_paid: invoice.amount_paid,
-          currency: invoice.currency,
-          status: invoice.status,
-          created: invoice.created,
-          due_date: invoice.due_date,
-          period_start: invoice.period_start,
-          period_end: invoice.period_end,
-          pdf_url: invoice.hosted_invoice_url,
-          download_url: invoice.invoice_pdf,
-        }));
+        if (customer) {
+          const invoices = await stripe.invoices.list({
+            customer: customer.id,
+            limit: 10,
+          });
 
-        return NextResponse.json({
-          success: true,
-          invoices: formattedInvoices,
-        });
+          const formattedInvoices = invoices.data.map(invoice => ({
+            id: invoice.id,
+            number: invoice.number,
+            amount_paid: invoice.amount_paid,
+            currency: invoice.currency,
+            status: invoice.status,
+            created: invoice.created,
+            due_date: invoice.due_date,
+            period_start: invoice.period_start,
+            period_end: invoice.period_end,
+            pdf_url: invoice.hosted_invoice_url,
+            download_url: invoice.invoice_pdf,
+          }));
+
+          return NextResponse.json({
+            success: true,
+            invoices: formattedInvoices,
+          });
+        }
       } catch (stripeError) {
         console.error('Stripe invoices error:', stripeError);
-        return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
+        // Continue to fallback
       }
     }
 
