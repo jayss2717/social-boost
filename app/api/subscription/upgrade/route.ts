@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`,
+      success_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2?payment_success=true`,
       cancel_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`,
       metadata: {
         merchantId,

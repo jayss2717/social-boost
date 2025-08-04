@@ -33,6 +33,7 @@ export default function DashboardPage() {
     const checkForNewInstallation = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
+      const paymentSuccess = urlParams.get('payment_success');
       
       if (shop && !merchantId && !isRedirecting) {
         console.log('New installation detected, checking merchant status...');
@@ -46,12 +47,31 @@ export default function DashboardPage() {
             // Store merchant ID in localStorage
             localStorage.setItem('merchantId', merchantData.id);
             
+            // If payment was successful, force complete onboarding
+            if (paymentSuccess === 'true') {
+              console.log('Payment successful, completing onboarding...');
+              try {
+                await fetch('/api/merchant/complete-onboarding', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ merchantId: merchantData.id }),
+                });
+                console.log('Onboarding completed after payment');
+              } catch (error) {
+                console.error('Failed to complete onboarding after payment:', error);
+              }
+            }
+            
             // If this is a new merchant or onboarding not completed, redirect to onboarding
             if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
               console.log('Redirecting to onboarding...');
               const onboardingUrl = withHost('/onboarding', { shop: shop || '', host: host || '' });
               window.location.href = onboardingUrl;
               return;
+            } else {
+              console.log('Onboarding already completed, showing dashboard');
             }
           }
         } catch (error) {
