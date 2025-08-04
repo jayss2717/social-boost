@@ -2,6 +2,7 @@
 
 import { Card, Text, ProgressBar, BlockStack, InlineStack, Badge } from '@shopify/polaris';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useEffect } from 'react';
 
 interface UsageMeterProps {
   type: 'ugc' | 'influencer';
@@ -10,6 +11,17 @@ interface UsageMeterProps {
 
 export function UsageMeter({ type, showDetails = true }: UsageMeterProps) {
   const { data: subscription, isLoading } = useSubscription();
+
+  // Debug logging
+  useEffect(() => {
+    if (subscription) {
+      console.log('UsageMeter subscription data:', {
+        plan: subscription.subscription?.plan?.name,
+        usage: subscription.usage,
+        type
+      });
+    }
+  }, [subscription, type]);
 
   if (isLoading || !subscription?.usage) {
     return (

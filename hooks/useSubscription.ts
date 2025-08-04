@@ -48,8 +48,22 @@ export function useSubscription() {
     {
       // Prevent SWR from running during SSR
       revalidateOnMount: typeof window !== 'undefined',
+      // Force refresh when payment is successful
+      revalidateOnFocus: true,
+      refreshInterval: 0, // Disable automatic refresh
     }
   );
+
+  // Force refresh when payment success is detected
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    
+    if (paymentSuccess === 'true' && merchantId && shop) {
+      console.log('Payment success detected, refreshing subscription data...');
+      mutate();
+    }
+  }, [merchantId, shop, mutate]);
 
   return {
     data,
