@@ -98,7 +98,7 @@ export default function DashboardPage() {
             // Store merchant ID in localStorage
             localStorage.setItem('merchantId', merchantData.id);
             
-            // If payment was successful, force complete onboarding
+            // If payment was successful, force complete onboarding and stay on dashboard
             if (paymentSuccess === 'true') {
               console.log('Payment successful, completing onboarding...');
               try {
@@ -114,14 +114,15 @@ export default function DashboardPage() {
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.delete('payment_success');
                 window.history.replaceState({}, '', newUrl.toString());
-                // Don't redirect to onboarding since payment was successful
+                // Don't redirect anywhere - stay on dashboard
+                setIsRedirecting(false);
                 return;
               } catch (error) {
                 console.error('Failed to complete onboarding after payment:', error);
               }
             }
             
-            // Only redirect to onboarding if not a new merchant and onboarding not completed
+            // Only redirect to onboarding if not a new merchant and onboarding not completed AND no payment success
             if (merchantData._newMerchant || (!merchantData.onboardingCompleted && !paymentSuccess)) {
               console.log('Redirecting to onboarding...');
               window.location.href = `/onboarding?shop=${shop}`;
