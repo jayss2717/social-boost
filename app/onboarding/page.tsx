@@ -82,6 +82,7 @@ export default function OnboardingPage() {
     minEngagement: 100,
     payoutSchedule: 'WEEKLY',
     teamSize: '1-5',
+    selectedPlan: 'Pro',
   });
   const [hasError, setHasError] = useState(false);
 
@@ -210,7 +211,7 @@ export default function OnboardingPage() {
       console.log('Completing onboarding with data:', onboardingData);
 
       // If a paid plan is selected, redirect to payment
-      if (onboardingData.selectedPlan && onboardingData.selectedPlan !== 'Starter') {
+      if (onboardingData.selectedPlan && onboardingData.selectedPlan !== 'Starter' && onboardingData.selectedPlan !== undefined) {
         console.log('Paid plan selected, redirecting to payment...');
         
         const merchantId = localStorage.getItem('merchantId');
