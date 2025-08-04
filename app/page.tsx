@@ -39,24 +39,37 @@ export default function DashboardPage() {
     const shop = urlParams.get('shop');
 
     if (paymentSuccess === 'true' && shop) {
-      console.log('Payment success detected, verifying subscription...');
+      console.log('Payment success detected, completing onboarding and verifying subscription...');
       
-      // Verify subscription after payment
-      fetch(`/api/subscription/verify?shop=${shop}`, {
+      // First, complete onboarding
+      fetch('/api/merchant/complete-onboarding', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shop }),
       })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Onboarding completed after payment:', data);
+          
+          // Then verify subscription
+          return fetch(`/api/subscription/verify?shop=${shop}`, {
+            method: 'POST',
+          });
+        })
         .then(response => response.json())
         .then(data => {
           console.log('Subscription verification result:', data);
           if (data.success) {
             // Refresh subscription data
-            if (subscription) {
-              subscription.mutate();
+            if (mutateSubscription) {
+              mutateSubscription();
             }
           }
         })
         .catch(error => {
-          console.error('Failed to verify subscription:', error);
+          console.error('Failed to process payment success:', error);
         });
 
       // Clear the payment_success parameter
@@ -64,7 +77,7 @@ export default function DashboardPage() {
       newUrl.searchParams.delete('payment_success');
       window.history.replaceState({}, '', newUrl.toString());
     }
-  }, [subscription]);
+  }, [mutateSubscription]);
 
   // Check for new installations and redirect to onboarding
   useEffect(() => {
@@ -101,19 +114,17 @@ export default function DashboardPage() {
                 const newUrl = new URL(window.location.href);
                 newUrl.searchParams.delete('payment_success');
                 window.history.replaceState({}, '', newUrl.toString());
+                // Don't redirect to onboarding since payment was successful
+                return;
               } catch (error) {
                 console.error('Failed to complete onboarding after payment:', error);
               }
             }
             
-            // Only redirect to onboarding if this is truly a new merchant or onboarding not completed
+            // Only redirect to onboarding if not a new merchant and onboarding not completed
             if (merchantData._newMerchant || (!merchantData.onboardingCompleted && !paymentSuccess)) {
               console.log('Redirecting to onboarding...');
-              const onboardingUrl = withHost('/onboarding', { shop: shop || '', host: host || '' });
-              window.location.href = onboardingUrl;
-              return;
-            } else {
-              console.log('Onboarding already completed, showing dashboard');
+              window.location.href = `/onboarding?shop=${shop}`;
             }
           }
         } catch (error) {
