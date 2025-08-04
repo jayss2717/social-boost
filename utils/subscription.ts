@@ -34,15 +34,13 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
 
 export const getPlanLimits = (planName: string): PlanLimits => {
   const limits = {
-    'Free': { ugcLimit: 5, influencerLimit: 1 },
-    'Starter': { ugcLimit: 5, influencerLimit: 1 },
-    'Pro': { ugcLimit: 300, influencerLimit: 10 },
-    'Professional': { ugcLimit: 100, influencerLimit: 20 },
-    'Scale': { ugcLimit: 1000, influencerLimit: 50 }, // Match onboarding UI: "50 Influencers"
-    'Enterprise': { ugcLimit: -1, influencerLimit: -1 }, // -1 means unlimited
+    'Starter': { ugcLimit: 5, influencerLimit: 1 }, // Free plan: 1 Influencer, 5 DMs/month
+    'Pro': { ugcLimit: 300, influencerLimit: 10 }, // 10 Influencers, 300 DMs/month
+    'Scale': { ugcLimit: 1000, influencerLimit: 50 }, // 50 Influencers, 1000 DMs/month
+    'Enterprise': { ugcLimit: -1, influencerLimit: -1 }, // Unlimited
   };
 
-  return limits[planName as keyof typeof limits] || limits['Free'];
+  return limits[planName as keyof typeof limits] || limits['Starter'];
 };
 
 export const checkUsageLimit = async (

@@ -12,9 +12,9 @@ async function main() {
       update: {},
       create: {
         name: 'Starter',
-        priceCents: 2900, // $29/month
-        ugcLimit: 20,
-        influencerLimit: 5,
+        priceCents: 0, // Free plan
+        ugcLimit: 5,
+        influencerLimit: 1,
       },
     }),
     prisma.plan.upsert({
@@ -38,21 +38,11 @@ async function main() {
       },
     }),
     prisma.plan.upsert({
-      where: { name: 'Professional' },
-      update: {},
-      create: {
-        name: 'Professional',
-        priceCents: 7900, // $79/month
-        ugcLimit: 100,
-        influencerLimit: 20,
-      },
-    }),
-    prisma.plan.upsert({
       where: { name: 'Enterprise' },
       update: {},
       create: {
         name: 'Enterprise',
-        priceCents: 19900, // $199/month
+        priceCents: 0, // Custom pricing
         ugcLimit: -1, // Unlimited
         influencerLimit: -1, // Unlimited
       },

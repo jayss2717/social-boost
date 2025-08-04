@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         const planMap = {
           Pro: { ugcLimit: 300, influencerLimit: 10 },
-          Scale: { ugcLimit: 1000, influencerLimit: 50 }, // Match onboarding UI: "50 Influencers"
+          Scale: { ugcLimit: 1000, influencerLimit: 50 },
           Enterprise: { ugcLimit: -1, influencerLimit: -1 }, // -1 means unlimited
         };
 
