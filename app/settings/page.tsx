@@ -2038,7 +2038,7 @@ export default function SettingsPage() {
                             </Text>
                           </div>
                           <Tag>
-                            {subscription.subscription.status === 'active' ? 'Active' : subscription.subscription.status}
+                            {subscription.subscription.status === 'ACTIVE' ? 'Active' : subscription.subscription.status}
                           </Tag>
                         </div>
                         {subscription.usage && (
