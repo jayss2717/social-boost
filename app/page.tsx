@@ -38,8 +38,15 @@ export default function DashboardPage() {
     const paymentSuccess = urlParams.get('payment_success');
     const shop = urlParams.get('shop');
 
+    console.log('🔍 Main page payment success check:', {
+      paymentSuccess,
+      shop,
+      currentUrl: window.location.href,
+      isIframe: window !== window.top
+    });
+
     if (paymentSuccess === 'true' && shop) {
-      console.log('Payment success detected, completing onboarding and verifying subscription...');
+      console.log('✅ Payment success detected, completing onboarding and verifying subscription...');
       
       // First, complete onboarding
       fetch('/api/merchant/complete-onboarding', {
