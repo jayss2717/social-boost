@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
     // Get the shop parameter for proper redirect handling
     const shop = merchant.shop;
     
+    // Extract store name from shop URL
+    const storeName = shop.replace('.myshopify.com', '');
+    
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -47,8 +50,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.HOST}/billing?success=true&shop=${shop}`,
-      cancel_url: `${process.env.HOST}/billing?canceled=true&shop=${shop}`,
+      success_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`,
+      cancel_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`,
       metadata: {
         merchantId,
         plan,

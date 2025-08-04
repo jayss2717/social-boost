@@ -231,7 +231,7 @@ export default function OnboardingPage() {
 
         if (response.ok) {
           const { url } = await response.json();
-          // If we're in an iframe context, redirect to top level
+          // Always redirect to top level for Stripe checkout
           if (window !== window.top && window.top !== null) {
             window.top!.location.href = url;
           } else {
@@ -258,12 +258,14 @@ export default function OnboardingPage() {
 
       if (response.ok) {
         console.log('Onboarding completed successfully');
-        // Redirect to dashboard with shop parameter to prevent looping
-        window.location.href = `/?shop=${shop}`;
+        // Redirect to Shopify admin app page
+        const storeName = shop.replace('.myshopify.com', '');
+        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
       } else {
         console.error('Failed to complete onboarding:', response.status);
-        // Still redirect to prevent getting stuck
-        window.location.href = `/?shop=${shop}`;
+        // Still redirect to Shopify admin
+        const storeName = shop.replace('.myshopify.com', '');
+        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
       }
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -271,7 +273,8 @@ export default function OnboardingPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       if (shop) {
-        window.location.href = `/?shop=${shop}`;
+        const storeName = shop.replace('.myshopify.com', '');
+        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
       }
     }
   };
