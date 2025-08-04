@@ -2036,7 +2036,7 @@ export default function SettingsPage() {
                               ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}/month
                             </Text>
                           </div>
-                          <Tag tone={subscription.subscription.status === 'active' ? 'success' : 'warning'}>
+                          <Tag>
                             {subscription.subscription.status === 'active' ? 'Active' : subscription.subscription.status}
                           </Tag>
                         </div>
@@ -2083,7 +2083,7 @@ export default function SettingsPage() {
                               You're currently on the free plan
                             </Text>
                           </div>
-                          <Tag tone="warning">Free</Tag>
+                          <Tag>Free</Tag>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Button 

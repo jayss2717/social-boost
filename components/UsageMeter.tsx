@@ -33,7 +33,7 @@ export function UsageMeter({ type, showDetails = true }: UsageMeterProps) {
 
   const getProgressTone = () => {
     if (isOverLimit) return 'critical';
-    if (isNearLimit) return 'warning';
+    if (isNearLimit) return 'highlight';
     return 'success';
   };
 
@@ -61,7 +61,7 @@ export function UsageMeter({ type, showDetails = true }: UsageMeterProps) {
               {isNearLimit && !isOverLimit && (
                 <Badge tone="warning">Near Limit</Badge>
               )}
-              <Text variant="bodySm" tone="subdued">
+              <Text variant="bodySm" tone="subdued" as="span">
                 {getLimitText()}
               </Text>
             </InlineStack>
@@ -77,7 +77,7 @@ export function UsageMeter({ type, showDetails = true }: UsageMeterProps) {
 
           {showDetails && (
             <div>
-              <Text variant="bodySm" tone="subdued">
+              <Text variant="bodySm" tone="subdued" as="span">
                 {isUnlimited 
                   ? `You have unlimited ${type === 'ugc' ? 'UGC posts' : 'influencers'}`
                   : `${current} ${type === 'ugc' ? 'posts' : 'influencers'} used this month`

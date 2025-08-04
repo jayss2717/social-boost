@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const updatedSubscription = await prisma.subscription.update({
       where: { id: merchant.subscription.id },
       data: {
-        status: cancelAtPeriodEnd ? 'CANCELING' : 'CANCELED',
+        status: cancelAtPeriodEnd ? 'CANCELED' : 'CANCELED',
       },
       include: {
         plan: true,

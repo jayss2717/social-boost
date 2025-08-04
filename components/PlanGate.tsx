@@ -7,7 +7,6 @@ import { useState } from 'react';
 interface PlanGateProps {
   children: React.ReactNode;
   requiredPlan: 'STARTER' | 'PRO' | 'SCALE' | 'ENTERPRISE';
-  fallback?: React.ReactNode;
   showUpgradeButton?: boolean;
 }
 
@@ -21,7 +20,6 @@ const planHierarchy = {
 export function PlanGate({ 
   children, 
   requiredPlan, 
-  fallback,
   showUpgradeButton = true 
 }: PlanGateProps) {
   const { data: subscription, isLoading } = useSubscription();
@@ -48,7 +46,7 @@ export function PlanGate({
             <Text variant="headingMd" as="h3">
               Upgrade Required
             </Text>
-            <Text variant="bodyMd" tone="subdued">
+            <Text variant="bodyMd" tone="subdued" as="p">
               This feature requires a {requiredPlan} plan or higher.
             </Text>
             {showUpgradeButton && (
@@ -101,7 +99,7 @@ export function PlanGate({
             <Text variant="headingMd" as="h3">
               Plan Upgrade Required
             </Text>
-            <Text variant="bodyMd" tone="subdued">
+            <Text variant="bodyMd" tone="subdued" as="p">
               This feature requires a {requiredPlan} plan or higher. 
               You currently have a {currentPlan} plan.
             </Text>

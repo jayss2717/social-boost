@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { merchantId, newPlan, currentPlan } = body;
+    const { merchantId, newPlan } = body;
 
     if (!merchantId) {
       return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });

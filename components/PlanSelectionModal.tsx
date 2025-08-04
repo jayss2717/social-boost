@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Text, Button, BlockStack, InlineStack, Badge, Card } from '@shopify/polaris';
+import { Modal, Text, BlockStack, Badge, Card } from '@shopify/polaris';
 import { useState } from 'react';
 
 interface PlanSelectionModalProps {
@@ -161,15 +161,18 @@ export function PlanSelectionModal({
               const isSelected = plan.id === selectedPlan;
               
               return (
-                <Card
+                <div
                   key={plan.id}
                   style={{
                     border: isSelected ? '2px solid #3B82F6' : '1px solid #E5E7EB',
                     cursor: 'pointer',
                     opacity: isCurrentPlan ? 0.7 : 1,
+                    borderRadius: '0.5rem',
+                    overflow: 'hidden',
                   }}
                   onClick={() => !isCurrentPlan && handlePlanSelect(plan.id)}
                 >
+                  <Card>
                   <div style={{ padding: '1rem' }}>
                     <BlockStack gap="300">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -225,14 +228,15 @@ export function PlanSelectionModal({
                           borderRadius: '0.25rem',
                           textAlign: 'center'
                         }}>
-                          <Text variant="bodySm" fontWeight="semibold" as="p" color="white">
+                          <div style={{ color: 'white', fontSize: '0.875rem', fontWeight: '600' }}>
                             {isUpgrade() ? 'Upgrade' : 'Downgrade'} to {plan.name}
-                          </Text>
+                          </div>
                         </div>
                       )}
                     </BlockStack>
                   </div>
                 </Card>
+                  </div>
               );
             })}
           </div>
