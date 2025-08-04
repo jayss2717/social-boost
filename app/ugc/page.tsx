@@ -6,6 +6,7 @@ import { Hash, Instagram, Eye, CheckCircle, Send, Filter, Youtube, Twitter, Mess
 import React from 'react';
 import { UgcWorkflow } from '@/components/UgcWorkflow';
 import { UgcAnalytics } from '@/components/UgcAnalytics';
+import { apiFetch } from '@/utils/api';
 
 interface UgcPost {
   id: string;
@@ -82,24 +83,19 @@ export default function UgcPage() {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/ugc-posts');
-      const result = await response.json();
+      console.log('🔍 Fetching UGC posts with apiFetch utility...');
+      const data = await apiFetch('/api/ugc-posts');
       
-      // Handle the API response format
-      if (result.success && Array.isArray(result.data)) {
-        setPosts(result.data);
-      } else if (Array.isArray(result)) {
-        // Fallback for direct array response
-        setPosts(result);
+      if (data && Array.isArray(data)) {
+        console.log('✅ UGC posts fetched successfully:', data.length, 'posts');
+        setPosts(data);
       } else {
-        console.error('Invalid response format:', result);
+        console.error('❌ Failed to fetch UGC posts - invalid data format:', data);
         setPosts([]);
       }
     } catch (error) {
-      console.error('Failed to fetch UGC posts:', error);
+      console.error('❌ Failed to fetch UGC posts:', error);
       setPosts([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 

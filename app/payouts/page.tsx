@@ -4,6 +4,7 @@ import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner,
 import { useState, useEffect } from 'react';
 import { DollarSign, CreditCard, Clock, CheckCircle, Filter, Download, Eye, Send } from 'lucide-react';
 import React from 'react';
+import { apiFetch } from '@/utils/api';
 
 interface Payout {
   id: string;
@@ -70,35 +71,33 @@ export default function PayoutsPage() {
 
   const fetchPayouts = async () => {
     try {
-      const response = await fetch('/api/payouts', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log('🔍 Fetching payouts with apiFetch utility...');
+      const data = await apiFetch('/api/payouts');
       
-      if (response.ok) {
-        const data = await response.json();
+      if (data) {
+        console.log('✅ Payouts fetched successfully:', data);
         setPayouts(data.payouts || []);
+      } else {
+        console.error('❌ Failed to fetch payouts - no data returned');
       }
     } catch (error) {
-      console.error('Failed to fetch payouts:', error);
+      console.error('❌ Failed to fetch payouts:', error);
     }
   };
 
   const fetchSummary = async () => {
     try {
-      const response = await fetch('/api/payouts/summary', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log('🔍 Fetching payout summary with apiFetch utility...');
+      const data = await apiFetch('/api/payouts/summary');
       
-      if (response.ok) {
-        const data = await response.json();
+      if (data) {
+        console.log('✅ Payout summary fetched successfully:', data);
         setSummary(data);
+      } else {
+        console.error('❌ Failed to fetch payout summary - no data returned');
       }
     } catch (error) {
-      console.error('Failed to fetch summary:', error);
+      console.error('❌ Failed to fetch payout summary:', error);
     }
   };
 
