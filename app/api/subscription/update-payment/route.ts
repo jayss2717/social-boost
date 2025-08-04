@@ -33,16 +33,28 @@ export async function POST(request: NextRequest) {
 
     // Create a Stripe billing portal session for payment method updates
     if (stripe && merchant.subscription.stripeSubId) {
-      const session = await stripe.billingPortal.sessions.create({
-        customer: merchant.subscription.stripeCustomerId || undefined,
-        return_url: `${process.env.HOST}/settings?shop=${merchant.shop}`,
+      // Try to find Stripe customer by shop domain
+      const customers = await stripe.customers.list({
+        limit: 100,
       });
+      
+      const customer = customers.data.find(c => 
+        c.metadata?.shop === merchant.shop || 
+        c.email === merchant.shopEmail
+      );
 
-      return NextResponse.json({
-        success: true,
-        url: session.url,
-        message: 'Redirecting to payment update...',
-      });
+      if (customer) {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: customer.id,
+          return_url: `${process.env.HOST}/settings?shop=${merchant.shop}`,
+        });
+
+        return NextResponse.json({
+          success: true,
+          url: session.url,
+          message: 'Redirecting to payment update...',
+        });
+      }
     }
 
     // If no Stripe subscription, create a checkout session for new payment method
@@ -52,7 +64,7 @@ export async function POST(request: NextRequest) {
         mode: 'setup',
         success_url: `${process.env.HOST}/settings?success=payment_updated&shop=${merchant.shop}`,
         cancel_url: `${process.env.HOST}/settings?cancel=payment_update&shop=${merchant.shop}`,
-        customer_email: merchant.shopEmail,
+        customer_email: merchant.shopEmail || undefined,
         metadata: {
           merchantId: merchant.id,
           action: 'payment_update',
