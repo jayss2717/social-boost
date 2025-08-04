@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       where: { id: merchant.subscription.id },
       data: {
         status: cancelAtPeriodEnd ? 'CANCELING' : 'CANCELED',
-        canceledAt: new Date(),
       },
       include: {
         plan: true,
@@ -67,7 +66,6 @@ export async function POST(request: NextRequest) {
         id: updatedSubscription.id,
         status: updatedSubscription.status,
         currentPeriodEnd: updatedSubscription.currentPeriodEnd,
-        canceledAt: updatedSubscription.canceledAt,
         plan: updatedSubscription.plan ? {
           id: updatedSubscription.plan.id,
           name: updatedSubscription.plan.name,
