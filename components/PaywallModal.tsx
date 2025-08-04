@@ -40,8 +40,8 @@ const PLANS: Plan[] = [
   },
   {
     id: 'professional',
-    name: 'Professional',
-    priceCents: 7900,
+    name: 'Pro',
+    priceCents: 2999,
     ugcLimit: 100,
     influencerLimit: 20,
     features: [
@@ -50,6 +50,21 @@ const PLANS: Plan[] = [
       'Advanced analytics',
       'Priority support',
       'Custom branding',
+    ],
+  },
+  {
+    id: 'scale',
+    name: 'Scale',
+    priceCents: 6999,
+    ugcLimit: 500,
+    influencerLimit: 50,
+    features: [
+      'Up to 500 UGC posts per month',
+      'Up to 50 active influencers',
+      'Advanced analytics',
+      'Priority support',
+      'Custom branding',
+      'Custom integrations',
     ],
   },
   {

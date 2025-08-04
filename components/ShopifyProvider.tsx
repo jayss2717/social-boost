@@ -51,8 +51,20 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
           console.warn('No host parameter found, skipping App Bridge initialization');
           console.log('This is normal when running outside Shopify admin context');
           console.log('App will still function normally without App Bridge features');
-          setIsLoaded(true);
-          return;
+          
+          // For development/testing, you can mock the host parameter
+          if (process.env.NODE_ENV === 'development') {
+            const shop = new URLSearchParams(window.location.search).get('shop');
+            if (shop) {
+              console.log('Development mode: Using shop as host parameter for testing');
+              host = shop;
+            }
+          }
+          
+          if (!host) {
+            setIsLoaded(true);
+            return;
+          }
         }
 
         const app = createApp({

@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const planPrices = {
       Pro: process.env.STRIPE_PRO_PRICE_ID,
       Scale: process.env.STRIPE_SCALE_PRICE_ID,
+      Enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID,
     };
 
     const priceId = planPrices[plan as keyof typeof planPrices];

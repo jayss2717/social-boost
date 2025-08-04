@@ -589,10 +589,34 @@ export default function SettingsPage() {
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
-  const handleChangePlan = () => {
-    console.log('Opening plan change...');
-    setSaveMessage('Opening plan change...');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleChangePlan = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      // For now, redirect to Pro plan upgrade
+      const response = await fetch('/api/subscription/upgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
+        },
+        body: JSON.stringify({ plan: 'Pro' }),
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        window.location.href = url;
+      } else {
+        setSaveMessage('❌ Failed to create payment session');
+      }
+    } catch (error) {
+      console.error('Error changing plan:', error);
+      setSaveMessage('❌ Error changing plan');
+    }
   };
 
   const handleCancelSubscription = () => {
@@ -1922,7 +1946,7 @@ export default function SettingsPage() {
                           Pro Plan
                         </Text>
                         <Text variant="bodySm" tone="subdued" as="p">
-                          $29/month
+                          $29.99/month
                         </Text>
                       </div>
                       <Tag>Active</Tag>

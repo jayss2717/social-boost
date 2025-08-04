@@ -209,6 +209,36 @@ export default function OnboardingPage() {
 
       console.log('Completing onboarding with data:', onboardingData);
 
+      // If a paid plan is selected, redirect to payment
+      if (onboardingData.selectedPlan && onboardingData.selectedPlan !== 'Starter') {
+        console.log('Paid plan selected, redirecting to payment...');
+        
+        const merchantId = localStorage.getItem('merchantId');
+        if (!merchantId) {
+          console.error('No merchant ID found');
+          return;
+        }
+
+        const response = await fetch('/api/subscription/upgrade', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-merchant-id': merchantId,
+          },
+          body: JSON.stringify({ plan: onboardingData.selectedPlan }),
+        });
+
+        if (response.ok) {
+          const { url } = await response.json();
+          window.location.href = url;
+          return;
+        } else {
+          console.error('Failed to create payment session:', response.status);
+          // Fall back to completing onboarding without payment
+        }
+      }
+
+      // Complete onboarding (for free plan or if payment failed)
       const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: {
@@ -643,7 +673,12 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Starter Plan */}
-                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                  <div 
+                    className={`border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors ${
+                      onboardingData.selectedPlan === 'Starter' ? 'border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => updateOnboardingData('selectedPlan', 'Starter')}
+                  >
                     <div className="text-center">
                       <Text variant="headingMd" as="h3" fontWeight="bold">
                         Starter
@@ -672,13 +707,18 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Pro Plan */}
-                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors bg-blue-50 border-blue-200">
+                  <div 
+                    className={`border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors ${
+                      onboardingData.selectedPlan === 'Pro' ? 'border-blue-500 bg-blue-50' : 'bg-blue-50 border-blue-200'
+                    }`}
+                    onClick={() => updateOnboardingData('selectedPlan', 'Pro')}
+                  >
                     <div className="text-center">
                       <Text variant="headingMd" as="h3" fontWeight="bold">
                         Pro
                       </Text>
                       <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
-                        $19.99
+                        $29.99
                       </Text>
                       <Text variant="bodySm" tone="subdued" as="p">
                         Most popular choice
@@ -705,13 +745,18 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Scale Plan */}
-                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                  <div 
+                    className={`border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors ${
+                      onboardingData.selectedPlan === 'Scale' ? 'border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => updateOnboardingData('selectedPlan', 'Scale')}
+                  >
                     <div className="text-center">
                       <Text variant="headingMd" as="h3" fontWeight="bold">
                         Scale
                       </Text>
                       <Text variant="headingLg" as="p" fontWeight="bold" tone="success">
-                        $59.99
+                        $69.99
                       </Text>
                       <Text variant="bodySm" tone="subdued" as="p">
                         For growing businesses
@@ -742,7 +787,12 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Enterprise Plan */}
-                  <div className="border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors">
+                  <div 
+                    className={`border rounded-lg p-4 hover:border-blue-500 cursor-pointer transition-colors ${
+                      onboardingData.selectedPlan === 'Enterprise' ? 'border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => updateOnboardingData('selectedPlan', 'Enterprise')}
+                  >
                     <div className="text-center">
                       <Text variant="headingMd" as="h3" fontWeight="bold">
                         Enterprise
@@ -779,18 +829,10 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="skipPlan"
-                    className="rounded"
-                    onChange={(e) => updateOnboardingData('selectedPlan', e.target.checked ? 'Starter' : undefined)}
-                  />
-                  <label htmlFor="skipPlan">
-                    <Text variant="bodySm" as="span">
-                      Start with free plan (I&apos;ll upgrade later)
-                    </Text>
-                  </label>
+                <div className="mt-6 text-center">
+                  <Text variant="bodyMd" tone="subdued" as="p">
+                    Select your plan to continue. You can upgrade or downgrade anytime from your settings.
+                  </Text>
                 </div>
               </BlockStack>
             </div>
