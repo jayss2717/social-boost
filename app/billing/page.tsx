@@ -15,6 +15,31 @@ function BillingContent() {
 
     if (success) {
       setStatus('success');
+      
+      // Update merchant onboarding status after successful payment
+      const updateMerchantStatus = async () => {
+        try {
+          const merchantId = localStorage.getItem('merchantId');
+          if (merchantId) {
+            const response = await fetch('/api/merchant/complete-onboarding', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ merchantId }),
+            });
+            
+            if (response.ok) {
+              console.log('Merchant onboarding status updated after payment');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to update merchant status:', error);
+        }
+      };
+      
+      updateMerchantStatus();
+      
       // If we're in an iframe context, redirect to the main app
       if (window !== window.top && window.top !== null) {
         setTimeout(() => {
