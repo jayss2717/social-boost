@@ -605,7 +605,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const currentPlan = subscription?.subscription?.plan?.name || 'STARTER';
+      const currentPlan = subscription?.subscription?.plan?.name || 'Starter';
 
       // If downgrading to free plan, handle immediately
       if (newPlan === 'STARTER') {

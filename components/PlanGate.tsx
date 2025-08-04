@@ -86,7 +86,7 @@ export function PlanGate({
     );
   }
 
-  const currentPlan = subscription.subscription.plan?.name || 'STARTER';
+  const currentPlan = subscription.subscription.plan?.name || 'Starter';
   const currentPlanLevel = planHierarchy[currentPlan as keyof typeof planHierarchy] || 0;
   const requiredPlanLevel = planHierarchy[requiredPlan];
 

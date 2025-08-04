@@ -18,14 +18,14 @@ async function seedPlans() {
         influencerLimit: 1,
       },
       {
-        name: 'PRO',
-        priceCents: 1999, // $19.99
+        name: 'Pro',
+        priceCents: 2999, // $29.99/month
         ugcLimit: 300,
         influencerLimit: 10,
       },
       {
-        name: 'SCALE',
-        priceCents: 5999, // $59.99
+        name: 'Scale',
+        priceCents: 6999, // $69.99/month
         ugcLimit: 1000,
         influencerLimit: 50,
       },

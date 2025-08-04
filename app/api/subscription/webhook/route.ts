@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           planRecord = await prisma.plan.create({
             data: {
               name: plan,
-              priceCents: plan === 'Pro' ? 2900 : 9900,
+              priceCents: plan === 'Pro' ? 2999 : plan === 'Scale' ? 6999 : 0,
               ugcLimit: planData.ugcLimit,
               influencerLimit: planData.influencerLimit,
             },

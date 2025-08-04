@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const usage = await getSubscriptionUsage(merchant.id);
 
     // Get current plan
-    const currentPlan = merchant.subscription?.plan?.name || 'STARTER';
+    const currentPlan = merchant.subscription?.plan?.name || 'Starter';
 
     return NextResponse.json({
       success: true,
