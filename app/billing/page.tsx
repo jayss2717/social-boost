@@ -16,17 +16,17 @@ function BillingContent() {
     if (success) {
       setStatus('success');
       // If we're in an iframe context, redirect to the main app
-      if (window !== window.top && window.top) {
+      if (window !== window.top && window.top !== null) {
         setTimeout(() => {
-          window.top.location.href = `/?shop=${shop}`;
+          window.top!.location.href = `/?shop=${shop}`;
         }, 2000);
       }
     } else if (canceled) {
       setStatus('canceled');
       // If we're in an iframe context, redirect to the main app
-      if (window !== window.top && window.top) {
+      if (window !== window.top && window.top !== null) {
         setTimeout(() => {
-          window.top.location.href = `/?shop=${shop}`;
+          window.top!.location.href = `/?shop=${shop}`;
         }, 2000);
       }
     }

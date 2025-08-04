@@ -610,8 +610,8 @@ export default function SettingsPage() {
       if (response.ok) {
         const { url } = await response.json();
         // If we're in an iframe context, redirect to top level
-        if (window !== window.top && window.top) {
-          window.top.location.href = url;
+        if (window !== window.top && window.top !== null) {
+          window.top!.location.href = url;
         } else {
           window.location.href = url;
         }
