@@ -2080,7 +2080,7 @@ export default function SettingsPage() {
                               No Active Plan
                             </Text>
                             <Text variant="bodySm" tone="subdued" as="p">
-                              You're currently on the free plan
+                              You&apos;re currently on the free plan
                             </Text>
                           </div>
                           <Tag>Free</Tag>
