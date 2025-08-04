@@ -25,7 +25,8 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
     
     // Check if we're in a Shopify admin context
     const isShopifyAdmin = window.location.hostname.includes('myshopify.com') || 
-                          window.location.hostname.includes('shopify.com');
+                          window.location.hostname.includes('shopify.com') ||
+                          window.location.hostname.includes('shopify.dev');
 
     console.log('Is Shopify admin context:', isShopifyAdmin);
 
@@ -36,6 +37,7 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
         
         if (!host) {
           console.warn('No host parameter found, skipping App Bridge initialization');
+          console.log('This is normal when running outside Shopify admin context');
           setIsLoaded(true);
           return;
         }
