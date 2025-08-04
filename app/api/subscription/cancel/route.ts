@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If subscription has a Stripe subscription ID, cancel it in Stripe
-    if (merchant.subscription.stripeSubId) {
+    if (merchant.subscription.stripeSubId && stripe) {
       try {
         if (cancelAtPeriodEnd) {
           // Cancel at period end
