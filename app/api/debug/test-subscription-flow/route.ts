@@ -25,16 +25,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    const currentStatus = {
-      shop: merchant.shop,
-      plan: merchant.subscription?.plan?.name || 'No subscription',
-      status: merchant.subscription?.status || 'No subscription',
-      limits: merchant.subscription?.plan ? {
-        ugcLimit: merchant.subscription.plan.ugcLimit,
-        influencerLimit: merchant.subscription.plan.influencerLimit,
-      } : null,
-    };
-
     // 2. Check Stripe customer
     let stripeCustomer = null;
     if (stripe) {
