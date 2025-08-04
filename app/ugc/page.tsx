@@ -96,6 +96,9 @@ export default function UgcPage() {
     } catch (error) {
       console.error('❌ Failed to fetch UGC posts:', error);
       setPosts([]);
+    } finally {
+      console.log('🔍 Setting isLoading to false');
+      setIsLoading(false);
     }
   };
 

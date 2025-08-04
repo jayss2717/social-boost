@@ -38,13 +38,16 @@ export default function PayoutsPage() {
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
-  const [isLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchPayouts();
-    fetchSummary();
+    const loadData = async () => {
+      await Promise.all([fetchPayouts(), fetchSummary()]);
+      setIsLoading(false);
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
