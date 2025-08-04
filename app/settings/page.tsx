@@ -730,6 +730,47 @@ export default function SettingsPage() {
     }
   };
 
+  const handleReactivateSubscription = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      if (!subscription?.subscription) {
+        setSaveMessage('❌ No subscription found');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        'Are you sure you want to reactivate your subscription? You will be charged for the next billing period.'
+      );
+
+      if (!confirmed) return;
+
+      const response = await fetch('/api/subscription/reactivate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ merchantId }),
+      });
+
+      if (response.ok) {
+        setSaveMessage('✅ Subscription has been reactivated successfully');
+        // Refresh subscription data
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        setSaveMessage(`❌ Failed to reactivate subscription: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error reactivating subscription:', error);
+      setSaveMessage('❌ Error reactivating subscription');
+    }
+  };
+
   const handleUpdatePayment = async () => {
     try {
       const merchantId = localStorage.getItem('merchantId');
@@ -2142,9 +2183,16 @@ export default function SettingsPage() {
                             <Text variant="bodySm" tone="subdued" as="p">
                               ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}/month
                             </Text>
+                            {subscription.subscription.status === 'CANCELED' && (
+                              <Text variant="bodySm" tone="critical" as="p">
+                                Access ends: {new Date(subscription.subscription.currentPeriodEnd).toLocaleDateString()}
+                              </Text>
+                            )}
                           </div>
                           <Tag>
-                            {subscription.subscription.status === 'ACTIVE' ? 'Active' : subscription.subscription.status}
+                            {subscription.subscription.status === 'ACTIVE' ? 'Active' : 
+                             subscription.subscription.status === 'CANCELED' ? 'Canceled' : 
+                             subscription.subscription.status}
                           </Tag>
                         </div>
                         {subscription.usage && (
@@ -2163,20 +2211,37 @@ export default function SettingsPage() {
                           </div>
                         )}
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            size="slim" 
-                            variant="secondary"
-                            onClick={handleChangePlan}
-                          >
-                            Change Plan
-                          </Button>
-                          <Button 
-                            size="slim" 
-                            variant="secondary"
-                            onClick={handleCancelSubscription}
-                          >
-                            Cancel
-                          </Button>
+                          {subscription.subscription.status === 'CANCELED' ? (
+                            <>
+                              <Button 
+                                size="slim" 
+                                variant="primary"
+                                onClick={handleReactivateSubscription}
+                              >
+                                Reactivate Plan
+                              </Button>
+                              <Text variant="bodySm" tone="subdued" as="p">
+                                You can reactivate anytime before {new Date(subscription.subscription.currentPeriodEnd).toLocaleDateString()}
+                              </Text>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                size="slim" 
+                                variant="secondary"
+                                onClick={handleChangePlan}
+                              >
+                                Change Plan
+                              </Button>
+                              <Button 
+                                size="slim" 
+                                variant="secondary"
+                                onClick={handleCancelSubscription}
+                              >
+                                Cancel
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </>
                     ) : (
