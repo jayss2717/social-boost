@@ -26,7 +26,6 @@ export function SubscriptionBanner() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
         },
         body: JSON.stringify({ plan: 'Pro' }),
       });

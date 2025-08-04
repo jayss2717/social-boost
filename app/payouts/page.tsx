@@ -72,25 +72,16 @@ export default function PayoutsPage() {
     try {
       const response = await fetch('/api/payouts', {
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      const result = await response.json();
       
-      // Handle the API response format
-      if (result.success && Array.isArray(result.data)) {
-        setPayouts(result.data);
-      } else if (Array.isArray(result)) {
-        setPayouts(result);
-      } else {
-        console.error('Invalid response format:', result);
-        setPayouts([]);
+      if (response.ok) {
+        const data = await response.json();
+        setPayouts(data.payouts || []);
       }
     } catch (error) {
       console.error('Failed to fetch payouts:', error);
-      setPayouts([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -98,67 +89,53 @@ export default function PayoutsPage() {
     try {
       const response = await fetch('/api/payouts/summary', {
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
       
-      if (!response.ok) {
-        console.error('Failed to fetch payout summary:', response.status, response.statusText);
-        setSummary(null);
-        return;
-      }
-      
-      const result = await response.json();
-      
-      // Handle the API response format
-      if (result.success && result.data) {
-        setSummary(result.data);
-      } else if (result.success && result.data === null) {
-        setSummary(null);
-      } else {
-        console.error('Invalid response format:', result);
-        setSummary(null);
+      if (response.ok) {
+        const data = await response.json();
+        setSummary(data);
       }
     } catch (error) {
-      console.error('Failed to fetch payout summary:', error);
-      setSummary(null);
+      console.error('Failed to fetch summary:', error);
     }
   };
 
-  const handleProcessPayout = async (payoutId: string) => {
+  const processPayout = async (payoutId: string) => {
     try {
       const response = await fetch(`/api/payouts/${payoutId}/process`, {
         method: 'POST',
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-
+      
       if (response.ok) {
-        setShowProcessModal(false);
+        // Refresh payouts after processing
         fetchPayouts();
-        fetchSummary();
       }
     } catch (error) {
       console.error('Failed to process payout:', error);
     }
   };
 
-  const handleBulkProcess = async () => {
+  const bulkProcessPayouts = async () => {
     try {
       const response = await fetch('/api/payouts/bulk-process', {
         method: 'POST',
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-
+      
       if (response.ok) {
+        // Refresh payouts after processing
         fetchPayouts();
         fetchSummary();
       }
     } catch (error) {
-      console.error('Failed to process bulk payouts:', error);
+      console.error('Failed to bulk process payouts:', error);
     }
   };
 
@@ -216,7 +193,7 @@ export default function PayoutsPage() {
       primaryAction={{
         content: 'Process All Pending',
                     icon: () => React.createElement(Send, { size: 20 }),
-        onAction: handleBulkProcess,
+        onAction: bulkProcessPayouts,
         disabled: pendingPayouts.length === 0,
       }}
     >
@@ -413,7 +390,7 @@ export default function PayoutsPage() {
           title={`Process Payout for ${selectedPayout?.influencer.name}`}
           primaryAction={{
             content: 'Process Payout',
-            onAction: () => selectedPayout && handleProcessPayout(selectedPayout.id),
+            onAction: () => selectedPayout && processPayout(selectedPayout.id),
           }}
           secondaryActions={[
             {

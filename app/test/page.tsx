@@ -36,8 +36,8 @@ export default function TestPage() {
     try {
       const subscriptionResponse = await fetch('/api/subscription', {
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
       results.subscription = {
         status: subscriptionResponse.status,
@@ -76,8 +76,8 @@ export default function TestPage() {
     try {
       const payoutsResponse = await fetch('/api/payouts', {
         headers: {
-          'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd'
-        }
+          'Content-Type': 'application/json',
+        },
       });
       results.payouts = {
         status: payoutsResponse.status,
