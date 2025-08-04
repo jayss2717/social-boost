@@ -45,12 +45,12 @@ function BillingContent() {
       
       // Redirect to dashboard with payment success parameter
       setTimeout(() => {
-        // In Shopify admin context, redirect to the app's dashboard
+        // In Shopify admin context, redirect directly to dashboard
         if (window !== window.top && window.top !== null) {
-          // In Shopify admin iframe, redirect the top window to the app
-          const appUrl = shop ? `/apps/socialboost-2?shop=${shop}&payment_success=true` : '/apps/socialboost-2?payment_success=true';
-          console.log('🔄 Redirecting to app URL:', appUrl);
-          window.top!.location.href = appUrl;
+          // In Shopify admin iframe, redirect the top window directly to dashboard
+          const dashboardUrl = shop ? `/?shop=${shop}&payment_success=true` : '/?payment_success=true';
+          console.log('🔄 Redirecting top window to dashboard:', dashboardUrl);
+          window.top!.location.href = dashboardUrl;
         } else {
           // Direct access, redirect to dashboard
           const dashboardUrl = shop ? `/?shop=${shop}&payment_success=true` : '/?payment_success=true';
@@ -62,12 +62,12 @@ function BillingContent() {
       setStatus('canceled');
       // Redirect back to dashboard
       setTimeout(() => {
-        // In Shopify admin context, redirect to the app
+        // In Shopify admin context, redirect directly to dashboard
         if (window !== window.top && window.top !== null) {
-          // In Shopify admin iframe, redirect the top window to the app
-          const appUrl = shop ? `/apps/socialboost-2?shop=${shop}` : '/apps/socialboost-2';
-          console.log('🔄 Redirecting to app URL (canceled):', appUrl);
-          window.top!.location.href = appUrl;
+          // In Shopify admin iframe, redirect the top window directly to dashboard
+          const dashboardUrl = shop ? `/?shop=${shop}` : '/';
+          console.log('🔄 Redirecting top window to dashboard (canceled):', dashboardUrl);
+          window.top!.location.href = dashboardUrl;
         } else {
           // Direct access, redirect to dashboard
           const dashboardUrl = shop ? `/?shop=${shop}` : '/';
@@ -81,12 +81,12 @@ function BillingContent() {
       
       // Redirect back to dashboard after showing error
       setTimeout(() => {
-        // In Shopify admin context, redirect to the app
+        // In Shopify admin context, redirect directly to dashboard
         if (window !== window.top && window.top !== null) {
-          // In Shopify admin iframe, redirect the top window to the app
-          const appUrl = shop ? `/apps/socialboost-2?shop=${shop}` : '/apps/socialboost-2';
-          console.log('🔄 Redirecting to app URL (failed):', appUrl);
-          window.top!.location.href = appUrl;
+          // In Shopify admin iframe, redirect the top window directly to dashboard
+          const dashboardUrl = shop ? `/?shop=${shop}` : '/';
+          console.log('🔄 Redirecting top window to dashboard (failed):', dashboardUrl);
+          window.top!.location.href = dashboardUrl;
         } else {
           // Direct access, redirect to dashboard
           const dashboardUrl = shop ? `/?shop=${shop}` : '/';
