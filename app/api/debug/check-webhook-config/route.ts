@@ -12,20 +12,40 @@ export async function GET(request: NextRequest) {
     const result: {
       success: boolean;
       message: string;
-      webhookUrl: string;
-      stripeConfigured: boolean;
-      webhookSecret: boolean;
-      customerExists: boolean;
-      customerMetadata: any;
+      stripe: {
+        configured: boolean;
+        apiKey: string | null;
+        webhookSecret: string | null;
+      };
+      webhook: {
+        endpoint: string;
+        secret: string | null;
+        events: string[];
+      };
+      customer: {
+        exists: boolean;
+        id: string | null;
+        metadata: Record<string, unknown> | null;
+      };
       recommendations: string[];
     } = {
       success: true,
       message: 'Webhook configuration check completed',
-      webhookUrl: 'https://socialboost-blue.vercel.app/api/subscription/webhook',
-      stripeConfigured: !!stripe,
-      webhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      customerExists: false,
-      customerMetadata: null,
+      stripe: {
+        configured: !!stripe,
+        apiKey: process.env.STRIPE_SECRET_KEY ? 'configured' : null,
+        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ? 'configured' : null,
+      },
+      webhook: {
+        endpoint: `${process.env.HOST || 'https://socialboost-blue.vercel.app'}/api/subscription/webhook`,
+        secret: process.env.STRIPE_WEBHOOK_SECRET ? 'configured' : null,
+        events: ['checkout.session.completed', 'customer.subscription.updated', 'customer.subscription.deleted', 'invoice.payment_succeeded', 'invoice.payment_failed'],
+      },
+      customer: {
+        exists: false,
+        id: null,
+        metadata: null,
+      },
       recommendations: [],
     };
 
@@ -49,8 +69,9 @@ export async function GET(request: NextRequest) {
       const customer = customers.data.find(c => c.metadata?.shop === shop);
       
       if (customer) {
-        result.customerExists = true;
-        result.customerMetadata = customer.metadata;
+        result.customer.exists = true;
+        result.customer.id = customer.id;
+        result.customer.metadata = customer.metadata;
         console.log('✅ Stripe customer found:', {
           id: customer.id,
           metadata: customer.metadata,

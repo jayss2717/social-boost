@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
     
     // Create proper Shopify app URLs using the correct app handle
     const shopifyAppUrl = `https://${shop}/admin/apps/socialboost-2`;
-    const standaloneAppUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
     
     // Create or find customer with proper metadata
     let customer;

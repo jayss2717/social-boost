@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const planNames = plans.map(p => p.name);
 
     // 4. Check Stripe products (if configured)
-    let stripeProducts = null;
+    let stripeProducts: Array<{ id: string; name: string }> = [];
     if (stripe) {
       try {
         const products = await stripe.products.list();
@@ -75,19 +75,44 @@ export async function GET(request: NextRequest) {
     const result: {
       success: boolean;
       message: string;
-      currentStatus: any;
-      stripeCustomer: any;
+      currentStatus: {
+        shop: string;
+        plan: string | null;
+        status: string | null;
+        limits: {
+          ugcLimit: number | null;
+          influencerLimit: number | null;
+        };
+      };
+      stripeCustomer: {
+        id: string | null;
+        metadata: Record<string, unknown> | null;
+      };
       availablePlans: string[];
-      stripeProducts: any;
+      stripeProducts: Array<{
+        id: string;
+        name: string;
+      }>;
       recommendations: string[];
     } = {
       success: true,
       message: 'Subscription flow test completed',
-      currentStatus,
+      currentStatus: {
+        shop,
+        plan: merchant.subscription?.plan?.name || null,
+        status: merchant.subscription?.status || null,
+        limits: {
+          ugcLimit: merchant.subscription?.plan?.ugcLimit || null,
+          influencerLimit: merchant.subscription?.plan?.influencerLimit || null,
+        },
+      },
       stripeCustomer: stripeCustomer ? {
         id: stripeCustomer.id,
         metadata: stripeCustomer.metadata,
-      } : null,
+      } : {
+        id: null,
+        metadata: null,
+      },
       availablePlans: planNames,
       stripeProducts,
       recommendations: [],
