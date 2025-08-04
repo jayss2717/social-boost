@@ -7,14 +7,11 @@ import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
 import { useState, useEffect } from 'react';
 import { withHost } from '@/utils/withHost';
-import { useRouter } from 'next/navigation';
-
 export default function DashboardPage() {
   const merchantId = useMerchantId();
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const router = useRouter();
   
   // Get shop from URL params
   const [shop, setShop] = useState<string | null>(null);
