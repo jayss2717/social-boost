@@ -773,11 +773,16 @@ export default function SettingsPage() {
 
   const handleUpdatePayment = async () => {
     try {
+      console.log('🔄 Update Payment: Starting payment update process...');
+      
       const merchantId = localStorage.getItem('merchantId');
       if (!merchantId) {
+        console.error('❌ Update Payment: No merchant ID found in localStorage');
         setSaveMessage('❌ No merchant ID found');
         return;
       }
+
+      console.log('🔄 Update Payment: Merchant ID found:', merchantId);
 
       const response = await fetch('/api/subscription/update-payment', {
         method: 'POST',
@@ -787,20 +792,31 @@ export default function SettingsPage() {
         body: JSON.stringify({ merchantId }),
       });
 
+      console.log('🔄 Update Payment: API response status:', response.status);
+
       if (response.ok) {
-        const { url } = await response.json();
-        // If we're in an iframe context, redirect to top level
-        if (window !== window.top && window.top !== null) {
-          window.top!.location.href = url;
+        const data = await response.json();
+        console.log('🔄 Update Payment: API response data:', data);
+        
+        if (data.url) {
+          console.log('🔄 Update Payment: Redirecting to:', data.url);
+          // If we're in an iframe context, redirect to top level
+          if (window !== window.top && window.top !== null) {
+            window.top!.location.href = data.url;
+          } else {
+            window.location.href = data.url;
+          }
         } else {
-          window.location.href = url;
+          console.error('❌ Update Payment: No URL in response');
+          setSaveMessage('❌ No payment update URL received');
         }
       } else {
         const error = await response.json();
+        console.error('❌ Update Payment: API error:', error);
         setSaveMessage(`❌ Failed to update payment: ${error.error}`);
       }
     } catch (error) {
-      console.error('Error updating payment:', error);
+      console.error('❌ Update Payment: Network error:', error);
       setSaveMessage('❌ Error updating payment method');
     }
   };
