@@ -9,23 +9,48 @@ import { UsageWarning } from '@/components/UsageWarning';
 import { useState, useEffect, useCallback } from 'react';
 import { withHost } from '@/utils/withHost';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useShop } from '@/hooks/useShop';
 
 export default function DashboardPage() {
+  // Get merchant ID from localStorage or URL params
   const merchantId = useMerchantId();
+  const shop = useShop();
+
+  // Fallback: If we have a shop but no merchant ID, try to get it
+  useEffect(() => {
+    if (shop && !merchantId) {
+      console.log('Shop detected but no merchant ID, attempting to fetch...');
+      const fetchMerchantId = async () => {
+        try {
+          const response = await fetch(`/api/merchant?shop=${shop}`);
+          if (response.ok) {
+            const merchantData = await response.json();
+            localStorage.setItem('merchantId', merchantData.id);
+            window.dispatchEvent(new CustomEvent('merchantIdSet', { 
+              detail: merchantData.id 
+            }));
+            console.log('Merchant ID fetched and set:', merchantData.id);
+          }
+        } catch (error) {
+          console.error('Error fetching merchant ID:', error);
+        }
+      };
+      
+      fetchMerchantId();
+    }
+  }, [shop, merchantId]);
+  
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [paymentProcessed, setPaymentProcessed] = useState(false);
   
-  // Get shop from URL params
-  const [shop, setShop] = useState<string | null>(null);
+  // Get host from URL params
   const [host, setHost] = useState<string | null>(null);
   
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const shopParam = urlParams.get('shop');
     const hostParam = urlParams.get('host');
-    setShop(shopParam);
     setHost(hostParam);
   }, []);
   
@@ -109,14 +134,29 @@ export default function DashboardPage() {
           if (response.ok) {
             const merchantData = await response.json();
             
+            console.log('Merchant data received:', {
+              id: merchantData.id,
+              shop: merchantData.shop,
+              onboardingCompleted: merchantData.onboardingCompleted,
+            });
+            
             // Store merchant ID in localStorage
             localStorage.setItem('merchantId', merchantData.id);
+            
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('merchantIdSet', { 
+              detail: merchantData.id 
+            }));
+            
+            console.log('Merchant ID set in localStorage:', merchantData.id);
             
             // Only redirect to onboarding if not a new merchant and onboarding not completed
             if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
               console.log('Redirecting to onboarding...');
               window.location.href = `/onboarding?shop=${shop}`;
             }
+          } else {
+            console.error('Failed to fetch merchant data:', response.status);
           }
         } catch (error) {
           console.error('Error checking merchant status:', error);
