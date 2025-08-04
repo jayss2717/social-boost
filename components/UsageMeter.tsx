@@ -17,8 +17,11 @@ export function UsageMeter({ type, showDetails = true }: UsageMeterProps) {
     if (subscription) {
       console.log('UsageMeter subscription data:', {
         plan: subscription.subscription?.plan?.name,
+        planId: subscription.subscription?.planId,
         usage: subscription.usage,
-        type
+        type,
+        current: type === 'ugc' ? subscription.usage.ugcCount : subscription.usage.influencerCount,
+        limit: type === 'ugc' ? subscription.usage.ugcLimit : subscription.usage.influencerLimit,
       });
     }
   }, [subscription, type]);

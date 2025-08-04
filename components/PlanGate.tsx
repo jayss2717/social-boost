@@ -6,15 +6,15 @@ import { useState } from 'react';
 
 interface PlanGateProps {
   children: React.ReactNode;
-  requiredPlan: 'STARTER' | 'PRO' | 'SCALE' | 'ENTERPRISE';
+  requiredPlan: 'Starter' | 'Pro' | 'Scale' | 'Enterprise';
   showUpgradeButton?: boolean;
 }
 
 const planHierarchy = {
-  STARTER: 0,
-  PRO: 1,
-  SCALE: 2,
-  ENTERPRISE: 3,
+  'Starter': 0,
+  'Pro': 1,
+  'Scale': 2,
+  'Enterprise': 3,
 };
 
 export function PlanGate({ 

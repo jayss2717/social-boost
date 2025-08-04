@@ -70,7 +70,7 @@ const PLANS: Plan[] = [
   {
     id: 'enterprise',
     name: 'Enterprise',
-    priceCents: 19900,
+    priceCents: 0, // Custom pricing
     ugcLimit: -1,
     influencerLimit: -1,
     features: [
