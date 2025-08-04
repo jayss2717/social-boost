@@ -121,12 +121,20 @@ export default function OnboardingPage() {
       const shop = urlParams.get('shop');
       const paymentSuccess = urlParams.get('payment_success');
       
+      console.log('🔍 checkOnboardingStatus called with:', {
+        shop,
+        paymentSuccess,
+        currentUrl: window.location.href
+      });
+      
       if (!shop) return;
 
       // If payment was successful, redirect to dashboard immediately
       if (paymentSuccess === 'true') {
-        console.log('Payment success detected, redirecting to dashboard...');
-        window.location.href = `/?shop=${shop}&payment_success=true`;
+        console.log('✅ Payment success detected, redirecting to dashboard...');
+        const dashboardUrl = `/?shop=${shop}&payment_success=true`;
+        console.log('🔄 Redirecting to:', dashboardUrl);
+        window.location.href = dashboardUrl;
         return;
       }
 
@@ -137,13 +145,13 @@ export default function OnboardingPage() {
           
           // If onboarding is already completed, redirect to dashboard
           if (data.onboardingCompleted) {
-            console.log('Onboarding already completed, redirecting to dashboard');
+            console.log('✅ Onboarding already completed, redirecting to dashboard');
             window.location.href = `/?shop=${shop}`;
             return;
           }
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
+        console.error('❌ Error checking onboarding status:', error);
       }
     };
 
