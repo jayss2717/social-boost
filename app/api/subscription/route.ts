@@ -8,22 +8,39 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shop = searchParams.get('shop');
+    const merchantId = searchParams.get('merchantId');
 
-    if (!shop) {
-      return NextResponse.json({ error: 'Shop parameter is required' }, { status: 400 });
+    if (!shop && !merchantId) {
+      return NextResponse.json({ error: 'Either shop or merchantId parameter is required' }, { status: 400 });
     }
 
-    // Find the merchant and their subscription
-    const merchant = await prisma.merchant.findUnique({
-      where: { shop },
-      include: {
-        subscription: {
-          include: {
-            plan: true,
+    let merchant;
+
+    if (shop) {
+      // Find merchant by shop
+      merchant = await prisma.merchant.findUnique({
+        where: { shop },
+        include: {
+          subscription: {
+            include: {
+              plan: true,
+            },
           },
         },
-      },
-    });
+      });
+    } else if (merchantId) {
+      // Find merchant by ID
+      merchant = await prisma.merchant.findUnique({
+        where: { id: merchantId },
+        include: {
+          subscription: {
+            include: {
+              plan: true,
+            },
+          },
+        },
+      });
+    }
 
     if (!merchant) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
@@ -78,11 +95,12 @@ export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shop = searchParams.get('shop');
+    const merchantId = searchParams.get('merchantId');
     const body = await request.json();
     const { planId, status = 'ACTIVE' } = body;
 
-    if (!shop) {
-      return NextResponse.json({ error: 'Shop parameter is required' }, { status: 400 });
+    if (!shop && !merchantId) {
+      return NextResponse.json({ error: 'Either shop or merchantId parameter is required' }, { status: 400 });
     }
 
     if (!planId) {
@@ -90,9 +108,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the merchant
-    const merchant = await prisma.merchant.findUnique({
-      where: { shop },
-    });
+    let merchant;
+    if (shop) {
+      merchant = await prisma.merchant.findUnique({
+        where: { shop },
+      });
+    } else {
+      merchant = await prisma.merchant.findUnique({
+        where: { id: merchantId! },
+      });
+    }
 
     if (!merchant) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });

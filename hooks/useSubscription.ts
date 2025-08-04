@@ -28,51 +28,6 @@ const fetcher = async (url: string) => {
   return result;
 };
 
-// Fallback fetcher that gets merchant data by ID and then fetches subscription
-const fallbackFetcher = async (merchantId: string) => {
-  console.log('🔍 Using fallback approach - getting merchant data by ID:', merchantId);
-  
-  try {
-    // First, get merchant data by ID
-    const merchantResponse = await fetch(`/api/merchant/by-id?merchantId=${merchantId}`);
-    if (!merchantResponse.ok) {
-      console.log('❌ Failed to get merchant data by ID');
-      return null;
-    }
-    
-    const merchantData = await merchantResponse.json();
-    console.log('📊 Merchant data retrieved:', merchantData);
-    
-    if (!merchantData.success || !merchantData.merchant?.shop) {
-      console.log('❌ No shop found in merchant data');
-      return null;
-    }
-    
-    // Now fetch subscription data using the shop
-    const shop = merchantData.merchant.shop;
-    console.log('🔍 Fetching subscription data for shop:', shop);
-    
-    const subscriptionResponse = await fetch(`/api/subscription?shop=${shop}`, {
-      headers: {
-        'x-merchant-id': merchantId,
-      },
-    });
-    
-    if (!subscriptionResponse.ok) {
-      console.log('❌ Failed to fetch subscription data');
-      return null;
-    }
-    
-    const subscriptionData = await subscriptionResponse.json();
-    console.log('✅ Fallback subscription data fetched:', subscriptionData);
-    return subscriptionData;
-    
-  } catch (error) {
-    console.error('❌ Error in fallback fetcher:', error);
-    return null;
-  }
-};
-
 export function useSubscription() {
   const merchantId = useMerchantId();
   const [shop, setShop] = useState<string | null>(null);
@@ -81,19 +36,38 @@ export function useSubscription() {
   // Get shop from URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const shopParam = urlParams.get('shop');
-    setShop(shopParam);
-    console.log('🔍 Shop parameter detected:', shopParam);
+    let shopParam = urlParams.get('shop');
+    const hostParam = urlParams.get('host');
+    
+    // If no shop parameter but we have host, try to use host as shop
+    if (!shopParam && hostParam) {
+      console.log('🔍 useShop: No shop parameter, using host as shop:', hostParam);
+      shopParam = hostParam;
+    }
+    
+    if (shopParam) {
+      console.log('🔍 useShop: Setting shop to:', shopParam);
+      setShop(shopParam);
+    } else {
+      console.log('🔍 useShop: No shop or host parameter found in URL');
+    }
   }, []);
 
-  // Determine which fetcher to use
-  const shouldUseFallback = merchantId && !shop;
-  const fetcherKey = shouldUseFallback ? `fallback-${merchantId}` : (merchantId && shop ? `/api/subscription?shop=${shop}` : null);
-  const fetcherFunction = shouldUseFallback ? () => fallbackFetcher(merchantId!) : fetcher;
+  // Determine the API URL based on available parameters
+  const getApiUrl = () => {
+    if (shop && merchantId) {
+      return `/api/subscription?shop=${shop}`;
+    } else if (merchantId) {
+      return `/api/subscription?merchantId=${merchantId}`;
+    }
+    return null;
+  };
+
+  const apiUrl = getApiUrl();
 
   const { data, error, isLoading, mutate } = useSWR(
-    fetcherKey,
-    fetcherFunction,
+    apiUrl,
+    fetcher,
     {
       // Prevent SWR from running during SSR
       revalidateOnMount: typeof window !== 'undefined',
@@ -118,8 +92,7 @@ export function useSubscription() {
   console.log('🔍 useSubscription hook state:', {
     merchantId: merchantId ? 'present' : 'missing',
     shop,
-    shouldUseFallback,
-    fetcherKey,
+    apiUrl,
     data: data ? 'present' : 'missing',
     isLoading,
     error: error ? 'present' : 'missing',
