@@ -23,91 +23,98 @@ export function ShopifyProvider({ children }: ShopifyProviderProps) {
     console.log('Current hostname:', window.location.hostname);
     console.log('Current URL:', window.location.href);
     
+    // Enhanced Shopify admin context detection
+    const isInIframe = window !== window.top;
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop');
+    const host = urlParams.get('host');
+    
     // Check if we're in a Shopify admin context
     const isShopifyAdmin = window.location.hostname.includes('myshopify.com') || 
                           window.location.hostname.includes('shopify.com') ||
-                          window.location.hostname.includes('shopify.dev');
+                          window.location.hostname.includes('shopify.dev') ||
+                          isInIframe ||
+                          shop ||
+                          host;
 
-    console.log('Is Shopify admin context:', isShopifyAdmin);
+    console.log('Enhanced Shopify admin detection:', {
+      isInIframe,
+      shop,
+      host,
+      isShopifyAdmin,
+      hostname: window.location.hostname,
+    });
 
     const initializeAppBridge = () => {
       try {
-        // Try to get host from URL params first
-        let host = new URLSearchParams(window.location.search).get('host');
+        // Enhanced host parameter detection
+        let detectedHost = host;
         
         // If no host in URL, try to get it from parent window (for iframe scenarios)
-        if (!host && window !== window.top) {
+        if (!detectedHost && isInIframe) {
           try {
             const parentUrl = new URL(window.parent.location.href);
-            host = parentUrl.searchParams.get('host');
+            detectedHost = parentUrl.searchParams.get('host');
+            console.log('Retrieved host from parent window:', detectedHost);
           } catch (e) {
             console.log('Could not access parent window for host parameter');
           }
         }
         
+        // If still no host, try to construct it from shop parameter
+        if (!detectedHost && shop) {
+          detectedHost = shop;
+          console.log('Using shop as host parameter:', detectedHost);
+        }
+        
         const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY || '4638bbbd1542925e067ab11f3eecdc1c';
         
-        if (!host) {
+        if (!detectedHost) {
           console.warn('No host parameter found, skipping App Bridge initialization');
           console.log('This is normal when running outside Shopify admin context');
           console.log('App will still function normally without App Bridge features');
           
           // For development/testing, you can mock the host parameter
           if (process.env.NODE_ENV === 'development') {
-            const shop = new URLSearchParams(window.location.search).get('shop');
             if (shop) {
               console.log('Development mode: Using shop as host parameter for testing');
-              host = shop;
+              detectedHost = shop;
             }
           }
           
-          if (!host) {
+          if (!detectedHost) {
             setIsLoaded(true);
             return;
           }
         }
 
+        console.log('Initializing App Bridge with host:', detectedHost);
+        
         const app = createApp({
           apiKey,
-          host,
+          host: detectedHost,
           forceRedirect: false, // Prevent redirect loops
         });
         
         // Store app instance globally
         // @ts-ignore
         window.shopifyApp = app;
-        console.log('Shopify App Bridge initialized successfully');
+        console.log('✅ Shopify App Bridge initialized successfully');
         setIsLoaded(true);
       } catch (error) {
-        console.error('Failed to initialize Shopify App Bridge:', error);
+        console.error('❌ Failed to initialize Shopify App Bridge:', error);
         setIsLoaded(true); // Continue anyway
       }
     };
 
+    // Always attempt initialization if we're in a Shopify context
     if (isShopifyAdmin) {
-      // Initialize immediately in Shopify admin context
+      console.log('✅ Shopify admin context detected, initializing App Bridge');
       initializeAppBridge();
     } else {
-      // Check if we're in an iframe (Shopify admin context)
-      const isInIframe = window !== window.top;
-      console.log('Is in iframe:', isInIframe);
-      
-      if (isInIframe) {
-        console.log('Detected iframe context, attempting App Bridge initialization');
-        initializeAppBridge();
-      } else {
-        // Check if we have shop parameter (indicates Shopify context)
-        const shop = new URLSearchParams(window.location.search).get('shop');
-        if (shop) {
-          console.log('Shop parameter found, attempting App Bridge initialization');
-          initializeAppBridge();
-        } else {
-          console.log('Not in Shopify admin context, skipping App Bridge initialization');
-          console.log('Setting isLoaded to true for development/testing');
-          // For development/testing, still set as loaded
-          setIsLoaded(true);
-        }
-      }
+      console.log('⚠️ Not in Shopify admin context, skipping App Bridge initialization');
+      console.log('Setting isLoaded to true for development/testing');
+      setIsLoaded(true);
     }
   }, [isClient]);
 
