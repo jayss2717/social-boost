@@ -10,7 +10,10 @@ export function SubscriptionBanner() {
 
   if (isLoading || !subscription) return null;
 
+  // Add null checks for usage object
   const { usage } = subscription;
+  if (!usage) return null;
+
   const isOverLimit = (usage.ugcCount >= usage.ugcLimit && usage.ugcLimit !== -1) ||
                      (usage.influencerCount >= usage.influencerLimit && usage.influencerLimit !== -1);
 

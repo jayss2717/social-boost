@@ -113,7 +113,33 @@ export function useMetrics(period: string = '30d') {
             shopifyAnalytics: null,
           });
         } else {
-          setData(metricsData);
+          // The API returns { success: true, metrics: { ... } }
+          // Extract the metrics data and ensure proper structure
+          const metrics = metricsData.metrics;
+          setData({
+            period: metrics.period || period,
+            summary: metrics.summary || {
+              totalDiscountCodes: 0,
+              activeDiscountCodes: 0,
+              totalUsage: 0,
+              totalRevenue: 0,
+              influencerCount: 0,
+              ugcCount: 0,
+              ugcLimit: 20,
+              influencerLimit: 5,
+              totalPayouts: 0,
+              totalPayoutAmount: 0,
+            },
+            performance: metrics.performance || {
+              conversionRate: 0,
+              averageOrderValue: 0,
+              averagePayoutAmount: 0,
+            },
+            topPerformingCodes: metrics.topPerformingCodes || [],
+            recentActivity: metrics.recentActivity || [],
+            orderMetrics: metrics.orderMetrics || [],
+            shopifyAnalytics: metrics.shopifyAnalytics || null,
+          });
         }
       } catch (err) {
         console.error('Error fetching metrics:', err);

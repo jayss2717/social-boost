@@ -36,6 +36,19 @@ export function UsageMeter({ showDetails = false }: UsageMeterProps) {
 
   const { summary, performance } = metrics;
 
+  // Add null checks for summary object
+  if (!summary) {
+    return (
+      <Card>
+        <div style={{ padding: '1rem' }}>
+          <Text variant="bodyMd" as="p" tone="critical">
+            Failed to load usage summary
+          </Text>
+        </div>
+      </Card>
+    );
+  }
+
   // Calculate usage percentages
   const ugcUsagePercent = summary.ugcLimit > 0 ? (summary.ugcCount / summary.ugcLimit) * 100 : 0;
   const influencerUsagePercent = summary.influencerLimit > 0 ? (summary.influencerCount / summary.influencerLimit) * 100 : 0;
