@@ -4,18 +4,13 @@ import { useMerchantId } from './useMerchantId';
 import { useState, useEffect, useCallback } from 'react';
 
 const fetcher = async (url: string) => {
-  // Check if merchantId is available
-  const merchantId = typeof window !== 'undefined' 
-    ? localStorage.getItem('merchantId')
-    : null;
-
-  if (!merchantId) {
-    console.log('No merchantId available, skipping subscription fetch');
-    return null;
-  }
-
+  console.log('🔍 Fetching subscription data from:', url);
+  
   const result = await apiFetch(url);
+  console.log('📊 Subscription API result:', result);
+  
   if (result === null) {
+    console.log('❌ No subscription data returned from API');
     // Return default subscription structure to prevent React errors
     return {
       subscription: null,
@@ -28,6 +23,8 @@ const fetcher = async (url: string) => {
       plans: [],
     };
   }
+  
+  console.log('✅ Subscription data fetched successfully:', result);
   return result;
 };
 
@@ -41,6 +38,7 @@ export function useSubscription() {
     const urlParams = new URLSearchParams(window.location.search);
     const shopParam = urlParams.get('shop');
     setShop(shopParam);
+    console.log('🔍 Shop parameter detected:', shopParam);
   }, []);
 
   const { data, error, isLoading, mutate } = useSWR(
@@ -66,6 +64,14 @@ export function useSubscription() {
       mutate();
     }
   }, [merchantId, shop, mutate, paymentSuccessProcessed]);
+
+  console.log('🔍 useSubscription hook state:', {
+    merchantId: merchantId ? 'present' : 'missing',
+    shop,
+    data: data ? 'present' : 'missing',
+    isLoading,
+    error: error ? 'present' : 'missing',
+  });
 
   return {
     data,
