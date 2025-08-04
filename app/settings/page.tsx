@@ -4,8 +4,10 @@ import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge,
 import { useState, useEffect } from 'react';
 import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
 import React from 'react';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function SettingsPage() {
+  const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
   const [socialMediaAccounts] = useState<Array<{
     id: string;
     platform: string;
@@ -1945,33 +1947,83 @@ export default function SettingsPage() {
                     Current Plan
                   </Text>
                   <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <Text variant="bodyMd" fontWeight="semibold" as="p">
-                          Pro Plan
-                        </Text>
-                        <Text variant="bodySm" tone="subdued" as="p">
-                          $29.99/month
+                    {subscriptionLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Text variant="bodyMd" tone="subdued" as="p">
+                          Loading subscription data...
                         </Text>
                       </div>
-                      <Tag>Active</Tag>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        size="slim" 
-                        variant="secondary"
-                        onClick={handleChangePlan}
-                      >
-                        Change Plan
-                      </Button>
-                      <Button 
-                        size="slim" 
-                        variant="secondary"
-                        onClick={handleCancelSubscription}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
+                    ) : subscription?.subscription ? (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <Text variant="bodyMd" fontWeight="semibold" as="p">
+                              {subscription.subscription.plan?.name || 'Starter'} Plan
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                              ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}/month
+                            </Text>
+                          </div>
+                          <Tag tone={subscription.subscription.status === 'active' ? 'success' : 'warning'}>
+                            {subscription.subscription.status === 'active' ? 'Active' : subscription.subscription.status}
+                          </Tag>
+                        </div>
+                        {subscription.usage && (
+                          <div className="mb-3 p-3 bg-gray-50 rounded">
+                            <Text variant="bodySm" fontWeight="semibold" as="p">
+                              Usage This Month:
+                            </Text>
+                            <div className="flex justify-between mt-1">
+                              <Text variant="bodySm" tone="subdued" as="p">
+                                UGC Posts: {subscription.usage.ugcCount} / {subscription.usage.ugcLimit === -1 ? '∞' : subscription.usage.ugcLimit}
+                              </Text>
+                              <Text variant="bodySm" tone="subdued" as="p">
+                                Influencers: {subscription.usage.influencerCount} / {subscription.usage.influencerLimit === -1 ? '∞' : subscription.usage.influencerLimit}
+                              </Text>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="slim" 
+                            variant="secondary"
+                            onClick={handleChangePlan}
+                          >
+                            Change Plan
+                          </Button>
+                          <Button 
+                            size="slim" 
+                            variant="secondary"
+                            onClick={handleCancelSubscription}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <Text variant="bodyMd" fontWeight="semibold" as="p">
+                              No Active Plan
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                              You're currently on the free plan
+                            </Text>
+                          </div>
+                          <Tag tone="warning">Free</Tag>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="slim" 
+                            variant="primary"
+                            onClick={handleChangePlan}
+                          >
+                            Upgrade Plan
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -2018,50 +2070,65 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 border rounded">
-                      <div>
-                        <Text variant="bodySm" fontWeight="semibold" as="p">
-                          Pro Plan - Monthly
-                        </Text>
+                    {subscription?.subscription ? (
+                      <>
+                        <div className="flex items-center justify-between p-2 border rounded">
+                          <div>
+                            <Text variant="bodySm" fontWeight="semibold" as="p">
+                              {subscription.subscription.plan?.name || 'Starter'} Plan - Monthly
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                              {subscription.subscription.currentPeriodEnd ? 
+                                new Date(subscription.subscription.currentPeriodEnd).toLocaleDateString() : 
+                                'Current period'
+                              }
+                            </Text>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Text variant="bodySm" fontWeight="semibold" as="p">
+                              ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}
+                            </Text>
+                            <Button 
+                              size="slim" 
+                              variant="secondary"
+                              onClick={() => handleDownloadInvoice('current-invoice')}
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                        {subscription.subscription.createdAt && (
+                          <div className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <Text variant="bodySm" fontWeight="semibold" as="p">
+                                {subscription.subscription.plan?.name || 'Starter'} Plan - Initial
+                              </Text>
+                              <Text variant="bodySm" tone="subdued" as="p">
+                                {new Date(subscription.subscription.createdAt).toLocaleDateString()}
+                              </Text>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Text variant="bodySm" fontWeight="semibold" as="p">
+                                ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}
+                              </Text>
+                              <Button 
+                                size="slim" 
+                                variant="secondary"
+                                onClick={() => handleDownloadInvoice('initial-invoice')}
+                              >
+                                Download
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center py-4">
                         <Text variant="bodySm" tone="subdued" as="p">
-                          Dec 1, 2024
+                          No billing history available
                         </Text>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Text variant="bodySm" fontWeight="semibold" as="p">
-                          $29.00
-                        </Text>
-                        <Button 
-                          size="slim" 
-                          variant="secondary"
-                          onClick={() => handleDownloadInvoice('invoice-1')}
-                        >
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-2 border rounded">
-                      <div>
-                        <Text variant="bodySm" fontWeight="semibold" as="p">
-                          Pro Plan - Monthly
-                        </Text>
-                        <Text variant="bodySm" tone="subdued" as="p">
-                          Nov 1, 2024
-                        </Text>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Text variant="bodySm" fontWeight="semibold" as="p">
-                          $29.00
-                        </Text>
-                        <Button 
-                          size="slim" 
-                          variant="secondary"
-                          onClick={() => handleDownloadInvoice('invoice-2')}
-                        >
-                          Download
-                        </Button>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </BlockStack>
