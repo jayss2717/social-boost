@@ -78,7 +78,14 @@ function BillingContent() {
             Your plan has been upgraded and you now have access to additional features.
           </Text>
           <div className="mt-4">
-            <Button variant="primary" url="/">
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const shop = urlParams.get('shop');
+                window.location.href = `/?shop=${shop}`;
+              }}
+            >
               Return to Dashboard
             </Button>
           </div>
@@ -92,7 +99,14 @@ function BillingContent() {
             Your subscription remains unchanged. You can upgrade at any time from the dashboard.
           </Text>
           <div className="mt-4">
-            <Button variant="primary" url="/">
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const shop = urlParams.get('shop');
+                window.location.href = `/?shop=${shop}`;
+              }}
+            >
               Return to Dashboard
             </Button>
           </div>
