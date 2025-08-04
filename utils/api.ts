@@ -14,8 +14,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
       usage: {
         influencerCount: 0,
         ugcCount: 0,
-        influencerLimit: 5,
-        ugcLimit: 20,
+        ugcLimit: 5,        // Updated to match Starter plan
+        influencerLimit: 1,  // Updated to match Starter plan
       },
       plans: [],
     };

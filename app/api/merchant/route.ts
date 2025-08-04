@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
           create: {
             name: 'Starter',
             priceCents: 2900, // $29/month
-            ugcLimit: 20,
-            influencerLimit: 5,
+            ugcLimit: 5,        // Updated to match Starter plan
+            influencerLimit: 1,  // Updated to match Starter plan
           },
         });
 

@@ -97,8 +97,8 @@ export function useMetrics(period: string = '30d') {
               totalRevenue: 0,
               influencerCount: 0,
               ugcCount: 0,
-              ugcLimit: 20,
-              influencerLimit: 5,
+              ugcLimit: 5,        // Updated to match Starter plan
+              influencerLimit: 1,  // Updated to match Starter plan
               totalPayouts: 0,
               totalPayoutAmount: 0,
             },
@@ -125,8 +125,8 @@ export function useMetrics(period: string = '30d') {
               totalRevenue: 0,
               influencerCount: 0,
               ugcCount: 0,
-              ugcLimit: 20,
-              influencerLimit: 5,
+              ugcLimit: 5,        // Updated to match Starter plan
+              influencerLimit: 1,  // Updated to match Starter plan
               totalPayouts: 0,
               totalPayoutAmount: 0,
             },
@@ -155,8 +155,8 @@ export function useMetrics(period: string = '30d') {
             totalRevenue: 0,
             influencerCount: 0,
             ugcCount: 0,
-            ugcLimit: 20,
-            influencerLimit: 5,
+            ugcLimit: 5,        // Updated to match Starter plan
+            influencerLimit: 1,  // Updated to match Starter plan
             totalPayouts: 0,
             totalPayoutAmount: 0,
           },

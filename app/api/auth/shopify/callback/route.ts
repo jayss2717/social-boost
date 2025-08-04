@@ -169,8 +169,8 @@ export async function GET(request: NextRequest) {
           data: {
             name: 'Free',
             priceCents: 0,
-            ugcLimit: 20,
-            influencerLimit: 5,
+            ugcLimit: 5,        // Updated to match Starter plan
+            influencerLimit: 1,  // Updated to match Starter plan
           },
         });
       }

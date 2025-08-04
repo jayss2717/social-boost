@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
     // Calculate usage metrics
     const ugcCount = merchant.ugcPosts.length;
     const influencerCount = merchant.influencers.filter(i => i.isActive).length;
-    const ugcLimit = plan?.ugcLimit || 20;
-    const influencerLimit = plan?.influencerLimit || 5;
+    const ugcLimit = plan?.ugcLimit || 5;        // Updated to match Starter plan
+    const influencerLimit = plan?.influencerLimit || 1;  // Updated to match Starter plan
 
     // Get metrics for the period
     const metrics = {

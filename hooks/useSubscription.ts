@@ -22,8 +22,8 @@ const fetcher = async (url: string) => {
       usage: {
         influencerCount: 0,
         ugcCount: 0,
-        influencerLimit: 5,
-        ugcLimit: 20,
+        influencerLimit: 1, // Updated to match Starter plan
+        ugcLimit: 5,        // Updated to match Starter plan
       },
       plans: [],
     };
