@@ -32,16 +32,16 @@ export async function POST(request: NextRequest) {
     }
 
     // If subscription has a Stripe subscription ID, cancel it in Stripe
-    if (merchant.subscription.stripeSubscriptionId) {
+    if (merchant.subscription.stripeSubId) {
       try {
         if (cancelAtPeriodEnd) {
           // Cancel at period end
-          await stripe.subscriptions.update(merchant.subscription.stripeSubscriptionId, {
+          await stripe.subscriptions.update(merchant.subscription.stripeSubId, {
             cancel_at_period_end: true,
           });
         } else {
           // Cancel immediately
-          await stripe.subscriptions.cancel(merchant.subscription.stripeSubscriptionId);
+          await stripe.subscriptions.cancel(merchant.subscription.stripeSubId);
         }
       } catch (stripeError) {
         console.error('Stripe cancellation error:', stripeError);
