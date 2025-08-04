@@ -72,7 +72,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const result = {
+    const result: {
+      success: boolean;
+      message: string;
+      currentStatus: any;
+      stripeCustomer: any;
+      availablePlans: string[];
+      stripeProducts: any;
+      recommendations: string[];
+    } = {
       success: true,
       message: 'Subscription flow test completed',
       currentStatus,

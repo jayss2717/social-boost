@@ -26,7 +26,16 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. Test all plan scenarios
-    const testResults = {
+    const testResults: {
+      currentPlan: any;
+      planLimits: any;
+      usageValidation: any;
+      planHierarchy: any;
+      recommendations: string[];
+      scenarios?: any;
+      apiValidation?: any;
+      componentValidation?: any;
+    } = {
       currentPlan: {
         name: merchant.subscription?.plan?.name || 'No subscription',
         status: merchant.subscription?.status || 'No subscription',
