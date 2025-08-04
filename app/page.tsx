@@ -60,13 +60,17 @@ export default function DashboardPage() {
                   body: JSON.stringify({ merchantId: merchantData.id }),
                 });
                 console.log('Onboarding completed after payment');
+                // Clear the payment_success parameter to avoid redirect loops
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.delete('payment_success');
+                window.history.replaceState({}, '', newUrl.toString());
               } catch (error) {
                 console.error('Failed to complete onboarding after payment:', error);
               }
             }
             
-            // If this is a new merchant or onboarding not completed, redirect to onboarding
-            if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
+            // Only redirect to onboarding if this is truly a new merchant or onboarding not completed
+            if (merchantData._newMerchant || (!merchantData.onboardingCompleted && !paymentSuccess)) {
               console.log('Redirecting to onboarding...');
               const onboardingUrl = withHost('/onboarding', { shop: shop || '', host: host || '' });
               window.location.href = onboardingUrl;
@@ -99,7 +103,7 @@ export default function DashboardPage() {
                   Setting up your SocialBoost account...
                 </Text>
                 <Text variant="bodyMd" as="p" tone="subdued">
-                  We&apos;re configuring your Shopify integration. This will just take a moment.
+                  {isRedirecting ? 'Checking your account status...' : 'We\'re configuring your Shopify integration. This will just take a moment.'}
                 </Text>
                 <div style={{ marginTop: '2rem' }}>
                   <Button 

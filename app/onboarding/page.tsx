@@ -85,6 +85,8 @@ export default function OnboardingPage() {
     selectedPlan: 'Pro',
   });
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Fetching your store details...');
 
   // Error boundary for React errors
   useEffect(() => {
@@ -112,6 +114,34 @@ export default function OnboardingPage() {
     fetchMerchantData();
   }, []);
 
+  // Check if onboarding is already completed
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shop = urlParams.get('shop');
+      
+      if (!shop) return;
+
+      try {
+        const response = await fetch(`/api/merchant?shop=${shop}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // If onboarding is already completed, redirect to dashboard
+          if (data.onboardingCompleted) {
+            console.log('Onboarding already completed, redirecting to dashboard');
+            window.location.href = `/?shop=${shop}`;
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
   const fetchMerchantData = async () => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -119,7 +149,9 @@ export default function OnboardingPage() {
       
       if (!shop) return;
 
-      // Try to fetch merchant data with retries (in case of timing issues)
+      setLoadingMessage('Fetching your store details...');
+      
+      // Try to fetch merchant data with faster retries
       let attempts = 0;
       const maxAttempts = 3;
       
@@ -132,6 +164,7 @@ export default function OnboardingPage() {
           // Check if OAuth has been completed
           if (data.accessToken === 'pending' || !data.shopifyShopId) {
             console.log('OAuth not completed, redirecting to OAuth flow...');
+            setLoadingMessage('Completing authentication...');
             // Use top-level redirect to avoid iframe issues
             if (window.top) {
               window.top.location.href = `/api/auth/shopify?shop=${shop}`;
@@ -147,14 +180,17 @@ export default function OnboardingPage() {
             console.log('Stored merchant ID in localStorage:', data.id);
           }
           
+          setLoadingMessage('Loading store information...');
           setMerchantData(data);
+          setIsLoading(false);
           return; // Success, exit the function
         } else if (response.status === 404) {
           console.log(`Attempt ${attempts + 1}: Merchant not found, retrying...`);
           attempts++;
           if (attempts < maxAttempts) {
-            // Wait 1 second before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            setLoadingMessage(`Setting up your account... (attempt ${attempts + 1})`);
+            // Wait 500ms before retrying (reduced from 1000ms)
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
         } else {
           console.error('Failed to fetch merchant data:', response.status);
@@ -164,6 +200,7 @@ export default function OnboardingPage() {
       
       // If all attempts failed, redirect to OAuth flow
       console.log('Merchant not found after all attempts, redirecting to OAuth flow...');
+      setLoadingMessage('Redirecting to authentication...');
       if (window.top) {
         window.top.location.href = `/api/auth/shopify?shop=${shop}`;
       } else {
@@ -175,6 +212,7 @@ export default function OnboardingPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       if (shop) {
+        setLoadingMessage('Redirecting to authentication...');
         if (window.top) {
           window.top.location.href = `/api/auth/shopify?shop=${shop}`;
         } else {
@@ -258,14 +296,14 @@ export default function OnboardingPage() {
 
       if (response.ok) {
         console.log('Onboarding completed successfully');
-        // Redirect to Shopify admin app page
-        const storeName = shop.replace('.myshopify.com', '');
-        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
+        // Redirect to dashboard instead of Shopify admin to avoid redirect loops
+        const dashboardUrl = `/?shop=${shop}`;
+        window.location.href = dashboardUrl;
       } else {
         console.error('Failed to complete onboarding:', response.status);
-        // Still redirect to Shopify admin
-        const storeName = shop.replace('.myshopify.com', '');
-        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
+        // Still redirect to dashboard
+        const dashboardUrl = `/?shop=${shop}`;
+        window.location.href = dashboardUrl;
       }
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -273,8 +311,8 @@ export default function OnboardingPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
       if (shop) {
-        const storeName = shop.replace('.myshopify.com', '');
-        window.location.href = `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`;
+        const dashboardUrl = `/?shop=${shop}`;
+        window.location.href = dashboardUrl;
       }
     }
   };
@@ -301,7 +339,14 @@ export default function OnboardingPage() {
                   </Text>
                 </div>
 
-                {merchantData && (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+                    <Text variant="bodyMd" as="p" tone="subdued">
+                      {loadingMessage}
+                    </Text>
+                  </div>
+                ) : merchantData ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <TextField
@@ -335,6 +380,12 @@ export default function OnboardingPage() {
                         ✅ Store details verified from Shopify
                       </Text>
                     </Banner>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Text variant="bodyMd" as="p" tone="subdued">
+                      Unable to load store details. Please refresh the page.
+                    </Text>
                   </div>
                 )}
               </BlockStack>

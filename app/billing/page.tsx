@@ -40,20 +40,26 @@ function BillingContent() {
       
       updateMerchantStatus();
       
-      // If we're in an iframe context, redirect to the main app
-      if (window !== window.top && window.top !== null) {
-        setTimeout(() => {
-          window.top!.location.href = `/?shop=${shop}`;
-        }, 2000);
-      }
+      // Redirect to dashboard with payment success parameter
+      setTimeout(() => {
+        const dashboardUrl = shop ? `/?shop=${shop}&payment_success=true` : '/?payment_success=true';
+        if (window !== window.top && window.top !== null) {
+          window.top!.location.href = dashboardUrl;
+        } else {
+          window.location.href = dashboardUrl;
+        }
+      }, 2000);
     } else if (canceled) {
       setStatus('canceled');
-      // If we're in an iframe context, redirect to the main app
-      if (window !== window.top && window.top !== null) {
-        setTimeout(() => {
-          window.top!.location.href = `/?shop=${shop}`;
-        }, 2000);
-      }
+      // Redirect back to dashboard
+      setTimeout(() => {
+        const dashboardUrl = shop ? `/?shop=${shop}` : '/';
+        if (window !== window.top && window.top !== null) {
+          window.top!.location.href = dashboardUrl;
+        } else {
+          window.location.href = dashboardUrl;
+        }
+      }, 2000);
     }
   }, [searchParams]);
 
