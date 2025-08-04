@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
   
   // Handle OAuth results
   useEffect(() => {
@@ -134,6 +136,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchSettings();
+    fetchInvoices();
   }, []);
 
   const fetchSettings = async () => {
@@ -257,6 +260,29 @@ export default function SettingsPage() {
       console.error('Failed to fetch settings:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.log('No merchant ID found, skipping invoices fetch');
+        return;
+      }
+
+      setInvoicesLoading(true);
+      const response = await fetch(`/api/subscription/invoices?merchantId=${merchantId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setInvoices(data.invoices || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+    } finally {
+      setInvoicesLoading(false);
     }
   };
 
@@ -704,22 +730,105 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdatePayment = () => {
-    console.log('Opening payment update...');
-    setSaveMessage('Opening payment update...');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleUpdatePayment = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      const response = await fetch('/api/subscription/update-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ merchantId }),
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        // If we're in an iframe context, redirect to top level
+        if (window !== window.top && window.top !== null) {
+          window.top!.location.href = url;
+        } else {
+          window.location.href = url;
+        }
+      } else {
+        const error = await response.json();
+        setSaveMessage(`❌ Failed to update payment: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating payment:', error);
+      setSaveMessage('❌ Error updating payment method');
+    }
   };
 
-  const handleDownloadInvoice = (invoiceId: string) => {
-    console.log(`Downloading invoice ${invoiceId}...`);
-    setSaveMessage('Invoice download initiated...');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      const response = await fetch(`/api/subscription/invoices?merchantId=${merchantId}&invoiceId=${invoiceId}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        setSaveMessage('✅ Invoice downloaded successfully');
+      } else {
+        setSaveMessage('❌ Failed to download invoice');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      setSaveMessage('❌ Error downloading invoice');
+    }
   };
 
-  const handleDownloadAllInvoices = () => {
-    console.log('Downloading all invoices...');
-    setSaveMessage('All invoices download initiated...');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleDownloadAllInvoices = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      const response = await fetch(`/api/subscription/invoices?merchantId=${merchantId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.invoices) {
+          // Download each invoice
+          for (const invoice of data.invoices) {
+            if (invoice.download_url) {
+              const link = document.createElement('a');
+              link.href = invoice.download_url;
+              link.download = `invoice-${invoice.number}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          }
+          setSaveMessage('✅ All invoices downloaded successfully');
+        } else {
+          setSaveMessage('❌ No invoices available for download');
+        }
+      } else {
+        setSaveMessage('❌ Failed to download invoices');
+      }
+    } catch (error) {
+      console.error('Error downloading invoices:', error);
+      setSaveMessage('❌ Error downloading invoices');
+    }
   };
 
   const addHashtag = () => {
@@ -2142,58 +2251,39 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {subscription?.subscription ? (
-                      <>
-                        <div className="flex items-center justify-between p-2 border rounded">
+                    {invoicesLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      </div>
+                    ) : invoices.length > 0 ? (
+                      invoices.map((invoice, index) => (
+                        <div key={invoice.id || index} className="flex items-center justify-between p-2 border rounded">
                           <div>
                             <Text variant="bodySm" fontWeight="semibold" as="p">
-                              {subscription.subscription.plan?.name || 'Starter'} Plan - Monthly
+                              {invoice.number || `Invoice ${index + 1}`}
                             </Text>
                             <Text variant="bodySm" tone="subdued" as="p">
-                              {subscription.subscription.currentPeriodEnd ? 
-                                new Date(subscription.subscription.currentPeriodEnd).toLocaleDateString() : 
-                                'Current period'
+                              {invoice.created ? 
+                                new Date(invoice.created * 1000).toLocaleDateString() : 
+                                'Date not available'
                               }
                             </Text>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Text variant="bodySm" fontWeight="semibold" as="p">
-                              ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}
+                              ${((invoice.amount_paid || 0) / 100).toFixed(2)}
                             </Text>
                             <Button 
                               size="slim" 
                               variant="secondary"
-                              onClick={() => handleDownloadInvoice('current-invoice')}
+                              onClick={() => handleDownloadInvoice(invoice.id)}
+                              disabled={!invoice.download_url}
                             >
                               Download
                             </Button>
                           </div>
                         </div>
-                        {subscription.subscription.createdAt && (
-                          <div className="flex items-center justify-between p-2 border rounded">
-                            <div>
-                              <Text variant="bodySm" fontWeight="semibold" as="p">
-                                {subscription.subscription.plan?.name || 'Starter'} Plan - Initial
-                              </Text>
-                              <Text variant="bodySm" tone="subdued" as="p">
-                                {new Date(subscription.subscription.createdAt).toLocaleDateString()}
-                              </Text>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Text variant="bodySm" fontWeight="semibold" as="p">
-                                ${((subscription.subscription.plan?.priceCents || 0) / 100).toFixed(2)}
-                              </Text>
-                              <Button 
-                                size="slim" 
-                                variant="secondary"
-                                onClick={() => handleDownloadInvoice('initial-invoice')}
-                              >
-                                Download
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
+                      ))
                     ) : (
                       <div className="flex items-center justify-center py-4">
                         <Text variant="bodySm" tone="subdued" as="p">
