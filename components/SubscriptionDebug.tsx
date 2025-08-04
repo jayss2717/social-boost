@@ -10,6 +10,7 @@ interface DebugInfo {
   localStorageKeys: string[];
   subscriptionWithoutHeader: any;
   subscriptionWithHeader: any;
+  subscriptionWithMerchantId: any;
   timestamp: string;
   error?: string;
   urlParams?: Record<string, string | null>;
@@ -68,37 +69,53 @@ export function SubscriptionDebug() {
       const merchantId = localStorage.getItem('merchantId');
       console.log('🔍 Debug: Merchant ID from localStorage:', merchantId);
       
-      if (!shop) {
+      if (!shop && !merchantId) {
         setDebugInfo({
           shop: null,
           host,
           merchantId,
           localStorageKeys: Object.keys(localStorage),
-          subscriptionWithoutHeader: { error: 'Shop parameter is null' },
-          subscriptionWithHeader: { error: 'Shop parameter is null' },
+          subscriptionWithoutHeader: { error: 'No shop or merchantId available' },
+          subscriptionWithHeader: { error: 'No shop or merchantId available' },
+          subscriptionWithMerchantId: { error: 'No shop or merchantId available' },
           timestamp: new Date().toISOString(),
           urlParams: allParams,
           shopifyContext,
-          error: 'Shop parameter not found in URL and host cannot be used as shop',
+          error: 'Neither shop parameter nor merchantId available',
         });
         return;
       }
       
-      // Test API call without header
-      console.log('🔍 Debug: Testing API call without header for shop:', shop);
-      const response = await fetch(`/api/subscription?shop=${shop}`);
-      const subscriptionData = await response.json();
-      console.log('🔍 Debug: API response without header:', subscriptionData);
+      // Test API call without header (if shop available)
+      let subscriptionData = { error: 'Shop parameter is null' };
+      if (shop) {
+        console.log('🔍 Debug: Testing API call without header for shop:', shop);
+        const response = await fetch(`/api/subscription?shop=${shop}`);
+        subscriptionData = await response.json();
+        console.log('🔍 Debug: API response without header:', subscriptionData);
+      }
       
-      // Test with merchant ID header
-      console.log('🔍 Debug: Testing API call with header for shop:', shop);
-      const responseWithHeader = await fetch(`/api/subscription?shop=${shop}`, {
-        headers: {
-          'x-merchant-id': merchantId || '',
-        },
-      });
-      const subscriptionDataWithHeader = await responseWithHeader.json();
-      console.log('🔍 Debug: API response with header:', subscriptionDataWithHeader);
+      // Test with merchant ID header (if shop available)
+      let subscriptionDataWithHeader = { error: 'Shop parameter is null' };
+      if (shop) {
+        console.log('🔍 Debug: Testing API call with header for shop:', shop);
+        const responseWithHeader = await fetch(`/api/subscription?shop=${shop}`, {
+          headers: {
+            'x-merchant-id': merchantId || '',
+          },
+        });
+        subscriptionDataWithHeader = await responseWithHeader.json();
+        console.log('🔍 Debug: API response with header:', subscriptionDataWithHeader);
+      }
+      
+      // Test with merchantId parameter (if merchantId available)
+      let subscriptionDataWithMerchantId = { error: 'MerchantId not available' };
+      if (merchantId) {
+        console.log('🔍 Debug: Testing API call with merchantId parameter:', merchantId);
+        const responseWithMerchantId = await fetch(`/api/subscription?merchantId=${merchantId}`);
+        subscriptionDataWithMerchantId = await responseWithMerchantId.json();
+        console.log('🔍 Debug: API response with merchantId:', subscriptionDataWithMerchantId);
+      }
       
       setDebugInfo({
         shop,
@@ -107,6 +124,7 @@ export function SubscriptionDebug() {
         localStorageKeys: Object.keys(localStorage),
         subscriptionWithoutHeader: subscriptionData,
         subscriptionWithHeader: subscriptionDataWithHeader,
+        subscriptionWithMerchantId: subscriptionDataWithMerchantId,
         timestamp: new Date().toISOString(),
         urlParams: allParams,
         shopifyContext,
@@ -120,6 +138,7 @@ export function SubscriptionDebug() {
         localStorageKeys: [],
         subscriptionWithoutHeader: null,
         subscriptionWithHeader: null,
+        subscriptionWithMerchantId: null,
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : 'Unknown error',
       });

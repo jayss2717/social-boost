@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
 
     // If downgrading to free plan, update immediately
     if (newPlan === 'STARTER') {
-      // Find the STARTER plan
+      // Find the Starter plan (note: database uses "Starter" not "STARTER")
       const starterPlan = await prisma.plan.findFirst({
-        where: { name: 'STARTER' },
+        where: { name: 'Starter' },
       });
 
       if (!starterPlan) {
