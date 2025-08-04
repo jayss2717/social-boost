@@ -47,7 +47,31 @@ export async function GET(request: NextRequest) {
       matchesDatabase: merchantIdHeader === merchant.id,
     };
 
-    const result = {
+    const result: {
+      success: boolean;
+      message: string;
+      merchant: {
+        id: string;
+        shop: string;
+        name: string | null;
+        email: string | null;
+        onboardingCompleted: boolean;
+      };
+      subscription: {
+        plan: string | null;
+        status: string | null;
+        limits: {
+          ugcLimit: number | null;
+          influencerLimit: number | null;
+        };
+      } | null;
+      authentication: {
+        headerPresent: boolean;
+        headerValue: string | null;
+        matchesDatabase: boolean;
+      };
+      recommendations: string[];
+    } = {
       success: true,
       message: 'Merchant authentication check completed',
       merchant: {
