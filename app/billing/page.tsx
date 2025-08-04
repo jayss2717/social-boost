@@ -11,11 +11,24 @@ function BillingContent() {
   useEffect(() => {
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
+    const shop = searchParams.get('shop');
 
     if (success) {
       setStatus('success');
+      // If we're in an iframe context, redirect to the main app
+      if (window !== window.top && window.top) {
+        setTimeout(() => {
+          window.top.location.href = `/?shop=${shop}`;
+        }, 2000);
+      }
     } else if (canceled) {
       setStatus('canceled');
+      // If we're in an iframe context, redirect to the main app
+      if (window !== window.top && window.top) {
+        setTimeout(() => {
+          window.top.location.href = `/?shop=${shop}`;
+        }, 2000);
+      }
     }
   }, [searchParams]);
 

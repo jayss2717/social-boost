@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
+    // Get the shop parameter for proper redirect handling
+    const shop = merchant.shop;
+    
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -44,11 +47,12 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.HOST}/billing?success=true`,
-      cancel_url: `${process.env.HOST}/billing?canceled=true`,
+      success_url: `${process.env.HOST}/billing?success=true&shop=${shop}`,
+      cancel_url: `${process.env.HOST}/billing?canceled=true&shop=${shop}`,
       metadata: {
         merchantId,
         plan,
+        shop,
       },
     });
 

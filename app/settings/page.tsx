@@ -609,7 +609,12 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const { url } = await response.json();
-        window.location.href = url;
+        // If we're in an iframe context, redirect to top level
+        if (window !== window.top && window.top) {
+          window.top.location.href = url;
+        } else {
+          window.location.href = url;
+        }
       } else {
         setSaveMessage('❌ Failed to create payment session');
       }
