@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If upgrading to a paid plan, create Stripe checkout session
-    if (newPlan !== 'STARTER' && newPlanPriceId) {
+    if (newPlan !== 'STARTER' && newPlanPriceId && stripe) {
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
