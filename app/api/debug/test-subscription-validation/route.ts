@@ -97,14 +97,13 @@ export async function GET(request: NextRequest) {
 
     // Test usage validation
     if (merchant.subscription?.plan) {
-      const usageCheck = checkUsageLimit(merchant.subscription.plan.name, 'ugc', 5);
+      const usageCheck = await checkUsageLimit(merchant.id, 'ugc');
       testResults.scenarios.usageValidation = {
         plan: merchant.subscription.plan.name,
         usageType: 'ugc',
-        usageCount: 5,
-        limit: getPlanLimits(merchant.subscription.plan.name).ugcLimit,
-        isValid: usageCheck.isValid,
-        remaining: usageCheck.remaining,
+        current: usageCheck.current,
+        limit: usageCheck.limit,
+        isValid: usageCheck.allowed,
       };
     }
 
