@@ -18,6 +18,26 @@ async function main() {
       },
     }),
     prisma.plan.upsert({
+      where: { name: 'Pro' },
+      update: {},
+      create: {
+        name: 'Pro',
+        priceCents: 2999, // $29.99/month
+        ugcLimit: 300,
+        influencerLimit: 10,
+      },
+    }),
+    prisma.plan.upsert({
+      where: { name: 'Scale' },
+      update: {},
+      create: {
+        name: 'Scale',
+        priceCents: 6999, // $69.99/month
+        ugcLimit: 1000,
+        influencerLimit: 50,
+      },
+    }),
+    prisma.plan.upsert({
       where: { name: 'Professional' },
       update: {},
       create: {
