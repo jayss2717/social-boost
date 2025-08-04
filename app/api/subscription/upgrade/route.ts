@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
     // Extract store name from shop URL
     const storeName = shop.replace('.myshopify.com', '');
     
-    // Get the app URL for proper redirects
-    const appUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
+    // Create proper Shopify app URLs using the correct app handle
+    const shopifyAppUrl = `https://${shop}/admin/apps/socialboost-2`;
+    const standaloneAppUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
     
     // Create or find customer with proper metadata
     let customer;
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${appUrl}/?shop=${shop}&payment_success=true`,
-      cancel_url: `${appUrl}/?shop=${shop}`,
+      success_url: `${shopifyAppUrl}?payment_success=true&plan=${plan}`,
+      cancel_url: `${shopifyAppUrl}`,
       metadata: {
         merchantId,
         plan,
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`Created checkout session for ${shop} to upgrade to ${plan}`);
+    console.log(`Success URL: ${shopifyAppUrl}?payment_success=true&plan=${plan}`);
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error('Subscription upgrade error:', error);
