@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { PlanSelectionModal } from '@/components/PlanSelectionModal';
 
 export default function SettingsPage() {
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
@@ -19,6 +20,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
   
@@ -591,7 +593,11 @@ export default function SettingsPage() {
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
-  const handleChangePlan = async () => {
+  const handleChangePlan = () => {
+    setShowPlanModal(true);
+  };
+
+  const handlePlanChange = async (newPlan: string) => {
     try {
       const merchantId = localStorage.getItem('merchantId');
       if (!merchantId) {
@@ -599,14 +605,43 @@ export default function SettingsPage() {
         return;
       }
 
-      // For now, redirect to Pro plan upgrade
-      const response = await fetch('/api/subscription/upgrade', {
+      const currentPlan = subscription?.subscription?.plan?.name || 'STARTER';
+
+      // If downgrading to free plan, handle immediately
+      if (newPlan === 'STARTER') {
+        const response = await fetch('/api/subscription/change-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            merchantId, 
+            newPlan: 'STARTER',
+            currentPlan 
+          }),
+        });
+
+        if (response.ok) {
+          setSaveMessage('✅ Plan changed to Starter successfully');
+          // Refresh subscription data
+          window.location.reload();
+        } else {
+          setSaveMessage('❌ Failed to change plan');
+        }
+        return;
+      }
+
+      // For paid plans, redirect to payment
+      const response = await fetch('/api/subscription/change-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-merchant-id': merchantId,
         },
-        body: JSON.stringify({ plan: 'Pro' }),
+        body: JSON.stringify({ 
+          merchantId, 
+          newPlan,
+          currentPlan 
+        }),
       });
 
       if (response.ok) {
@@ -626,10 +661,47 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCancelSubscription = () => {
-    console.log('Cancelling subscription...');
-    setSaveMessage('Subscription cancellation initiated...');
-    setTimeout(() => setSaveMessage(''), 3000);
+  const handleCancelSubscription = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        setSaveMessage('❌ No merchant ID found');
+        return;
+      }
+
+      if (!subscription?.subscription) {
+        setSaveMessage('❌ No active subscription to cancel');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        'Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your current billing period.'
+      );
+
+      if (!confirmed) return;
+
+      const response = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          merchantId,
+          cancelAtPeriodEnd: true 
+        }),
+      });
+
+      if (response.ok) {
+        setSaveMessage('✅ Subscription will be canceled at the end of your current billing period');
+        // Refresh subscription data
+        window.location.reload();
+      } else {
+        setSaveMessage('❌ Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      setSaveMessage('❌ Error canceling subscription');
+    }
   };
 
   const handleUpdatePayment = () => {
@@ -2137,6 +2209,15 @@ export default function SettingsPage() {
         </Layout.Section>
 
       </Layout>
+
+      {/* Plan Selection Modal */}
+      <PlanSelectionModal
+        open={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        currentPlan={subscription?.subscription?.plan?.name}
+        onPlanChange={handlePlanChange}
+        isLoading={isSaving}
+      />
     </Page>
   );
 } 
