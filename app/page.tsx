@@ -8,6 +8,8 @@ import { UsageMeter } from '@/components/UsageMeter';
 import { UsageWarning } from '@/components/UsageWarning';
 import { useState, useEffect } from 'react';
 import { withHost } from '@/utils/withHost';
+import { useSubscription } from '@/hooks/useSubscription';
+
 export default function DashboardPage() {
   const merchantId = useMerchantId();
   const { data: metrics } = useMetrics();
@@ -28,6 +30,41 @@ export default function DashboardPage() {
   
   // Use the new merchant data hook
   const { merchantData, isOAuthCompleted } = useMerchantData(shop || undefined);
+  const { data: subscription, mutate: mutateSubscription } = useSubscription();
+
+  // Check for payment success and verify subscription
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const shop = urlParams.get('shop');
+
+    if (paymentSuccess === 'true' && shop) {
+      console.log('Payment success detected, verifying subscription...');
+      
+      // Verify subscription after payment
+      fetch(`/api/subscription/verify?shop=${shop}`, {
+        method: 'POST',
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Subscription verification result:', data);
+          if (data.success) {
+            // Refresh subscription data
+            if (subscription) {
+              subscription.mutate();
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Failed to verify subscription:', error);
+        });
+
+      // Clear the payment_success parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('payment_success');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [subscription]);
 
   // Check for new installations and redirect to onboarding
   useEffect(() => {
