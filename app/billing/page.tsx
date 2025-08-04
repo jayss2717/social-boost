@@ -43,23 +43,31 @@ function BillingContent() {
       // Redirect to dashboard with payment success parameter
       setTimeout(() => {
         const dashboardUrl = shop ? `/?shop=${shop}&payment_success=true` : '/?payment_success=true';
+        
+        // Check if we're in Shopify admin context
         if (window !== window.top && window.top !== null) {
+          // In Shopify admin iframe, redirect the top window
           window.top!.location.href = dashboardUrl;
         } else {
+          // Direct access, redirect current window
           window.location.href = dashboardUrl;
         }
-      }, 2000);
+      }, 1000); // Reduced timeout for faster redirect
     } else if (canceled) {
       setStatus('canceled');
       // Redirect back to dashboard
       setTimeout(() => {
         const dashboardUrl = shop ? `/?shop=${shop}` : '/';
+        
+        // Check if we're in Shopify admin context
         if (window !== window.top && window.top !== null) {
+          // In Shopify admin iframe, redirect the top window
           window.top!.location.href = dashboardUrl;
         } else {
+          // Direct access, redirect current window
           window.location.href = dashboardUrl;
         }
-      }, 2000);
+      }, 1000); // Reduced timeout for faster redirect
     }
   }, [searchParams]);
 

@@ -119,8 +119,16 @@ export default function OnboardingPage() {
     const checkOnboardingStatus = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop');
+      const paymentSuccess = urlParams.get('payment_success');
       
       if (!shop) return;
+
+      // If payment was successful, redirect to dashboard immediately
+      if (paymentSuccess === 'true') {
+        console.log('Payment success detected, redirecting to dashboard...');
+        window.location.href = `/?shop=${shop}&payment_success=true`;
+        return;
+      }
 
       try {
         const response = await fetch(`/api/merchant?shop=${shop}`);
