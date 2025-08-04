@@ -256,63 +256,82 @@ export default function OnboardingPage() {
 
       console.log('Completing onboarding with data:', onboardingData);
 
-      // If a paid plan is selected, redirect to payment
-      if (onboardingData.selectedPlan && onboardingData.selectedPlan !== 'Starter' && onboardingData.selectedPlan !== undefined) {
-        console.log('Paid plan selected, redirecting to payment...');
+      // For Starter plan, complete onboarding and go to dashboard immediately
+      if (onboardingData.selectedPlan === 'Starter' || !onboardingData.selectedPlan) {
+        console.log('Starter plan selected, completing onboarding...');
+        
+        const response = await fetch('/api/onboarding/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            shop,
+            onboardingData,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('Onboarding completed successfully for Starter plan');
+          // Redirect to dashboard
+          const dashboardUrl = `/?shop=${shop}`;
+          window.location.href = dashboardUrl;
+        } else {
+          console.error('Failed to complete onboarding:', response.status);
+          // Still redirect to dashboard
+          const dashboardUrl = `/?shop=${shop}`;
+          window.location.href = dashboardUrl;
+        }
+        return;
+      }
+
+      // For paid plans (Pro, Scale, Enterprise), redirect to payment
+      if (onboardingData.selectedPlan && ['Pro', 'Scale', 'Enterprise'].includes(onboardingData.selectedPlan)) {
+        console.log(`Paid plan selected (${onboardingData.selectedPlan}), redirecting to payment...`);
         
         const merchantId = localStorage.getItem('merchantId');
         if (!merchantId) {
           console.error('No merchant ID found');
-          return;
-        }
-
-        const response = await fetch('/api/subscription/upgrade', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-merchant-id': merchantId,
-          },
-          body: JSON.stringify({ plan: onboardingData.selectedPlan }),
-        });
-
-        if (response.ok) {
-          const { url } = await response.json();
-          // Always redirect to top level for Stripe checkout
-          if (window !== window.top && window.top !== null) {
-            window.top!.location.href = url;
-          } else {
-            window.location.href = url;
-          }
-          return;
-        } else {
-          console.error('Failed to create payment session:', response.status);
           // Fall back to completing onboarding without payment
+          await completeOnboardingWithoutPayment(shop);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/subscription/upgrade', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-merchant-id': merchantId,
+            },
+            body: JSON.stringify({ plan: onboardingData.selectedPlan }),
+          });
+
+          if (response.ok) {
+            const { url } = await response.json();
+            console.log('Payment session created, redirecting to Stripe...');
+            // Always redirect to top level for Stripe checkout
+            if (window !== window.top && window.top !== null) {
+              window.top!.location.href = url;
+            } else {
+              window.location.href = url;
+            }
+            return;
+          } else {
+            console.error('Failed to create payment session:', response.status);
+            // Show user-friendly error and complete onboarding
+            await handlePaymentError(shop);
+            return;
+          }
+        } catch (error) {
+          console.error('Error creating payment session:', error);
+          await handlePaymentError(shop);
+          return;
         }
       }
 
-      // Complete onboarding (for free plan or if payment failed)
-      const response = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          shop,
-          onboardingData,
-        }),
-      });
-
-      if (response.ok) {
-        console.log('Onboarding completed successfully');
-        // Redirect to dashboard instead of Shopify admin to avoid redirect loops
-        const dashboardUrl = `/?shop=${shop}`;
-        window.location.href = dashboardUrl;
-      } else {
-        console.error('Failed to complete onboarding:', response.status);
-        // Still redirect to dashboard
-        const dashboardUrl = `/?shop=${shop}`;
-        window.location.href = dashboardUrl;
-      }
+      // Fallback: complete onboarding without payment
+      await completeOnboardingWithoutPayment(shop);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       // Redirect anyway to prevent getting stuck
@@ -322,6 +341,66 @@ export default function OnboardingPage() {
         const dashboardUrl = `/?shop=${shop}`;
         window.location.href = dashboardUrl;
       }
+    }
+  };
+
+  const completeOnboardingWithoutPayment = async (shop: string) => {
+    console.log('Completing onboarding without payment...');
+    
+    const response = await fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        shop,
+        onboardingData,
+      }),
+    });
+
+    if (response.ok) {
+      console.log('Onboarding completed successfully');
+      // Redirect to dashboard
+      const dashboardUrl = `/?shop=${shop}`;
+      window.location.href = dashboardUrl;
+    } else {
+      console.error('Failed to complete onboarding:', response.status);
+      // Still redirect to dashboard
+      const dashboardUrl = `/?shop=${shop}`;
+      window.location.href = dashboardUrl;
+    }
+  };
+
+  const handlePaymentError = async (shop: string) => {
+    console.log('Handling payment error, completing onboarding with Starter plan...');
+    
+    // Update onboarding data to use Starter plan
+    const updatedOnboardingData = {
+      ...onboardingData,
+      selectedPlan: 'Starter',
+    };
+
+    const response = await fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        shop,
+        onboardingData: updatedOnboardingData,
+      }),
+    });
+
+    if (response.ok) {
+      console.log('Onboarding completed with Starter plan after payment error');
+      // Redirect to dashboard
+      const dashboardUrl = `/?shop=${shop}`;
+      window.location.href = dashboardUrl;
+    } else {
+      console.error('Failed to complete onboarding after payment error:', response.status);
+      // Still redirect to dashboard
+      const dashboardUrl = `/?shop=${shop}`;
+      window.location.href = dashboardUrl;
     }
   };
 

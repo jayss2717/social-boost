@@ -6,11 +6,14 @@ import { useEffect, useState, Suspense } from 'react';
 
 function BillingContent() {
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<'success' | 'canceled' | null>(null);
+  const [status, setStatus] = useState<'success' | 'canceled' | 'failed' | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
+    const failed = searchParams.get('failed');
+    const error = searchParams.get('error');
     const shop = searchParams.get('shop');
 
     if (success) {
@@ -68,6 +71,23 @@ function BillingContent() {
           window.location.href = dashboardUrl;
         }
       }, 1000); // Reduced timeout for faster redirect
+    } else if (failed || error) {
+      setStatus('failed');
+      setErrorMessage(error || 'Payment failed. Please try again.');
+      
+      // Redirect back to dashboard after showing error
+      setTimeout(() => {
+        const dashboardUrl = shop ? `/?shop=${shop}` : '/';
+        
+        // Check if we're in Shopify admin context
+        if (window !== window.top && window.top !== null) {
+          // In Shopify admin iframe, redirect the top window
+          window.top!.location.href = dashboardUrl;
+        } else {
+          // Direct access, redirect current window
+          window.location.href = dashboardUrl;
+        }
+      }, 3000); // Give user time to read error message
     }
   }, [searchParams]);
 
@@ -104,13 +124,37 @@ function BillingContent() {
             </Button>
           </div>
         </BlockStack>
+      ) : status === 'failed' ? (
+        <BlockStack gap="400">
+          <Text variant="headingLg" as="h2" tone="critical">
+            Payment Failed
+          </Text>
+          <Text variant="bodyMd" tone="subdued" as="p">
+            {errorMessage || 'There was an issue processing your payment. Please try again.'}
+          </Text>
+          <Text variant="bodyMd" tone="subdued" as="p">
+            You can upgrade your plan later from the dashboard.
+          </Text>
+          <div className="mt-4">
+            <Button 
+              variant="primary" 
+              onClick={() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const shop = urlParams.get('shop');
+                window.location.href = `/?shop=${shop}`;
+              }}
+            >
+              Return to Dashboard
+            </Button>
+          </div>
+        </BlockStack>
       ) : (
         <BlockStack gap="400">
           <Text variant="headingLg" as="h2">
-            Subscription Update Canceled
+            Payment Canceled
           </Text>
           <Text variant="bodyMd" tone="subdued" as="p">
-            Your subscription remains unchanged. You can upgrade at any time from the dashboard.
+            Your payment was canceled. You can upgrade your plan later from the dashboard.
           </Text>
           <div className="mt-4">
             <Button 
