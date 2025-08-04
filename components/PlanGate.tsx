@@ -31,7 +31,7 @@ export function PlanGate({
     return (
       <Card>
         <div style={{ padding: '1rem', textAlign: 'center' }}>
-          <Text variant="bodyMd" tone="subdued">
+          <Text variant="bodyMd" tone="subdued" as="p">
             Loading subscription data...
           </Text>
         </div>
