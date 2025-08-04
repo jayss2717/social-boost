@@ -5,6 +5,8 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Check if Stripe is configured
     if (!stripe) {
@@ -34,6 +36,38 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Webhook: Processing ${event.type} event for ${event.id}`);
+
+    // Process the event asynchronously to avoid timeouts
+    processWebhookEvent(event).catch(error => {
+      console.error('❌ Async webhook processing error:', error);
+    });
+
+    // Return immediately to prevent timeout
+    const responseTime = Date.now() - startTime;
+    console.log(`✅ Webhook response sent in ${responseTime}ms`);
+    
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error('❌ Webhook error:', error);
+    const responseTime = Date.now() - startTime;
+    console.log(`❌ Webhook error response in ${responseTime}ms`);
+    
+    return NextResponse.json(
+      { error: 'Webhook handler failed' },
+      { status: 500 }
+    );
+  }
+}
+
+async function processWebhookEvent(event: Stripe.Event) {
+  const startTime = Date.now();
+  
+  try {
+    // Ensure stripe is available in the async function
+    if (!stripe) {
+      console.error('Stripe not available in async processing');
+      return;
+    }
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -296,12 +330,11 @@ export async function POST(request: NextRequest) {
         console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
 
-    return NextResponse.json({ received: true });
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Webhook event processed in ${processingTime}ms`);
   } catch (error) {
-    console.error('❌ Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
-    );
+    console.error('❌ Async webhook processing error:', error);
+    const processingTime = Date.now() - startTime;
+    console.log(`❌ Webhook processing failed in ${processingTime}ms`);
   }
 } 
