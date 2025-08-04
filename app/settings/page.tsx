@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [saveMessage, setSaveMessage] = useState('');
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [paymentMethodLoading, setPaymentMethodLoading] = useState(false);
   
   // Handle OAuth results
   useEffect(() => {
@@ -137,6 +139,7 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchSettings();
     fetchInvoices();
+    fetchPaymentMethod();
   }, []);
 
   const fetchSettings = async () => {
@@ -283,6 +286,29 @@ export default function SettingsPage() {
       console.error('Error fetching invoices:', error);
     } finally {
       setInvoicesLoading(false);
+    }
+  };
+
+  const fetchPaymentMethod = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.log('No merchant ID found, skipping payment method fetch');
+        return;
+      }
+
+      setPaymentMethodLoading(true);
+      const response = await fetch(`/api/subscription/payment-method?merchantId=${merchantId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setPaymentMethod(data.paymentMethod);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment method:', error);
+    } finally {
+      setPaymentMethodLoading(false);
     }
   };
 
@@ -2292,26 +2318,53 @@ export default function SettingsPage() {
                     Payment Method
                   </Text>
                   <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <CreditCard className="w-5 h-5" />
-                        <div>
-                          <Text variant="bodyMd" fontWeight="semibold" as="p">
-                            Visa ending in 4242
-                          </Text>
-                          <Text variant="bodySm" tone="subdued" as="p">
-                            Expires 12/25
-                          </Text>
-                        </div>
+                    {paymentMethodLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                       </div>
-                      <Button 
-                        size="slim" 
-                        variant="secondary"
-                        onClick={handleUpdatePayment}
-                      >
-                        Update
-                      </Button>
-                    </div>
+                    ) : paymentMethod ? (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <CreditCard className="w-5 h-5" />
+                          <div>
+                            <Text variant="bodyMd" fontWeight="semibold" as="p">
+                              {paymentMethod.brand} ending in {paymentMethod.last4}
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                              Expires {paymentMethod.exp_month}/{paymentMethod.exp_year}
+                            </Text>
+                          </div>
+                        </div>
+                        <Button 
+                          size="slim" 
+                          variant="secondary"
+                          onClick={handleUpdatePayment}
+                        >
+                          Update
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <CreditCard className="w-5 h-5" />
+                          <div>
+                            <Text variant="bodyMd" fontWeight="semibold" as="p">
+                              No payment method on file
+                            </Text>
+                            <Text variant="bodySm" tone="subdued" as="p">
+                              Add a payment method to continue
+                            </Text>
+                          </div>
+                        </div>
+                        <Button 
+                          size="slim" 
+                          variant="primary"
+                          onClick={handleUpdatePayment}
+                        >
+                          Add Payment Method
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

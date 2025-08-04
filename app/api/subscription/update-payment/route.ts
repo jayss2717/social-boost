@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           
           const session = await stripe.billingPortal.sessions.create({
             customer: customer.id,
-            return_url: `${baseUrl}/settings?shop=${merchant.shop}`,
+            return_url: `https://${merchant.shop}/admin/apps/socialboost-2`,
           });
 
           console.log('🔄 Update Payment API: Billing portal session created:', session.url);
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ['card'],
           mode: 'setup',
-          success_url: `${baseUrl}/settings?success=payment_updated&shop=${merchant.shop}`,
-          cancel_url: `${baseUrl}/settings?cancel=payment_update&shop=${merchant.shop}`,
+          success_url: `https://${merchant.shop}/admin/apps/socialboost-2?success=payment_updated`,
+          cancel_url: `https://${merchant.shop}/admin/apps/socialboost-2?cancel=payment_update`,
           customer_email: merchant.shopEmail || undefined,
           metadata: {
             merchantId: merchant.id,
