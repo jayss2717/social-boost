@@ -5,6 +5,7 @@ import { useMerchantId } from '@/hooks/useMerchantId';
 import { useMerchantData } from '@/hooks/useMerchantData';
 import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
+import { UsageWarning } from '@/components/UsageWarning';
 import { useState, useEffect } from 'react';
 import { withHost } from '@/utils/withHost';
 export default function DashboardPage() {
@@ -168,9 +169,18 @@ export default function DashboardPage() {
           </Card>
         </Layout.Section>
 
+        {/* Usage Warnings */}
+        <Layout.Section>
+          <UsageWarning type="ugc" />
+          <UsageWarning type="influencer" />
+        </Layout.Section>
+
         {/* Usage Overview */}
         <Layout.Section>
-          <UsageMeter showDetails={showDetailedMetrics} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <UsageMeter type="ugc" showDetails={showDetailedMetrics} />
+            <UsageMeter type="influencer" showDetails={showDetailedMetrics} />
+          </div>
         </Layout.Section>
 
         {/* Quick Actions */}
