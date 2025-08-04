@@ -775,16 +775,14 @@ export default function SettingsPage() {
       const response = await fetch(`/api/subscription/invoices?merchantId=${merchantId}&invoiceId=${invoiceId}`);
       
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoiceId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        setSaveMessage('✅ Invoice downloaded successfully');
+        const data = await response.json();
+        if (data.success && data.url) {
+          // Open the hosted invoice URL in a new tab
+          window.open(data.url, '_blank');
+          setSaveMessage('✅ Invoice opened in new tab');
+        } else {
+          setSaveMessage('❌ Invoice not available for download');
+        }
       } else {
         setSaveMessage('❌ Failed to download invoice');
       }

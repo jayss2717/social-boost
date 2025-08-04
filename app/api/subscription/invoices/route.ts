@@ -37,14 +37,17 @@ export async function GET(request: NextRequest) {
       if (stripe) {
         try {
           const invoice = await stripe.invoices.retrieve(invoiceId);
-          const pdf = await stripe.invoices.retrievePdf(invoiceId);
           
-          return new NextResponse(pdf, {
-            headers: {
-              'Content-Type': 'application/pdf',
-              'Content-Disposition': `attachment; filename="invoice-${invoiceId}.pdf"`,
-            },
-          });
+          // Redirect to the hosted invoice URL instead of trying to download PDF
+          if (invoice.hosted_invoice_url) {
+            return NextResponse.json({
+              success: true,
+              url: invoice.hosted_invoice_url,
+              message: 'Redirecting to invoice...',
+            });
+          } else {
+            return NextResponse.json({ error: 'Invoice PDF not available' }, { status: 404 });
+          }
         } catch (stripeError) {
           console.error('Stripe invoice error:', stripeError);
           return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
