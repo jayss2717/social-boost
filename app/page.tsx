@@ -30,7 +30,7 @@ export default function DashboardPage() {
   
   // Use the new merchant data hook
   const { merchantData, isOAuthCompleted } = useMerchantData(shop || undefined);
-  const { data: subscription, mutate: mutateSubscription } = useSubscription();
+  const { mutate: mutateSubscription } = useSubscription();
 
   // Check for payment success and verify subscription
   useEffect(() => {

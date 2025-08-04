@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { stripe } from '@/lib/stripe';
+import { Stripe } from 'stripe';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    console.log('Starting automated subscription sync...');
-
-    // Get all merchants with subscriptions
+    console.log('Starting bulk subscription sync...');
+    
+    // Get all merchants
     const merchants = await prisma.merchant.findMany({
       include: {
         subscription: {
@@ -17,124 +17,123 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const results = {
-      total: merchants.length,
-      verified: 0,
-      updated: 0,
-      created: 0,
-      errors: 0,
-      details: [] as any[],
-    };
+    console.log(`Found ${merchants.length} merchants to sync`);
+
+    let updatedCount = 0;
+    let errorCount = 0;
 
     for (const merchant of merchants) {
       try {
-        console.log(`Syncing subscription for ${merchant.shop}`);
+        // Create Starter plan if it doesn't exist
+        const starterPlan = await prisma.plan.upsert({
+          where: { name: 'Starter' },
+          update: {},
+          create: {
+            name: 'Starter',
+            priceCents: 0,
+            ugcLimit: 5,
+            influencerLimit: 1,
+          },
+        });
 
-        // If no subscription exists, create default Starter
+        // If merchant has no subscription, create a Starter subscription
         if (!merchant.subscription) {
-          const starterPlan = await prisma.plan.findUnique({
-            where: { name: 'Starter' },
+          await prisma.subscription.create({
+            data: {
+              merchantId: merchant.id,
+              planId: starterPlan.id,
+              status: 'ACTIVE',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
           });
-
-          if (starterPlan) {
-            await prisma.subscription.create({
-              data: {
-                merchantId: merchant.id,
-                planId: starterPlan.id,
-                status: 'ACTIVE',
-                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              },
-            });
-
-            results.created++;
-            results.details.push({
-              shop: merchant.shop,
-              action: 'created_starter',
-              message: 'Created default Starter subscription',
-            });
-          }
+          console.log(`Created Starter subscription for merchant ${merchant.id}`);
+          updatedCount++;
           continue;
         }
 
-        // If subscription has Stripe ID, verify with Stripe
-        if (merchant.subscription.stripeSubId && stripe) {
+        // Check if subscription is expired
+        if (merchant.subscription.currentPeriodEnd < new Date()) {
+          await prisma.subscription.update({
+            where: { id: merchant.subscription.id },
+            data: {
+              status: 'CANCELED',
+            },
+          });
+          console.log(`Marked subscription as expired for merchant ${merchant.id}`);
+          updatedCount++;
+        }
+
+        // For paid plans, sync with Stripe
+        if (merchant.subscription.plan.name !== 'Starter') {
           try {
-            const stripeSubscription = await stripe.subscriptions.retrieve(
-              merchant.subscription.stripeSubId
+            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+              apiVersion: '2023-10-16',
+            });
+
+            // Get customer from Stripe using shop domain
+            const customers = await stripe.customers.list({
+              limit: 100,
+            });
+
+            const customer = customers.data.find(c => 
+              c.metadata?.shop === merchant.shop || 
+              c.email === merchant.shop
             );
 
-            // Update if status differs
-            if (stripeSubscription.status !== merchant.subscription.status.toLowerCase()) {
-              await prisma.subscription.update({
-                where: { id: merchant.subscription.id },
-                data: {
-                  status: stripeSubscription.status === 'active' ? 'ACTIVE' : 'CANCELED',
-                  currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-                },
+            if (customer) {
+              const subscriptions = await stripe.subscriptions.list({
+                customer: customer.id,
+                status: 'active',
               });
 
-              results.updated++;
-              results.details.push({
-                shop: merchant.shop,
-                action: 'updated_status',
-                message: `Updated from ${merchant.subscription.status} to ${stripeSubscription.status}`,
-              });
-            } else {
-              results.verified++;
-              results.details.push({
-                shop: merchant.shop,
-                action: 'verified',
-                message: 'Subscription status verified',
-              });
+              if (subscriptions.data.length > 0) {
+                const stripeSubscription = subscriptions.data[0];
+                const product = await stripe.products.retrieve(stripeSubscription.items.data[0].price.product as string);
+                
+                // Update subscription based on Stripe data
+                const planName = product.name;
+                const plan = await prisma.plan.findUnique({
+                  where: { name: planName },
+                });
+
+                if (plan) {
+                  await prisma.subscription.update({
+                    where: { id: merchant.subscription.id },
+                    data: {
+                      planId: plan.id,
+                      status: 'ACTIVE',
+                      currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+                    },
+                  });
+                  console.log(`Synced subscription for merchant ${merchant.id} with Stripe`);
+                  updatedCount++;
+                }
+              }
             }
-          } catch (error) {
-            console.error(`Error syncing ${merchant.shop}:`, error);
-            
-            // Mark as canceled if Stripe subscription not found
-            await prisma.subscription.update({
-              where: { id: merchant.subscription.id },
-              data: {
-                status: 'CANCELED',
-                stripeSubId: null,
-              },
-            });
-
-            results.updated++;
-            results.details.push({
-              shop: merchant.shop,
-              action: 'marked_canceled',
-              message: 'Stripe subscription not found, marked as canceled',
-            });
+          } catch (stripeError) {
+            console.error(`Stripe sync error for merchant ${merchant.id}:`, stripeError);
+            errorCount++;
           }
-        } else {
-          // No Stripe ID, just verify local subscription
-          results.verified++;
-          results.details.push({
-            shop: merchant.shop,
-            action: 'verified',
-            message: 'Local subscription verified',
-          });
         }
       } catch (error) {
-        console.error(`Error processing ${merchant.shop}:`, error);
-        results.errors++;
-        results.details.push({
-          shop: merchant.shop,
-          action: 'error',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        });
+        console.error(`Error processing merchant ${merchant.id}:`, error);
+        errorCount++;
       }
     }
 
-    console.log('Subscription sync completed:', results);
+    console.log(`Sync completed. Updated: ${updatedCount}, Errors: ${errorCount}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Subscription sync completed',
-      results,
+      message: `Sync completed. Updated: ${updatedCount}, Errors: ${errorCount}`,
+      updatedCount,
+      errorCount,
     });
   } catch (error) {
-    console.error('Subscription sync error:', error);
-    return NextResponse.json({ error: 'Failed to sync subscriptions' }, { status: 500 });
+    console.error('Bulk sync error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to sync subscriptions' },
+      { status: 500 }
+    );
   }
 } 

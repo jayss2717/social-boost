@@ -31,7 +31,11 @@ export async function GET(request: NextRequest) {
       updated: 0,
       created: 0,
       errors: 0,
-      details: [] as any[],
+      details: [] as Array<{
+        shop: string;
+        action: string;
+        message: string;
+      }>,
     };
 
     for (const merchant of merchants) {

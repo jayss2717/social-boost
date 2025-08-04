@@ -34,10 +34,10 @@ export default function PayoutsPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [filteredPayouts, setFilteredPayouts] = useState<Payout[]>([]);
   const [summary, setSummary] = useState<PayoutSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
+  const [isLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
