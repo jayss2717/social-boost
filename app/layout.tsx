@@ -10,6 +10,13 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'SocialBoost - Influencer Marketing & UGC Management',
   description: 'Manage influencer partnerships, UGC content, and commission payouts for your Shopify store',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
