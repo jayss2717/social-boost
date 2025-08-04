@@ -1,10 +1,20 @@
 'use client';
 
 import { Card, Text, Button, BlockStack } from '@shopify/polaris';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+interface DebugInfo {
+  shop: string | null;
+  merchantId: string | null;
+  localStorageKeys: string[];
+  subscriptionWithoutHeader: any;
+  subscriptionWithHeader: any;
+  timestamp: string;
+  error?: string;
+}
 
 export function SubscriptionDebug() {
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const runDebug = async () => {
@@ -39,8 +49,13 @@ export function SubscriptionDebug() {
       });
     } catch (error) {
       setDebugInfo({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        shop: null,
+        merchantId: null,
+        localStorageKeys: [],
+        subscriptionWithoutHeader: null,
+        subscriptionWithHeader: null,
         timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
       setIsLoading(false);
