@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { apiFetch } from '@/utils/api';
 import { useMerchantId } from './useMerchantId';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const fetcher = async (url: string) => {
   // Check if merchantId is available
@@ -34,6 +34,7 @@ const fetcher = async (url: string) => {
 export function useSubscription() {
   const merchantId = useMerchantId();
   const [shop, setShop] = useState<string | null>(null);
+  const [paymentSuccessProcessed, setPaymentSuccessProcessed] = useState(false);
   
   // Get shop from URL params
   useEffect(() => {
@@ -54,16 +55,17 @@ export function useSubscription() {
     }
   );
 
-  // Force refresh when payment success is detected
+  // Force refresh when payment success is detected (only once)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentSuccess = urlParams.get('payment_success');
     
-    if (paymentSuccess === 'true' && merchantId && shop) {
+    if (paymentSuccess === 'true' && merchantId && shop && !paymentSuccessProcessed) {
       console.log('Payment success detected, refreshing subscription data...');
+      setPaymentSuccessProcessed(true);
       mutate();
     }
-  }, [merchantId, shop, mutate]);
+  }, [merchantId, shop, mutate, paymentSuccessProcessed]);
 
   return {
     data,

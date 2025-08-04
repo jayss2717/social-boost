@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
     // Extract store name from shop URL
     const storeName = shop.replace('.myshopify.com', '');
     
+    // Get the app URL for proper redirects
+    const appUrl = process.env.HOST || 'https://socialboost-blue.vercel.app';
+    
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -50,8 +53,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2?payment_success=true`,
-      cancel_url: `https://admin.shopify.com/store/${storeName}/apps/socialboost-2`,
+      success_url: `${appUrl}/?shop=${shop}&payment_success=true`,
+      cancel_url: `${appUrl}/?shop=${shop}`,
       metadata: {
         merchantId,
         plan,

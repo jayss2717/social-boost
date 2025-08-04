@@ -6,7 +6,7 @@ import { useMerchantData } from '@/hooks/useMerchantData';
 import { useMetrics } from '@/hooks/useMetrics';
 import { UsageMeter } from '@/components/UsageMeter';
 import { UsageWarning } from '@/components/UsageWarning';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { withHost } from '@/utils/withHost';
 import { useSubscription } from '@/hooks/useSubscription';
 
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const { data: metrics } = useMetrics();
   const [showDetailedMetrics, setShowDetailedMetrics] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [paymentProcessed, setPaymentProcessed] = useState(false);
   
   // Get shop from URL params
   const [shop, setShop] = useState<string | null>(null);
@@ -32,71 +33,77 @@ export default function DashboardPage() {
   const { merchantData, isOAuthCompleted } = useMerchantData(shop || undefined);
   const { mutate: mutateSubscription } = useSubscription();
 
-  // Check for payment success and verify subscription
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentSuccess = urlParams.get('payment_success');
-    const shop = urlParams.get('shop');
-
-    console.log('🔍 Main page payment success check:', {
-      paymentSuccess,
-      shop,
-      currentUrl: window.location.href,
-      isIframe: window !== window.top
-    });
-
-    if (paymentSuccess === 'true' && shop) {
-      console.log('✅ Payment success detected, completing onboarding and verifying subscription...');
-      
+  // Handle payment success processing
+  const processPaymentSuccess = useCallback(async (shop: string) => {
+    if (paymentProcessed) return; // Prevent duplicate processing
+    
+    console.log('✅ Processing payment success for shop:', shop);
+    setPaymentProcessed(true);
+    
+    try {
       // First, complete onboarding
-      fetch('/api/merchant/complete-onboarding', {
+      const onboardingResponse = await fetch('/api/merchant/complete-onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ shop }),
-      })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Onboarding completed after payment:', data);
-          
-          // Then verify subscription
-          return fetch(`/api/subscription/verify?shop=${shop}`, {
-            method: 'POST',
-          });
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Subscription verification result:', data);
-          if (data.success) {
-            // Refresh subscription data
-            if (mutateSubscription) {
-              mutateSubscription();
-            }
-          }
-        })
-        .catch(error => {
-          console.error('Failed to process payment success:', error);
+      });
+      
+      if (onboardingResponse.ok) {
+        console.log('Onboarding completed after payment');
+        
+        // Then verify subscription
+        const verifyResponse = await fetch(`/api/subscription/verify?shop=${shop}`, {
+          method: 'POST',
         });
-
+        
+        if (verifyResponse.ok) {
+          const data = await verifyResponse.json();
+          console.log('Subscription verification result:', data);
+          if (data.success && mutateSubscription) {
+            mutateSubscription();
+          }
+        }
+      }
+      
       // Clear the payment_success parameter
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('payment_success');
       window.history.replaceState({}, '', newUrl.toString());
-    }
-  }, [mutateSubscription]);
-
-  // Check for new installations and redirect to onboarding
-  useEffect(() => {
-    const checkForNewInstallation = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const shop = urlParams.get('shop');
-      const paymentSuccess = urlParams.get('payment_success');
       
-      if (shop && !merchantId && !isRedirecting) {
-        console.log('New installation detected, checking merchant status...');
-        setIsRedirecting(true);
-        
+    } catch (error) {
+      console.error('Failed to process payment success:', error);
+    }
+  }, [paymentProcessed, mutateSubscription]);
+
+  // Check for payment success and new installations
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const shop = urlParams.get('shop');
+
+    console.log('🔍 Main page check:', {
+      paymentSuccess,
+      shop,
+      currentUrl: window.location.href,
+      isIframe: window !== window.top,
+      paymentProcessed,
+      merchantId,
+      isRedirecting
+    });
+
+    if (paymentSuccess === 'true' && shop && !paymentProcessed) {
+      processPaymentSuccess(shop);
+      return; // Don't proceed with other checks if processing payment
+    }
+
+    // Check for new installations and redirect to onboarding
+    if (shop && !merchantId && !isRedirecting && !paymentProcessed) {
+      console.log('New installation detected, checking merchant status...');
+      setIsRedirecting(true);
+      
+      const checkMerchantStatus = async () => {
         try {
           const response = await fetch(`/api/merchant?shop=${shop}`);
           if (response.ok) {
@@ -105,46 +112,22 @@ export default function DashboardPage() {
             // Store merchant ID in localStorage
             localStorage.setItem('merchantId', merchantData.id);
             
-            // If payment was successful, force complete onboarding and stay on dashboard
-            if (paymentSuccess === 'true') {
-              console.log('Payment successful, completing onboarding...');
-              try {
-                await fetch('/api/merchant/complete-onboarding', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ merchantId: merchantData.id }),
-                });
-                console.log('Onboarding completed after payment');
-                // Clear the payment_success parameter to avoid redirect loops
-                const newUrl = new URL(window.location.href);
-                newUrl.searchParams.delete('payment_success');
-                window.history.replaceState({}, '', newUrl.toString());
-                // Don't redirect anywhere - stay on dashboard
-                setIsRedirecting(false);
-                return;
-              } catch (error) {
-                console.error('Failed to complete onboarding after payment:', error);
-              }
-            }
-            
-            // Only redirect to onboarding if not a new merchant and onboarding not completed AND no payment success
-            if (merchantData._newMerchant || (!merchantData.onboardingCompleted && !paymentSuccess)) {
+            // Only redirect to onboarding if not a new merchant and onboarding not completed
+            if (merchantData._newMerchant || !merchantData.onboardingCompleted) {
               console.log('Redirecting to onboarding...');
               window.location.href = `/onboarding?shop=${shop}`;
             }
           }
         } catch (error) {
           console.error('Error checking merchant status:', error);
+        } finally {
+          setIsRedirecting(false);
         }
-        
-        setIsRedirecting(false);
-      }
-    };
-
-    checkForNewInstallation();
-  }, [merchantId, isRedirecting, host]);
+      };
+      
+      checkMerchantStatus();
+    }
+  }, [shop, merchantId, isRedirecting, paymentProcessed, processPaymentSuccess]);
 
   // Show loading state while redirecting or OAuth is in progress
   if (isRedirecting || (merchantData && !isOAuthCompleted)) {
