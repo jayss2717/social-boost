@@ -168,6 +168,21 @@ export default function DashboardPage() {
                   <Badge tone="success">Usage Tracking</Badge>
                   <Badge tone="success">Revenue Analytics</Badge>
                 </div>
+
+                {/* Show helpful message for new accounts */}
+                {metrics && metrics.summary.totalUsage === 0 && metrics.summary.influencerCount === 0 && (
+                  <div style={{ 
+                    backgroundColor: '#f0f9ff', 
+                    border: '1px solid #0ea5e9', 
+                    borderRadius: '8px', 
+                    padding: '1rem', 
+                    marginTop: '1rem' 
+                  }}>
+                    <Text variant="bodyMd" as="p" tone="subdued">
+                      🚀 <strong>Next Steps:</strong> Start by adding your first influencer or connecting your social media accounts to detect brand mentions automatically.
+                    </Text>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -229,6 +244,22 @@ export default function DashboardPage() {
                     </Button>
                   </div>
 
+                  {/* Show helpful message for new accounts */}
+                  {metrics.summary.totalUsage === 0 && metrics.summary.influencerCount === 0 && (
+                    <div style={{ 
+                      backgroundColor: '#f0f9ff', 
+                      border: '1px solid #0ea5e9', 
+                      borderRadius: '8px', 
+                      padding: '1rem', 
+                      marginBottom: '1rem' 
+                    }}>
+                      <Text variant="bodyMd" as="p" tone="subdued">
+                        🎉 Welcome to SocialBoost! Your metrics will appear here once you start working with influencers and creating discount codes. 
+                        Get started by adding your first influencer or connecting your social media accounts.
+                      </Text>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div style={{ textAlign: 'center' }}>
                       <Text variant="headingLg" as="p" tone="success">
@@ -258,8 +289,8 @@ export default function DashboardPage() {
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
-                      <Text variant="headingLg" as="p" tone="critical">
-                        ${metrics.performance.averageOrderValue.toFixed(2)}
+                      <Text variant="headingLg" as="p" tone="success">
+                        ${(metrics.performance.averageOrderValue / 100).toFixed(2)}
                       </Text>
                       <Text variant="bodySm" as="p" tone="subdued">
                         Avg Order Value
