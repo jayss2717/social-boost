@@ -6,6 +6,7 @@ import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanSelectionModal } from '@/components/PlanSelectionModal';
+import { SubscriptionDebug } from '@/components/SubscriptionDebug';
 
 export default function SettingsPage() {
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
@@ -2206,6 +2207,11 @@ export default function SettingsPage() {
               </BlockStack>
             </div>
           </Card>
+        </Layout.Section>
+
+        {/* Debug Component - Temporary */}
+        <Layout.Section>
+          <SubscriptionDebug />
         </Layout.Section>
 
       </Layout>
