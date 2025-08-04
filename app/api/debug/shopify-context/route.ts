@@ -16,7 +16,19 @@ export async function GET(request: NextRequest) {
       'referer': request.headers.get('referer'),
     };
 
-    const result = {
+    const result: {
+      success: boolean;
+      message: string;
+      shop: string;
+      headers: {
+        'x-shopify-shop-domain': string | null;
+        'x-shopify-api-version': string | null;
+        'x-shopify-webhook-id': string | null;
+        'user-agent': string | null;
+        'referer': string | null;
+      };
+      recommendations: string[];
+    } = {
       success: true,
       message: 'Shopify context check completed',
       shop,
