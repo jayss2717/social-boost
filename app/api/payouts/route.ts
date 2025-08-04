@@ -1,49 +1,84 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { payoutSchema, createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { requireMerchantId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const merchantId = request.headers.get('x-merchant-id');
+    const merchantId = requireMerchantId(request);
+    const { searchParams } = new URL(request.url);
     
-    if (!merchantId) {
-      return createErrorResponse('Merchant ID required', 401);
+    const status = searchParams.get('status');
+    const influencerId = searchParams.get('influencerId');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+
+    const whereClause: Record<string, unknown> = { merchantId };
+    
+    if (status) {
+      whereClause.status = status;
+    }
+    
+    if (influencerId) {
+      whereClause.influencerId = influencerId;
     }
 
-
-
     const payouts = await prisma.payout.findMany({
-      where: { merchantId },
+      where: whereClause,
       include: {
-        influencer: true,
+        influencer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            commissionRate: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit,
     });
 
-    return createSuccessResponse(payouts);
+    const total = await prisma.payout.count({ where: whereClause });
+
+    return createSuccessResponse({
+      payouts,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch payouts:', error);
+    if (error instanceof Error && error.message === 'Merchant ID required') {
+      return createErrorResponse('Merchant ID required', 401);
+    }
     return createErrorResponse('Failed to fetch payouts', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const merchantId = request.headers.get('x-merchant-id');
-    
-    if (!merchantId) {
-      return createErrorResponse('Merchant ID required', 401);
+    const merchantId = requireMerchantId(request);
+    const body = await request.json();
+
+    const { influencerId, amount, salesAmount } = body;
+
+    // Validate required fields
+    if (!influencerId || !amount || !salesAmount) {
+      return createErrorResponse('Missing required fields', 400);
     }
 
-    const body = await request.json();
-    const validatedData = payoutSchema.parse(body);
-
-    // Verify influencer exists and belongs to merchant
+    // Get influencer details
     const influencer = await prisma.influencer.findFirst({
-      where: {
-        id: validatedData.influencerId,
+      where: { 
+        id: influencerId,
         merchantId,
       },
     });
@@ -52,24 +87,37 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Influencer not found', 404);
     }
 
+    // Calculate commission
+    const commissionAmount = Math.round(amount * influencer.commissionRate);
+
+    // Create payout
     const payout = await prisma.payout.create({
       data: {
-        merchantId,
-        influencerId: validatedData.influencerId,
-        amount: Math.round(validatedData.amount * 100), // Convert to cents
+        influencerId,
+        amount: commissionAmount,
         status: 'PENDING',
         periodStart: new Date(),
         periodEnd: new Date(),
-        stripeTransferId: null,
+        merchantId,
       },
       include: {
-        influencer: true,
+        influencer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            commissionRate: true,
+          },
+        },
       },
     });
 
     return createSuccessResponse(payout, 'Payout created successfully');
   } catch (error) {
     console.error('Failed to create payout:', error);
+    if (error instanceof Error && error.message === 'Merchant ID required') {
+      return createErrorResponse('Merchant ID required', 401);
+    }
     return createErrorResponse('Failed to create payout', 500);
   }
 } 

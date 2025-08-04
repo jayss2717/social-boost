@@ -13,7 +13,10 @@
     "fix:credentials": "tsx scripts/fix-merchant-credentials.ts",
     "test:app": "node scripts/test-app.js",
     "test:shopify": "node scripts/test-shopify.js",
-    "test:install": "node scripts/test-shopify-install.js"
+    "test:install": "node scripts/test-shopify-install.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/client": "^4.16.2",
@@ -32,9 +35,11 @@
     "ioredis": "^5.3.0",
     "lucide-react": "^0.263.1",
     "next": "^14.2.0",
+    "node-mocks-http": "^1.13.0",
     "postcss": "^8.4.24",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "shopify-api-node": "^3.15.0",
     "stripe": "^14.0.0",
     "swr": "^2.2.4",
     "tailwindcss": "^3.3.2",
@@ -45,6 +50,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
+    "@vitest/coverage-v8": "^1.0.0",
     "jsdom": "^26.1.0",
     "prisma": "^4.16.2",
     "tsx": "^3.12.7"

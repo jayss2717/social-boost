@@ -12,7 +12,7 @@ export const influencerSchema = z.object({
   phone: phoneSchema.optional(),
   instagramHandle: z.string().regex(/^@?[a-zA-Z0-9._]+$/).optional().or(z.literal('')),
   tiktokHandle: z.string().regex(/^@?[a-zA-Z0-9._]+$/).optional().or(z.literal('')),
-  commissionRate: z.number().min(0.01).max(100),
+  commissionRate: z.number().min(0.01).max(1.0), // Changed to decimal format (0.1 = 10%)
 });
 
 // UGC Post validation
