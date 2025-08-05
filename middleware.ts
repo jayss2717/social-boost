@@ -94,14 +94,27 @@ export function middleware(request: NextRequest) {
   // Allow embedding for Shopify apps - check if request is from Shopify admin
   const userAgent = request.headers.get('user-agent') || '';
   const referer = request.headers.get('referer') || '';
-  const isShopifyAdmin = userAgent.includes('Shopify') || referer.includes('admin.shopify.com');
+  const origin = request.headers.get('origin') || '';
+  const secFetchSite = request.headers.get('sec-fetch-site') || '';
+  
+  // More comprehensive Shopify admin detection
+  const isShopifyAdmin = 
+    userAgent.includes('Shopify') || 
+    referer.includes('admin.shopify.com') ||
+    origin.includes('admin.shopify.com') ||
+    secFetchSite === 'cross-site' ||
+    request.nextUrl.searchParams.get('embedded') === '1' ||
+    request.nextUrl.searchParams.get('hmac') ||
+    request.nextUrl.searchParams.get('shop');
   
   if (isShopifyAdmin) {
     // Allow embedding in Shopify admin
     response.headers.set('X-Frame-Options', 'ALLOW-FROM https://admin.shopify.com');
+    console.log('Shopify admin detected - allowing iframe embedding');
   } else {
     // Deny embedding for non-Shopify requests
     response.headers.set('X-Frame-Options', 'DENY');
+    console.log('Non-Shopify request - denying iframe embedding');
   }
   
   response.headers.set('X-XSS-Protection', '1; mode=block');
