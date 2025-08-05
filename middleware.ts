@@ -110,11 +110,11 @@ export function middleware(request: NextRequest) {
   if (isShopifyAdmin) {
     // Allow embedding in Shopify admin
     response.headers.set('X-Frame-Options', 'ALLOW-FROM https://admin.shopify.com');
-    console.log('Shopify admin detected - allowing iframe embedding');
+    console.log('Shopify admin detected - allowing iframe embedding - v2');
   } else {
     // Deny embedding for non-Shopify requests
     response.headers.set('X-Frame-Options', 'DENY');
-    console.log('Non-Shopify request - denying iframe embedding');
+    console.log('Non-Shopify request - denying iframe embedding - v2');
   }
   
   response.headers.set('X-XSS-Protection', '1; mode=block');
