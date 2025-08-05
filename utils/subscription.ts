@@ -34,13 +34,13 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
 
 export const getPlanLimits = (planName: string): PlanLimits => {
   const limits = {
-    'Starter': { ugcLimit: 5, influencerLimit: 1 }, // Free plan: 1 Influencer, 5 DMs/month
+    'STARTER': { ugcLimit: 5, influencerLimit: 1 }, // Free plan: 1 Influencer, 5 DMs/month
     'Pro': { ugcLimit: 300, influencerLimit: 10 }, // 10 Influencers, 300 DMs/month
     'Scale': { ugcLimit: 1000, influencerLimit: 50 }, // 50 Influencers, 1000 DMs/month
-    'Enterprise': { ugcLimit: -1, influencerLimit: -1 }, // Unlimited
+    'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 }, // Unlimited
   };
 
-  return limits[planName as keyof typeof limits] || limits['Starter'];
+  return limits[planName as keyof typeof limits] || limits['STARTER'];
 };
 
 export const checkUsageLimit = async (
@@ -84,9 +84,9 @@ export const withSubscriptionGate = (
       return Response.json({ error: 'No active subscription' }, { status: 403 });
     }
 
-    const planHierarchy = { Free: 0, Pro: 1, Scale: 2 };
+    const planHierarchy = { STARTER: 0, Pro: 1, Scale: 2, ENTERPRISE: 3 };
     const currentPlanLevel = planHierarchy[subscription.plan.name as keyof typeof planHierarchy] || 0;
-    const requiredPlanLevel = planHierarchy[requiredPlan];
+    const requiredPlanLevel = planHierarchy[requiredPlan === 'Free' ? 'STARTER' : requiredPlan] || 0;
 
     if (currentPlanLevel < requiredPlanLevel) {
       return Response.json({ 
