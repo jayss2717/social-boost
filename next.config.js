@@ -16,6 +16,21 @@ const nextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
+  webpack: (config, { isServer }) => {
+    // Exclude extensions directory from the main build
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@shopify/web-pixels-extension': false,
+    };
+    
+    // Exclude extensions from being processed
+    config.module.rules.push({
+      test: /extensions\/.*\.ts$/,
+      use: 'ignore-loader',
+    });
+    
+    return config;
+  },
   async headers() {
     return [
       {

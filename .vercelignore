@@ -1,0 +1,25 @@
+# Exclude extensions from Vercel build
+extensions/
+extensions/web-pixel/
+extensions/web-pixel/node_modules/
+extensions/web-pixel/dist/
+extensions/web-pixel/.shopify/
+
+# Exclude development files
+.env.local
+.env.development
+.env.test
+
+# Exclude test files
+test/
+__tests__/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Exclude documentation (optional)
+docs/
+
+# Exclude scripts
+scripts/ 
