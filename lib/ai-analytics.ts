@@ -24,7 +24,7 @@ export interface AICodeOptimization {
   influencerId: string;
   influencerName: string;
   success: boolean;
-  codes?: any[];
+  codes?: Record<string, unknown>[];
   error?: string;
   aiOptimization?: {
     confidenceScore: number;

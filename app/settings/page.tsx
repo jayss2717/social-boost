@@ -23,9 +23,9 @@ export default function SettingsPage() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Record<string, unknown>[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState<Record<string, unknown> | null>(null);
   const [paymentMethodLoading, setPaymentMethodLoading] = useState(false);
   
   // Handle OAuth results

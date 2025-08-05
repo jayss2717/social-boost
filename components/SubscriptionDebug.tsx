@@ -8,13 +8,13 @@ interface DebugInfo {
   host: string | null;
   merchantId: string | null;
   localStorageKeys: string[];
-  subscriptionWithoutHeader: any;
-  subscriptionWithHeader: any;
-  subscriptionWithMerchantId: any;
+  subscriptionWithoutHeader: Record<string, unknown>;
+  subscriptionWithHeader: Record<string, unknown>;
+  subscriptionWithMerchantId: Record<string, unknown>;
   timestamp: string;
   error?: string;
   urlParams?: Record<string, string | null>;
-  shopifyContext?: any;
+  shopifyContext?: Record<string, unknown>;
 }
 
 export function SubscriptionDebug() {

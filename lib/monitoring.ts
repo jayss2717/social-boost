@@ -9,7 +9,7 @@ export interface LogContext {
   duration?: number;
   error?: Error;
   stack?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface PerformanceMetrics {
@@ -17,7 +17,7 @@ export interface PerformanceMetrics {
   duration: number;
   success: boolean;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class Logger {
@@ -68,7 +68,7 @@ class Logger {
   }
 
   // Performance monitoring
-  trackPerformance(operation: string, duration: number, success: boolean, metadata?: Record<string, any>) {
+  trackPerformance(operation: string, duration: number, success: boolean, metadata?: Record<string, unknown>) {
     const metric: PerformanceMetrics = {
       operation,
       duration,
@@ -188,7 +188,7 @@ class Logger {
 export const logger = Logger.getInstance();
 
 // Middleware for request logging
-export function withRequestLogging<T extends any[], R>(
+export function withRequestLogging<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   operationName: string
 ) {
@@ -236,7 +236,7 @@ export function withDatabaseLogging<T>(
 
 // Health check endpoint data
 export function getHealthMetrics() {
-  const loggerInstance = Logger.getInstance() as any;
+  const loggerInstance = Logger.getInstance() as Record<string, unknown>;
   return {
     performanceMetrics: loggerInstance.performanceMetrics.length,
     uptime: process.uptime(),
