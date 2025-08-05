@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ShopifyAPI } from '@/lib/shopify';
+import { stripe } from '@/lib/stripe';
+import { 
+  withDatabaseRetry, 
+  createErrorResponse, 
+  createSuccessResponse,
+  AppError,
+  DatabaseError,
+  ValidationError 
+} from '@/utils/error-handling';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -22,7 +31,6 @@ export async function GET(request: NextRequest) {
 
   if (!shop || !code) {
     console.error('❌ Missing required parameters:', { shop, hasCode: !!code });
-    // Instead of returning error, redirect to app with error message
     const errorUrl = shop ? `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed` : '/install';
     return NextResponse.redirect(errorUrl);
   }
@@ -30,29 +38,31 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔄 Starting OAuth token exchange for shop:', shop);
     
-    // Exchange code for access token
-    const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: process.env.SHOPIFY_API_KEY,
-        client_secret: process.env.SHOPIFY_API_SECRET,
-        code,
-      }),
-    });
+    // Exchange code for access token with retry logic
+    const tokenData = await withDatabaseRetry(async () => {
+      const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: process.env.SHOPIFY_API_KEY,
+          client_secret: process.env.SHOPIFY_API_SECRET,
+          code,
+        }),
+      });
 
-    console.log('🔄 Token response status:', tokenResponse.status);
+      console.log('🔄 Token response status:', tokenResponse.status);
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('❌ Token exchange failed:', errorText);
-      console.error('❌ Response headers:', Object.fromEntries(tokenResponse.headers.entries()));
-      return NextResponse.json({ error: 'Failed to exchange code for token' }, { status: 401 });
-    }
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('❌ Token exchange failed:', errorText);
+        throw new AppError(`Failed to exchange code for token: ${errorText}`, 401);
+      }
 
-    const tokenData = await tokenResponse.json();
+      return await tokenResponse.json();
+    }, 'token exchange');
+
     const accessToken = tokenData.access_token;
     const scope = tokenData.scope;
     
@@ -63,23 +73,26 @@ export async function GET(request: NextRequest) {
       tokenLength: accessToken?.length || 0
     });
 
-    // Fetch shop data from Shopify
+    // Fetch shop data from Shopify with retry
     console.log('🔄 Fetching shop data from Shopify...');
-    const shopResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-      },
-    });
+    const shopData = await withDatabaseRetry(async () => {
+      const shopResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+        },
+      });
 
-    console.log('🔄 Shop response status:', shopResponse.status);
+      console.log('🔄 Shop response status:', shopResponse.status);
 
-    if (!shopResponse.ok) {
-      const errorText = await shopResponse.text();
-      console.error('❌ Failed to fetch shop data:', errorText);
-      return NextResponse.json({ error: 'Failed to fetch shop data' }, { status: 500 });
-    }
+      if (!shopResponse.ok) {
+        const errorText = await shopResponse.text();
+        console.error('❌ Failed to fetch shop data:', errorText);
+        throw new AppError(`Failed to fetch shop data: ${errorText}`, 500);
+      }
 
-    const shopData = await shopResponse.json();
+      return await shopResponse.json();
+    }, 'shop data fetch');
+
     const shopInfo = shopData.shop;
 
     console.log('✅ Shop data fetched:', { 
@@ -90,54 +103,54 @@ export async function GET(request: NextRequest) {
       timezone: shopInfo.timezone
     });
 
-    // Create or update merchant in database
+    // Create or update merchant in database with comprehensive error handling
     let merchant;
     try {
       console.log('🔄 Starting merchant database operation...');
       
-      // First, try to find existing merchant
-      const existingMerchant = await prisma.merchant.findUnique({
-        where: { shop },
-      });
-
-      console.log('🔄 Existing merchant found:', !!existingMerchant);
-
-      if (existingMerchant) {
-        // Update existing merchant with OAuth data
-        merchant = await prisma.merchant.update({
+      merchant = await withDatabaseRetry(async () => {
+        // First, try to find existing merchant
+        const existingMerchant = await prisma.merchant.findUnique({
           where: { shop },
-          data: {
-            accessToken,
-            scope,
-            shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop, // Set shopifyShopId
-            shopName: shopInfo.name,
-            shopEmail: shopInfo.email,
-            shopDomain: shopInfo.domain,
-            shopCurrency: shopInfo.currency,
-            shopTimezone: shopInfo.timezone,
-            isActive: true,
-          },
         });
-        console.log('✅ Updated existing merchant with OAuth data');
-      } else {
-        // Create new merchant
-        merchant = await prisma.merchant.create({
-          data: {
-            shop,
-            accessToken,
-            scope,
-            shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop, // Set shopifyShopId
-            shopName: shopInfo.name,
-            shopEmail: shopInfo.email,
-            shopDomain: shopInfo.domain,
-            shopCurrency: shopInfo.currency,
-            shopTimezone: shopInfo.timezone,
-            isActive: true,
-            onboardingCompleted: false,
-          },
-        });
-        console.log('✅ Created new merchant with OAuth data');
-      }
+
+        console.log('🔄 Existing merchant found:', !!existingMerchant);
+
+        if (existingMerchant) {
+          // Update existing merchant with OAuth data
+          return await prisma.merchant.update({
+            where: { shop },
+            data: {
+              accessToken,
+              scope,
+              shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
+              shopName: shopInfo.name,
+              shopEmail: shopInfo.email,
+              shopDomain: shopInfo.domain,
+              shopCurrency: shopInfo.currency,
+              shopTimezone: shopInfo.timezone,
+              isActive: true,
+            },
+          });
+        } else {
+          // Create new merchant
+          return await prisma.merchant.create({
+            data: {
+              shop,
+              accessToken,
+              scope,
+              shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
+              shopName: shopInfo.name,
+              shopEmail: shopInfo.email,
+              shopDomain: shopInfo.domain,
+              shopCurrency: shopInfo.currency,
+              shopTimezone: shopInfo.timezone,
+              isActive: true,
+              onboardingCompleted: false,
+            },
+          });
+        }
+      }, 'merchant creation/update');
 
       console.log('✅ Merchant created/updated:', {
         id: merchant.id,
@@ -158,103 +171,146 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(onboardingUrl);
     }
 
-    // Create default subscription (Free plan)
+    // Create Stripe customer automatically
     try {
-      const freePlan = await prisma.plan.findUnique({
-        where: { name: 'Free' },
-      });
+      if (stripe && merchant) { // Check if merchant exists
+        await withDatabaseRetry(async () => {
+          // Check if customer already exists
+          const existingCustomers = await stripe.customers.list({
+            limit: 100,
+          });
+          
+          const existingCustomer = existingCustomers.data.find(c => c.metadata?.shop === shop);
+          
+          if (!existingCustomer) {
+            // Create new Stripe customer
+            const customer = await stripe.customers.create({
+              email: merchant.shopEmail || `${shop.replace('.myshopify.com', '')}@example.com`,
+              name: merchant.shopName || shop.replace('.myshopify.com', ''),
+              metadata: {
+                shop,
+                merchantId: merchant.id,
+                shopifyShopId: merchant.shopifyShopId || '',
+              },
+              description: `Shopify store: ${shop}`,
+            });
+            
+            console.log('✅ Stripe customer created:', customer.id);
+          } else {
+            console.log('✅ Stripe customer already exists:', existingCustomer.id);
+          }
+        }, 'Stripe customer creation');
+      }
+    } catch (error) {
+      console.error('❌ Failed to create Stripe customer:', error);
+      // Continue with onboarding even if Stripe customer creation fails
+    }
 
-      if (!freePlan) {
-        await prisma.plan.create({
-          data: {
-            name: 'Free',
-            priceCents: 0,
-            ugcLimit: 5,        // Updated to match Starter plan
-            influencerLimit: 1,  // Updated to match Starter plan
+    // Create default subscription (Free plan) with retry
+    try {
+      await withDatabaseRetry(async () => {
+        const freePlan = await prisma.plan.findUnique({
+          where: { name: 'Free' },
+        });
+
+        if (!freePlan) {
+          await prisma.plan.create({
+            data: {
+              name: 'Free',
+              priceCents: 0,
+              ugcLimit: 5,
+              influencerLimit: 1,
+            },
+          });
+        }
+
+        await prisma.subscription.upsert({
+          where: { merchantId: merchant.id },
+          update: {},
+          create: {
+            merchantId: merchant.id,
+            planId: freePlan?.id || 'free-plan',
+            status: 'ACTIVE',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         });
-      }
+      }, 'subscription creation');
 
-      await prisma.subscription.upsert({
-        where: { merchantId: merchant.id },
-        update: {},
-        create: {
-          merchantId: merchant.id,
-          planId: freePlan?.id || 'free-plan',
-          status: 'ACTIVE',
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
       console.log('✅ Subscription created for merchant:', merchant.id);
     } catch (error) {
       console.error('❌ Failed to create subscription:', error);
       // Continue with onboarding even if subscription creation fails
     }
 
-    // Create default merchant settings
+    // Create default merchant settings with retry
     try {
-      await prisma.merchantSettings.upsert({
-        where: { merchantId: merchant.id },
-        update: {},
-        create: {
-          merchantId: merchant.id,
-          name: merchant.shopName || shop.replace('.myshopify.com', ''),
-          email: merchant.shopEmail || `admin@${shop}`,
-          website: `https://${shop}`,
-          linkPattern: '/discount/{{code}}',
-          socialMedia: {
-            instagram: '',
-            tiktok: '',
-            twitter: '',
-            youtube: '',
+      await withDatabaseRetry(async () => {
+        await prisma.merchantSettings.upsert({
+          where: { merchantId: merchant.id },
+          update: {},
+          create: {
+            merchantId: merchant.id,
+            name: merchant.shopName || shop.replace('.myshopify.com', ''),
+            email: merchant.shopEmail || `admin@${shop}`,
+            website: `https://${shop}`,
+            linkPattern: '/discount/{{code}}',
+            socialMedia: {
+              instagram: '',
+              tiktok: '',
+              twitter: '',
+              youtube: '',
+            },
+            discountSettings: {
+              defaultPercentage: 20,
+              maxPercentage: 50,
+              minPercentage: 5,
+              autoApprove: false,
+            },
+            commissionSettings: {
+              defaultRate: 10,
+              maxRate: 25,
+              minRate: 5,
+              autoPayout: false,
+            },
+            ugcSettings: {
+              autoApprove: false,
+              minEngagement: 100,
+              requiredHashtags: [],
+              excludedWords: [],
+              codeDelayHours: 2,
+              codeDelayMinutes: 0,
+              maxCodesPerDay: 50,
+              maxCodesPerInfluencer: 1,
+              discountType: 'PERCENTAGE',
+              discountValue: 20,
+              discountUsageLimit: 100,
+            },
+            payoutSettings: {
+              autoPayout: false,
+              payoutSchedule: 'WEEKLY',
+              minimumPayout: 50,
+            },
           },
-          discountSettings: {
-            defaultPercentage: 20,
-            maxPercentage: 50,
-            minPercentage: 5,
-            autoApprove: false,
-          },
-          commissionSettings: {
-            defaultRate: 10,
-            maxRate: 25,
-            minRate: 5,
-            autoPayout: false,
-          },
-          ugcSettings: {
-            autoApprove: false,
-            minEngagement: 100,
-            requiredHashtags: [],
-            excludedWords: [],
-            codeDelayHours: 2,
-            codeDelayMinutes: 0,
-            maxCodesPerDay: 50,
-            maxCodesPerInfluencer: 1,
-            discountType: 'PERCENTAGE',
-            discountValue: 20,
-            discountUsageLimit: 100,
-          },
-          payoutSettings: {
-            autoPayout: false,
-            payoutSchedule: 'WEEKLY',
-            minimumPayout: 50,
-            stripeAccountId: '',
-          },
-        },
-      });
+        });
+      }, 'merchant settings creation');
+
       console.log('✅ Merchant settings created for merchant:', merchant.id);
     } catch (error) {
       console.error('❌ Failed to create merchant settings:', error);
       // Continue with onboarding even if settings creation fails
     }
 
-    // Register webhooks for real-time order processing
+    // Register webhooks for real-time order processing with retry
     try {
-      const shopifyAPI = new ShopifyAPI(accessToken, shop);
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : (process.env.HOST || 'https://socialboost-blue.vercel.app');
-      
-      await shopifyAPI.registerWebhooks(baseUrl);
+      await withDatabaseRetry(async () => {
+        const shopifyAPI = new ShopifyAPI(accessToken, shop);
+        const baseUrl = process.env.VERCEL_URL 
+          ? `https://${process.env.VERCEL_URL}` 
+          : (process.env.HOST || 'https://socialboost-blue.vercel.app');
+        
+        await shopifyAPI.registerWebhooks(baseUrl);
+      }, 'webhook registration');
+
       console.log('✅ Webhooks registered successfully');
     } catch (error) {
       console.error('❌ Failed to register webhooks:', error);
@@ -270,9 +326,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect to onboarding if not completed, otherwise to app
-    // For new installations, always redirect to onboarding
     if (!merchant || !merchant.onboardingCompleted) {
-      // Use Vercel URL for production, localhost for development
       const baseUrl = process.env.VERCEL_URL 
         ? `https://${process.env.VERCEL_URL}` 
         : (process.env.HOST || 'https://socialboost-blue.vercel.app');
@@ -285,15 +339,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
     
-    // Fallback: if we get here, always redirect to onboarding
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : (process.env.HOST || 'https://socialboost-blue.vercel.app');
-    const onboardingUrl = `${baseUrl}/onboarding?shop=${shop}`;
-    console.log('✅ Fallback: redirecting to onboarding:', onboardingUrl);
-    return NextResponse.redirect(onboardingUrl);
   } catch (error) {
     console.error('❌ Shopify OAuth error:', error);
+    
+    // Handle specific error types
+    if (error instanceof AppError) {
+      console.error(`OAuth Error (${error.statusCode}):`, error.message);
+    }
+    
     // Redirect to app with error instead of returning JSON
     const errorUrl = shop ? `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}?error=oauth_failed` : '/install';
     return NextResponse.redirect(errorUrl);

@@ -1,116 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getMerchantId } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const shop = searchParams.get('shop') || 'teststorev103.myshopify.com';
-
-    console.log(`🔍 Checking merchant authentication for ${shop}`);
+    const merchantId = getMerchantId(request);
+    
+    if (!merchantId) {
+      return Response.json({
+        error: 'No merchant ID provided',
+        headers: Object.fromEntries(request.headers.entries()),
+        localStorage: 'Check browser console for localStorage.merchantId',
+      }, { status: 401 });
+    }
 
     // Check if merchant exists
     const merchant = await prisma.merchant.findUnique({
-      where: { shop },
+      where: { id: merchantId },
       include: {
         subscription: {
           include: {
             plan: true,
           },
         },
+        settings: true,
       },
     });
 
     if (!merchant) {
-      return NextResponse.json({
-        success: false,
-        message: 'Merchant not found',
-        shop,
-        recommendations: ['Create merchant record for this shop'],
-      });
+      return Response.json({
+        error: 'Merchant not found',
+        merchantId,
+      }, { status: 404 });
     }
 
-    // Check subscription status
-    const subscriptionStatus = merchant.subscription ? {
-      plan: merchant.subscription.plan?.name,
-      status: merchant.subscription.status,
-      limits: {
-        ugcLimit: merchant.subscription.plan?.ugcLimit,
-        influencerLimit: merchant.subscription.plan?.influencerLimit,
-      },
-    } : null;
-
-    // Check if merchant ID is being sent in headers
-    const merchantIdHeader = request.headers.get('x-merchant-id');
-    const authStatus = {
-      headerPresent: !!merchantIdHeader,
-      headerValue: merchantIdHeader,
-      matchesDatabase: merchantIdHeader === merchant.id,
-    };
-
-    const result: {
-      success: boolean;
-      message: string;
-      merchant: {
-        id: string;
-        shop: string;
-        name: string | null;
-        email: string | null;
-        onboardingCompleted: boolean;
-      };
-      subscription: {
-        plan: string | null;
-        status: string | null;
-        limits: {
-          ugcLimit: number | null;
-          influencerLimit: number | null;
-        };
-      } | null;
-      authentication: {
-        headerPresent: boolean;
-        headerValue: string | null;
-        matchesDatabase: boolean;
-      };
-      recommendations: string[];
-    } = {
+    return Response.json({
       success: true,
-      message: 'Merchant authentication check completed',
       merchant: {
         id: merchant.id,
         shop: merchant.shop,
-        name: merchant.shopName,
-        email: merchant.shopEmail,
+        shopName: merchant.shopName,
         onboardingCompleted: merchant.onboardingCompleted,
       },
-      subscription: subscriptionStatus,
-      authentication: authStatus,
-      recommendations: [],
-    };
+      subscription: merchant.subscription ? {
+        status: merchant.subscription.status,
+        plan: merchant.subscription.plan.name,
+        currentPeriodEnd: merchant.subscription.currentPeriodEnd,
+      } : null,
+      settings: merchant.settings ? {
+        name: merchant.settings.name,
+        website: merchant.settings.website,
+      } : null,
+    });
 
-    // Generate recommendations
-    if (!authStatus.headerPresent) {
-      result.recommendations.push('Merchant ID header is missing from API calls');
-    }
-
-    if (authStatus.headerPresent && !authStatus.matchesDatabase) {
-      result.recommendations.push('Merchant ID in header does not match database record');
-    }
-
-    if (!merchant.onboardingCompleted) {
-      result.recommendations.push('Merchant onboarding is not completed');
-    }
-
-    if (!merchant.subscription) {
-      result.recommendations.push('No subscription found for merchant');
-    }
-
-    console.log('🔍 Merchant authentication check results:', result);
-
-    return NextResponse.json(result);
   } catch (error) {
-    console.error('❌ Merchant authentication check error:', error);
-    return NextResponse.json(
-      { error: 'Failed to check merchant authentication' },
-      { status: 500 }
-    );
+    console.error('Debug merchant auth error:', error);
+    return Response.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 });
   }
 } 
