@@ -32,10 +32,37 @@ embedded = false
 [app_preferences]
 url = "https://socialboost-blue.vercel.app/settings"
 
-# Webhook endpoints for new features
+# Webhook endpoints for production-ready features
 [webhooks.handlers]
 orders_create = "https://socialboost-blue.vercel.app/api/webhooks/orders-create"
 app_uninstalled = "https://socialboost-blue.vercel.app/api/webhooks/app-uninstalled"
 customers_data_request = "https://socialboost-blue.vercel.app/api/webhooks/customers-data-request"
 customers_redact = "https://socialboost-blue.vercel.app/api/webhooks/customers-redact"
 shop_redact = "https://socialboost-blue.vercel.app/api/webhooks/shop-redact"
+
+# Additional webhooks for enhanced features
+[webhooks.additional_handlers]
+# Social media integration webhooks
+instagram_webhook = "https://socialboost-blue.vercel.app/api/webhooks/instagram"
+tiktok_webhook = "https://socialboost-blue.vercel.app/api/webhooks/tiktok"
+
+# Enhanced order processing
+orders_paid = "https://socialboost-blue.vercel.app/api/webhooks/orders-create"
+orders_fulfilled = "https://socialboost-blue.vercel.app/api/webhooks/orders-create"
+
+# GDPR compliance
+customers_data_request = "https://socialboost-blue.vercel.app/api/webhooks/customers-data-request"
+customers_redact = "https://socialboost-blue.vercel.app/api/webhooks/customers-redact"
+shop_redact = "https://socialboost-blue.vercel.app/api/webhooks/shop-redact"
+
+# Production monitoring
+[monitoring]
+health_check_url = "https://socialboost-blue.vercel.app/api/health"
+error_reporting = true
+performance_monitoring = true
+
+# Security configuration
+[security]
+rate_limiting = true
+cors_enabled = true
+content_security_policy = true
