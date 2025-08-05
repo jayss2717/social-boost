@@ -4,6 +4,7 @@ import { PolarisProvider } from '@/components/PolarisProvider';
 import { AppFrame } from '@/components/AppFrame';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { ShopifyProvider } from '@/components/ShopifyProvider';
+import { MerchantInitializer } from '@/components/MerchantInitializer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,10 +30,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <ShopifyProvider>
           <PolarisProvider>
-            <AppFrame>
-              <SubscriptionBanner />
-              {children}
-            </AppFrame>
+            <MerchantInitializer>
+              <AppFrame>
+                <SubscriptionBanner />
+                {children}
+              </AppFrame>
+            </MerchantInitializer>
           </PolarisProvider>
         </ShopifyProvider>
       </body>
