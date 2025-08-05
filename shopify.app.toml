@@ -54,15 +54,3 @@ orders_fulfilled = "https://socialboost-blue.vercel.app/api/webhooks/orders-crea
 customers_data_request = "https://socialboost-blue.vercel.app/api/webhooks/customers-data-request"
 customers_redact = "https://socialboost-blue.vercel.app/api/webhooks/customers-redact"
 shop_redact = "https://socialboost-blue.vercel.app/api/webhooks/shop-redact"
-
-# Production monitoring
-[monitoring]
-health_check_url = "https://socialboost-blue.vercel.app/api/health"
-error_reporting = true
-performance_monitoring = true
-
-# Security configuration
-[security]
-rate_limiting = true
-cors_enabled = true
-content_security_policy = true
