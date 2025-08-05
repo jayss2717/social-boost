@@ -1,10 +1,9 @@
-import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Only allow in development
     if (process.env.NODE_ENV !== 'development') {

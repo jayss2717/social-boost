@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface MerchantInitializerProps {
   children: React.ReactNode;
@@ -9,7 +8,6 @@ interface MerchantInitializerProps {
 
 export function MerchantInitializer({ children }: MerchantInitializerProps) {
   const [isInitialized, setIsInitialized] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const initializeMerchant = async () => {
