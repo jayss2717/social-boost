@@ -236,9 +236,9 @@ export function withDatabaseLogging<T>(
 
 // Health check endpoint data
 export function getHealthMetrics() {
-  const loggerInstance = Logger.getInstance() as Record<string, unknown>;
+  const loggerInstance = Logger.getInstance();
   return {
-    performanceMetrics: loggerInstance.performanceMetrics.length,
+    performanceMetrics: (loggerInstance as any).performanceMetrics?.length || 0,
     uptime: process.uptime(),
     memoryUsage: process.memoryUsage(),
     nodeVersion: process.version,

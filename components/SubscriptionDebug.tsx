@@ -8,9 +8,9 @@ interface DebugInfo {
   host: string | null;
   merchantId: string | null;
   localStorageKeys: string[];
-  subscriptionWithoutHeader: Record<string, unknown>;
-  subscriptionWithHeader: Record<string, unknown>;
-  subscriptionWithMerchantId: Record<string, unknown>;
+  subscriptionWithoutHeader: Record<string, unknown> | null;
+  subscriptionWithHeader: Record<string, unknown> | null;
+  subscriptionWithMerchantId: Record<string, unknown> | null;
   timestamp: string;
   error?: string;
   urlParams?: Record<string, string | null>;

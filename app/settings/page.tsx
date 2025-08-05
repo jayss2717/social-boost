@@ -7,6 +7,22 @@ import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanSelectionModal } from '@/components/PlanSelectionModal';
 
+interface PaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+interface Invoice {
+  id: string;
+  number?: string;
+  created?: number;
+  amount_paid?: number;
+  download_url?: string;
+}
+
 export default function SettingsPage() {
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
   const [socialMediaAccounts] = useState<Array<{
@@ -23,9 +39,9 @@ export default function SettingsPage() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
-  const [invoices, setInvoices] = useState<Record<string, unknown>[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<Record<string, unknown> | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [paymentMethodLoading, setPaymentMethodLoading] = useState(false);
   
   // Handle OAuth results
