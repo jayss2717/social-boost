@@ -55,17 +55,17 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        // Get or create the Starter plan
-        const starterPlan = await prisma.plan.upsert({
-          where: { name: 'Starter' },
-          update: {},
-          create: {
-            name: 'Starter',
-            priceCents: 0,
-            ugcLimit: 5,        // Updated to match Starter plan
-            influencerLimit: 1,  // Updated to match Starter plan
-          },
-        });
+            // Get or create the Starter plan
+    const starterPlan = await prisma.plan.upsert({
+      where: { name: 'STARTER' },
+      update: {},
+      create: {
+        name: 'STARTER',
+        priceCents: 0,
+        ugcLimit: 5,        // Updated to match Starter plan
+        influencerLimit: 1,  // Updated to match Starter plan
+      },
+    });
 
         // Create default subscription
         await prisma.subscription.create({

@@ -22,7 +22,7 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
     }),
   ]);
 
-  const limits = getPlanLimits(subscription?.plan?.name || 'Starter');
+  const limits = getPlanLimits(subscription?.plan?.name || 'STARTER');
 
   return {
     ugcCount,

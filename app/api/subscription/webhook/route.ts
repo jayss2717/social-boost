@@ -179,10 +179,10 @@ async function processWebhookEvent(event: Stripe.Event) {
               'Pro': 'Pro',
               'Scale Plan': 'Scale',
               'Scale': 'Scale',
-              'Enterprise Plan': 'Enterprise',
-              'Enterprise': 'Enterprise',
-              'Starter Plan': 'Starter',
-              'Starter': 'Starter',
+              'Enterprise Plan': 'ENTERPRISE',
+              'Enterprise': 'ENTERPRISE',
+              'Starter Plan': 'STARTER',
+              'Starter': 'STARTER',
             };
             
             const mappedPlanName = planNameMapping[planName] || planName;
@@ -265,10 +265,10 @@ async function processWebhookEvent(event: Stripe.Event) {
                 'Pro': 'Pro',
                 'Scale Plan': 'Scale',
                 'Scale': 'Scale',
-                'Enterprise Plan': 'Enterprise',
-                'Enterprise': 'Enterprise',
-                'Starter Plan': 'Starter',
-                'Starter': 'Starter',
+                'Enterprise Plan': 'ENTERPRISE',
+                'Enterprise': 'ENTERPRISE',
+                'Starter Plan': 'STARTER',
+                'Starter': 'STARTER',
               };
               
               const mappedPlanName = planNameMapping[planName] || planName;

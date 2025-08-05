@@ -37,13 +37,13 @@ export async function POST(request: NextRequest) {
     if (!merchant.subscription) {
       console.log(`Creating default Starter subscription for ${shop}`);
       
-      const starterPlan = await prisma.plan.findUnique({
-        where: { name: 'Starter' },
-      });
+          const starterPlan = await prisma.plan.findUnique({
+      where: { name: 'STARTER' },
+    });
 
-      if (!starterPlan) {
-        return NextResponse.json({ error: 'Starter plan not found' }, { status: 500 });
-      }
+    if (!starterPlan) {
+      return NextResponse.json({ error: 'Starter plan not found' }, { status: 500 });
+    }
 
       await prisma.subscription.create({
         data: {
