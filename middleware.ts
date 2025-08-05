@@ -90,7 +90,20 @@ export function middleware(request: NextRequest) {
   
   // Security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
+  
+  // Allow embedding for Shopify apps - check if request is from Shopify admin
+  const userAgent = request.headers.get('user-agent') || '';
+  const referer = request.headers.get('referer') || '';
+  const isShopifyAdmin = userAgent.includes('Shopify') || referer.includes('admin.shopify.com');
+  
+  if (isShopifyAdmin) {
+    // Allow embedding in Shopify admin
+    response.headers.set('X-Frame-Options', 'ALLOW-FROM https://admin.shopify.com');
+  } else {
+    // Deny embedding for non-Shopify requests
+    response.headers.set('X-Frame-Options', 'DENY');
+  }
+  
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -98,12 +111,12 @@ export function middleware(request: NextRequest) {
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://checkout.stripe.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.myshopify.com",
-    "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://checkout.stripe.com https://cdn.shopify.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.shopify.com",
+    "font-src 'self' https://fonts.gstatic.com https://cdn.shopify.com",
+    "img-src 'self' data: https: blob: https://cdn.shopify.com",
+    "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.myshopify.com https://admin.shopify.com https://monorail-edge.shopifysvc.com",
+    "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://admin.shopify.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
