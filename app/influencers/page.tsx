@@ -49,7 +49,6 @@ interface AutomatedCodeResult {
 
 export default function InfluencersPage() {
   const { data: influencers, isLoading, mutate } = useInfluencers();
-  const [filteredData, setFilteredData] = useState<Influencer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -70,6 +69,13 @@ export default function InfluencersPage() {
     minEngagementRate: 2.0,
     maxInfluencers: 1000,
     minPayoutAmount: 50,
+    defaultCommissionRate: 10,
+    maxCommissionRate: 25,
+    minCommissionRate: 5,
+    autoPayout: false,
+    defaultDiscountPercentage: 20,
+    maxDiscountPercentage: 50,
+    minDiscountPercentage: 5,
     commissionCalculationBase: 'DISCOUNTED_AMOUNT' as 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT',
   });
   const [editFormData, setEditFormData] = useState({
@@ -133,6 +139,13 @@ export default function InfluencersPage() {
             minEngagementRate: data.data.influencerSettings?.minEngagementRate || 2.0,
             maxInfluencers: data.data.influencerSettings?.maxInfluencers || 1000,
             minPayoutAmount: data.data.influencerSettings?.minPayoutAmount || 50,
+            defaultCommissionRate: data.data.influencerSettings?.defaultCommissionRate || 10,
+            maxCommissionRate: data.data.influencerSettings?.maxCommissionRate || 25,
+            minCommissionRate: data.data.influencerSettings?.minCommissionRate || 5,
+            autoPayout: data.data.influencerSettings?.autoPayout || false,
+            defaultDiscountPercentage: data.data.influencerSettings?.defaultDiscountPercentage || 20,
+            maxDiscountPercentage: data.data.influencerSettings?.maxDiscountPercentage || 50,
+            minDiscountPercentage: data.data.influencerSettings?.minDiscountPercentage || 5,
             commissionCalculationBase: data.data.commissionSettings?.commissionCalculationBase || 'DISCOUNTED_AMOUNT',
           });
         }
