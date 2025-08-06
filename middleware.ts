@@ -105,7 +105,8 @@ export function middleware(request: NextRequest) {
     secFetchSite === 'cross-site' ||
     request.nextUrl.searchParams.get('embedded') === '1' ||
     request.nextUrl.searchParams.get('hmac') ||
-    request.nextUrl.searchParams.get('shop');
+    request.nextUrl.searchParams.get('shop') ||
+    request.nextUrl.searchParams.get('v'); // Allow cache-busting parameter
   
   if (isShopifyAdmin) {
     // Allow embedding in Shopify admin
