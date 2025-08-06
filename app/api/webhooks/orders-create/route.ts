@@ -3,6 +3,35 @@ import { prisma } from '@/lib/prisma';
 import { calculateCommission } from '@/utils/payouts';
 import { createPayout } from '@/utils/payouts';
 
+// Define proper types for the order data
+interface ShopifyOrder {
+  id: string;
+  total_price: string;
+  discount_codes?: Array<{
+    code: string;
+    amount: string;
+  }>;
+}
+
+interface ShopifyDiscountCode {
+  code: string;
+  amount: string;
+}
+
+interface MerchantWithSettings {
+  id: string;
+  shop: string;
+  merchantSettings?: {
+    commissionSettings?: {
+      commissionCalculationBase?: 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT';
+    };
+    payoutSettings?: {
+      autoPayout?: boolean;
+      minimumPayoutAmount?: number;
+    };
+  };
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('x-shopify-hmac-sha256');
@@ -14,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Verify webhook signature (implement proper verification)
-    const order = JSON.parse(body);
+    const order: ShopifyOrder = JSON.parse(body);
     console.log('Processing order webhook:', order.id);
 
     // Extract shop domain from webhook
@@ -38,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process order for influencer commissions
-    await processOrderForCommissions(order, merchant);
+    await processOrderForCommissions(order, merchant as MerchantWithSettings);
 
     return NextResponse.json({ received: true });
   } catch (error) {
@@ -47,7 +76,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processOrderForCommissions(order: any, merchant: any) {
+async function processOrderForCommissions(order: ShopifyOrder, merchant: MerchantWithSettings) {
   try {
     console.log('Processing order for commissions:', order.id);
 
@@ -69,7 +98,7 @@ async function processOrderForCommissions(order: any, merchant: any) {
   }
 }
 
-async function processDiscountCodeForCommission(discountCode: any, order: any, merchant: any) {
+async function processDiscountCodeForCommission(discountCode: ShopifyDiscountCode, order: ShopifyOrder, merchant: MerchantWithSettings) {
   try {
     console.log('Processing discount code:', discountCode.code);
 
@@ -144,7 +173,7 @@ async function processDiscountCodeForCommission(discountCode: any, order: any, m
       
       if (commissionResult.commissionAmount >= minimumAmount) {
         console.log('Auto-payout criteria met, processing payout');
-        await processPayoutViaStripe(payout.id, merchant.id);
+        await processPayoutViaStripe(payout.id);
       } else {
         console.log('Commission amount below minimum for auto-payout:', commissionResult.commissionAmount);
       }
@@ -155,7 +184,7 @@ async function processDiscountCodeForCommission(discountCode: any, order: any, m
   }
 }
 
-async function processPayoutViaStripe(payoutId: string, merchantId: string) {
+async function processPayoutViaStripe(payoutId: string) {
   try {
     // Get payout with influencer details
     const payout = await prisma.payout.findUnique({
