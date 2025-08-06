@@ -100,11 +100,11 @@ export default function InfluencersPage() {
     const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
     const merchantData = await merchantResponse.json();
     
-    if (!merchantData.success || !merchantData.merchant) {
+    if (!merchantData.id) {
       throw new Error('Failed to fetch merchant data');
     }
 
-    return merchantData.merchant.id;
+    return merchantData.id;
   };
 
   // Filter influencers based on search query
