@@ -56,7 +56,6 @@ export default function InfluencersPage() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isEditingDetails, setIsEditingDetails] = useState(false);
-  const [editingInfluencer, setEditingInfluencer] = useState<Influencer | null>(null);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -260,26 +259,6 @@ export default function InfluencersPage() {
     console.log('Stored merchant ID in localStorage:', merchantData.id);
 
     return merchantData.id;
-  };
-
-  const fetchStripeConnectStatus = async (influencerId: string) => {
-    try {
-      const merchantId = await getMerchantId();
-      
-      const response = await fetch(`/api/influencers/${influencerId}/stripe-connect`, {
-        headers: {
-          'x-merchant-id': merchantId,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.data.stripeAccount.status;
-      }
-    } catch (error) {
-      console.error('Error fetching Stripe Connect status:', error);
-    }
-    return 'NOT_CONNECTED';
   };
 
   // Filter influencers based on search query
