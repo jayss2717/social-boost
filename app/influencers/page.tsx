@@ -879,7 +879,7 @@ export default function InfluencersPage() {
                                 {code.uniqueLink && (
                                   <div>
                                     <Text variant="bodySm" tone="subdued" as="p">
-                                      Link: {code.uniqueLink}
+                                      Link: {code.uniqueLink.replace('{code}', code.code)}
                                     </Text>
                                   </div>
                                 )}
