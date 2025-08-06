@@ -856,7 +856,7 @@ export default function InfluencersPage() {
                       </Text>
                       {selectedInfluencer.discountCodes.length > 0 ? (
                         <BlockStack gap="200">
-                          {selectedInfluencer.discountCodes.map((code, index) => (
+                          {selectedInfluencer.discountCodes.map((code) => (
                             <Card key={code.id} padding="300">
                               <BlockStack gap="200">
                                 <InlineStack align="space-between">
