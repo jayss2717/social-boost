@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
           maxRate: 25,
           minRate: 5,
           autoPayout: false,
+          commissionCalculationBase: 'DISCOUNTED_AMOUNT',
         },
         ugcSettings: {
           autoApprove: false,

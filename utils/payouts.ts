@@ -10,14 +10,59 @@ export interface PayoutCalculation {
   periodEnd: Date;
 }
 
-export const calculateCommission = (
-  salesAmount: number,
-  commissionRate: number,
-  discountAmount: number = 0
-): number => {
-  const netSales = salesAmount - discountAmount;
-  return Math.round(netSales * (commissionRate / 100));
-};
+export interface CommissionCalculationParams {
+  originalAmount: number;
+  discountedAmount: number;
+  commissionRate: number;
+  calculationBase: 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT';
+}
+
+export interface CommissionCalculationResult {
+  commissionAmount: number;
+  calculationBase: 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT';
+  baseAmount: number;
+  commissionRate: number;
+}
+
+/**
+ * Calculate commission based on merchant's preference
+ */
+export function calculateCommission(params: CommissionCalculationParams): CommissionCalculationResult {
+  const { originalAmount, discountedAmount, commissionRate, calculationBase } = params;
+  
+  let baseAmount: number;
+  
+  if (calculationBase === 'DISCOUNTED_AMOUNT') {
+    baseAmount = discountedAmount;
+  } else {
+    baseAmount = originalAmount;
+  }
+  
+  const commissionAmount = baseAmount * (commissionRate / 100);
+  
+  return {
+    commissionAmount: Math.round(commissionAmount * 100) / 100, // Round to 2 decimal places
+    calculationBase,
+    baseAmount,
+    commissionRate,
+  };
+}
+
+/**
+ * Example usage:
+ * 
+ * // For a $100 order with 20% discount and 5% commission
+ * const result = calculateCommission({
+ *   originalAmount: 100,
+ *   discountedAmount: 80,
+ *   commissionRate: 5,
+ *   calculationBase: 'DISCOUNTED_AMOUNT' // or 'ORIGINAL_AMOUNT'
+ * });
+ * 
+ * // Result:
+ * // - DISCOUNTED_AMOUNT: $4.00 commission (5% of $80)
+ * // - ORIGINAL_AMOUNT: $5.00 commission (5% of $100)
+ */
 
 export const createPayoutRecord = async (
   merchantId: string,

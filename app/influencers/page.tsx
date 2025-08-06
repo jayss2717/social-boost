@@ -72,6 +72,7 @@ export default function InfluencersPage() {
     defaultDiscountPercentage: 20,
     maxDiscountPercentage: 50,
     minDiscountPercentage: 5,
+    commissionCalculationBase: 'DISCOUNTED_AMOUNT' as 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT',
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -142,6 +143,7 @@ export default function InfluencersPage() {
             defaultDiscountPercentage: data.data.discountSettings?.defaultPercentage || 20,
             maxDiscountPercentage: data.data.discountSettings?.maxPercentage || 50,
             minDiscountPercentage: data.data.discountSettings?.minPercentage || 5,
+            commissionCalculationBase: data.data.commissionSettings?.commissionCalculationBase || 'DISCOUNTED_AMOUNT',
           });
         }
       }
@@ -189,6 +191,7 @@ export default function InfluencersPage() {
           maxRate: influencerSettings.maxCommissionRate,
           minRate: influencerSettings.minCommissionRate,
           autoPayout: influencerSettings.autoPayout,
+          commissionCalculationBase: influencerSettings.commissionCalculationBase,
         },
         discountSettings: {
           ...currentSettings.discountSettings,
@@ -1399,6 +1402,36 @@ Your Brand Team`;
                 <div className="mt-2">
                   <Text variant="bodySm" tone="subdued" as="p">
                     {influencerSettings.autoPayout ? 'Automatically' : 'Manually'} process payouts when balance reaches ${influencerSettings.minPayoutAmount}.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Commission Calculation Preference */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Commission Calculation Preference
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <Select
+                    label="Commission Calculation Base"
+                    options={[
+                      { label: 'Discounted Amount', value: 'DISCOUNTED_AMOUNT' },
+                      { label: 'Original Amount', value: 'ORIGINAL_AMOUNT' },
+                    ]}
+                    value={influencerSettings.commissionCalculationBase}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      commissionCalculationBase: value as 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT'
+                    })}
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Choose how commissions are calculated for influencer payouts.
+                    <br />
+                                         &quot;Discounted Amount&quot; means the commission is based on the price after applying the discount.
+                     <br />
+                     &quot;Original Amount&quot; means the commission is based on the full price before the discount.
                   </Text>
                 </div>
               </div>

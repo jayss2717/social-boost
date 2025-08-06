@@ -125,6 +125,7 @@ export interface CommissionSettings {
   maxRate: number;
   minRate: number;
   autoPayout: boolean;
+  commissionCalculationBase: 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT';
 }
 
 export interface UgcSettings {

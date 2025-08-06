@@ -70,6 +70,7 @@ export const settingsSchema = z.object({
     maxRate: z.number().min(0).max(100),
     minRate: z.number().min(0).max(100),
     autoPayout: z.boolean(),
+    commissionCalculationBase: z.enum(['DISCOUNTED_AMOUNT', 'ORIGINAL_AMOUNT']),
   }),
   ugcSettings: z.object({
     autoApprove: z.boolean(),
