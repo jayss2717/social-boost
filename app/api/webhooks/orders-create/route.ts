@@ -1,144 +1,215 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ShopifyAPI } from '@/lib/shopify';
+import { calculateCommission } from '@/utils/payouts';
+import { createPayout } from '@/utils/payouts';
 
 export async function POST(request: NextRequest) {
+  const body = await request.text();
+  const signature = request.headers.get('x-shopify-hmac-sha256');
+
+  if (!signature) {
+    console.error('Missing Shopify webhook signature');
+    return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+  }
+
   try {
-    const body = await request.json();
-    const { id: orderId, shop_domain, discount_codes, total_price, currency, customer } = body;
+    // Verify webhook signature (implement proper verification)
+    const order = JSON.parse(body);
+    console.log('Processing order webhook:', order.id);
 
-    console.log(`Processing order webhook for order ${orderId} from shop ${shop_domain}`);
-
-    if (!orderId || !shop_domain) {
-      return NextResponse.json({ error: 'Missing required order data' }, { status: 400 });
+    // Extract shop domain from webhook
+    const shopDomain = request.headers.get('x-shopify-shop-domain');
+    if (!shopDomain) {
+      console.error('Missing shop domain in webhook');
+      return NextResponse.json({ error: 'Missing shop domain' }, { status: 400 });
     }
 
-    // Find the merchant by shop domain
+    // Find merchant by shop domain
     const merchant = await prisma.merchant.findFirst({
-      where: { 
-        shop: shop_domain,
-        isActive: true 
-      },
+      where: { shop: shopDomain },
       include: {
-        settings: true,
-      }
+        merchantSettings: true,
+      },
     });
 
     if (!merchant) {
-      console.log(`No active merchant found for shop: ${shop_domain}`);
-      return NextResponse.json({ success: true });
+      console.error('Merchant not found for shop:', shopDomain);
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // Get detailed order information from Shopify if access token is available
-    if (merchant.accessToken) {
-      try {
-        const shopifyAPI = new ShopifyAPI(merchant.accessToken, merchant.shop);
-        await shopifyAPI.getOrder(orderId);
-        console.log(`Retrieved order details from Shopify for order ${orderId}`);
-      } catch (error) {
-        console.error(`Failed to get order details from Shopify:`, error);
-        // Continue processing with webhook data only
-      }
-    }
+    // Process order for influencer commissions
+    await processOrderForCommissions(order, merchant);
 
-    // Process discount codes if any were used
-    if (discount_codes && discount_codes.length > 0) {
-      console.log(`Processing ${discount_codes.length} discount codes for order ${orderId}`);
-      
-      for (const discountCode of discount_codes) {
-        try {
-          // Find the discount code in our database
-          const code = await prisma.discountCode.findFirst({
-            where: {
-              code: discountCode.code,
-              merchantId: merchant.id,
-              isActive: true,
-            },
-            include: { 
-              influencer: true,
-              ugcPost: true,
-            },
-          });
-
-          if (!code) {
-            console.log(`Discount code ${discountCode.code} not found in database`);
-            continue;
-          }
-
-          // Update usage count
-          await prisma.discountCode.update({
-            where: { id: code.id },
-            data: { usageCount: { increment: 1 } },
-          });
-
-          console.log(`Updated usage count for discount code ${discountCode.code}`);
-
-          // Calculate commission if influencer is associated
-          if (code.influencer) {
-            const discountAmount = parseFloat(discountCode.amount || '0');
-            
-            // Calculate commission based on discount amount and influencer's commission rate
-            const commissionAmount = Math.round(discountAmount * code.influencer.commissionRate * 100); // Convert to cents
-
-            if (commissionAmount > 0) {
-              // Create payout record
-              await prisma.payout.create({
-                data: {
-                  merchantId: merchant.id,
-                  influencerId: code.influencer.id,
-                  amount: commissionAmount,
-                  status: 'PENDING',
-                  periodStart: new Date(),
-                  periodEnd: new Date(),
-                  stripeTransferId: null,
-                },
-              });
-
-              console.log(`Created payout for influencer ${code.influencer.name}: $${commissionAmount / 100} (${discountAmount} discount)`);
-            }
-          }
-
-          // If this is a UGC post discount code, mark the post as rewarded
-          if (code.ugcPost && !code.ugcPost.isRewarded) {
-            await prisma.ugcPost.update({
-              where: { id: code.ugcPost.id },
-              data: { 
-                isRewarded: true,
-                rewardAmount: Math.round(parseFloat(discountCode.amount || '0') * 100), // Store in cents
-              },
-            });
-
-            console.log(`Marked UGC post ${code.ugcPost.id} as rewarded`);
-          }
-
-        } catch (error) {
-          console.error(`Error processing discount code ${discountCode.code}:`, error);
-          // Continue processing other discount codes
-        }
-      }
-    }
-
-    // Track order metrics for usage analytics
-    try {
-      await prisma.orderMetric.create({
-        data: {
-          merchantId: merchant.id,
-          orderId: orderId.toString(),
-          totalAmount: Math.round(parseFloat(total_price || '0') * 100), // Store in cents
-          currency: currency || 'USD',
-          discountCodesUsed: discount_codes?.length || 0,
-          customerEmail: customer?.email || null,
-          processedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create order metric:', error);
-    }
-
-    console.log(`Successfully processed order ${orderId} for shop: ${merchant.shop}`);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Orders create webhook error:', error);
+    console.error('Error processing order webhook:', error);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+  }
+}
+
+async function processOrderForCommissions(order: any, merchant: any) {
+  try {
+    console.log('Processing order for commissions:', order.id);
+
+    // Extract discount codes used in the order
+    const discountCodes = order.discount_codes || [];
+    
+    if (discountCodes.length === 0) {
+      console.log('No discount codes found in order:', order.id);
+      return;
+    }
+
+    // Process each discount code
+    for (const discountCode of discountCodes) {
+      await processDiscountCodeForCommission(discountCode, order, merchant);
+    }
+
+  } catch (error) {
+    console.error('Error processing order for commissions:', error);
+  }
+}
+
+async function processDiscountCodeForCommission(discountCode: any, order: any, merchant: any) {
+  try {
+    console.log('Processing discount code:', discountCode.code);
+
+    // Find influencer by discount code
+    const influencer = await prisma.influencer.findFirst({
+      where: {
+        merchantId: merchant.id,
+        discountCodes: {
+          some: {
+            code: discountCode.code,
+            isActive: true,
+          },
+        },
+      },
+      include: {
+        discountCodes: {
+          where: {
+            code: discountCode.code,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!influencer) {
+      console.log('No influencer found for discount code:', discountCode.code);
+      return;
+    }
+
+    console.log('Found influencer:', influencer.name, 'for code:', discountCode.code);
+
+    // Calculate commission
+    const originalAmount = parseFloat(order.total_price);
+    const discountAmount = parseFloat(discountCode.amount);
+    const discountedAmount = originalAmount - discountAmount;
+
+    const commissionCalculationBase = merchant.merchantSettings?.commissionSettings?.commissionCalculationBase || 'DISCOUNTED_AMOUNT';
+
+    const commissionResult = calculateCommission({
+      originalAmount,
+      discountedAmount,
+      commissionRate: influencer.commissionRate,
+      calculationBase: commissionCalculationBase,
+    });
+
+    console.log('Commission calculation:', {
+      originalAmount,
+      discountedAmount,
+      commissionRate: influencer.commissionRate,
+      calculationBase: commissionCalculationBase,
+      commissionAmount: commissionResult.commissionAmount,
+    });
+
+    // Create payout record
+    const payout = await createPayout({
+      merchantId: merchant.id,
+      influencerId: influencer.id,
+      orderId: order.id.toString(),
+      originalAmount,
+      discountedAmount,
+      commissionAmount: commissionResult.commissionAmount,
+      commissionRate: influencer.commissionRate,
+      discountCode: discountCode.code,
+      status: 'PENDING',
+    });
+
+    console.log('Created payout:', payout.id, 'for amount:', commissionResult.commissionAmount);
+
+    // Check if auto-payout should be triggered
+    if (merchant.merchantSettings?.payoutSettings?.autoPayout) {
+      const minimumAmount = merchant.merchantSettings.payoutSettings.minimumPayoutAmount || 0;
+      
+      if (commissionResult.commissionAmount >= minimumAmount) {
+        console.log('Auto-payout criteria met, processing payout');
+        await processPayoutViaStripe(payout.id, merchant.id);
+      } else {
+        console.log('Commission amount below minimum for auto-payout:', commissionResult.commissionAmount);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error processing discount code for commission:', error);
+  }
+}
+
+async function processPayoutViaStripe(payoutId: string, merchantId: string) {
+  try {
+    // Get payout with influencer details
+    const payout = await prisma.payout.findUnique({
+      where: { id: payoutId },
+      include: {
+        influencer: true,
+      },
+    });
+
+    if (!payout || !payout.influencer.stripeAccountId) {
+      console.error('Payout or Stripe account not found:', payoutId);
+      return;
+    }
+
+    // Import Stripe
+    const { stripe } = await import('@/lib/stripe');
+
+    // Create transfer to influencer's Stripe account
+    const transfer = await stripe.transfers.create({
+      amount: Math.round(payout.commissionAmount * 100), // Convert to cents
+      currency: 'usd',
+      destination: payout.influencer.stripeAccountId,
+      description: `Commission for order ${payout.orderId} - ${payout.discountCode}`,
+      metadata: {
+        payoutId: payout.id,
+        orderId: payout.orderId,
+        influencerId: payout.influencerId,
+        discountCode: payout.discountCode,
+      },
+    });
+
+    // Update payout status
+    await prisma.payout.update({
+      where: { id: payoutId },
+      data: {
+        status: 'PROCESSING',
+        stripeTransferId: transfer.id,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log('Stripe transfer created:', transfer.id, 'for payout:', payoutId);
+
+  } catch (error) {
+    console.error('Error processing payout via Stripe:', error);
+    
+    // Update payout status to failed
+    await prisma.payout.update({
+      where: { id: payoutId },
+      data: {
+        status: 'FAILED',
+        processedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
   }
 } 

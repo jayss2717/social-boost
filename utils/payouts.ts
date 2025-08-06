@@ -1,14 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { stripe } from '@/lib/stripe';
-
-export interface PayoutCalculation {
-  influencerId: string;
-  amount: number; // in cents
-  commissionRate: number;
-  salesAmount: number;
-  periodStart: Date;
-  periodEnd: Date;
-}
 
 export interface CommissionCalculationParams {
   originalAmount: number;
@@ -20,13 +10,11 @@ export interface CommissionCalculationParams {
 export interface CommissionCalculationResult {
   commissionAmount: number;
   calculationBase: 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT';
-  baseAmount: number;
+  originalAmount: number;
+  discountedAmount: number;
   commissionRate: number;
 }
 
-/**
- * Calculate commission based on merchant's preference
- */
 export function calculateCommission(params: CommissionCalculationParams): CommissionCalculationResult {
   const { originalAmount, discountedAmount, commissionRate, calculationBase } = params;
   
@@ -38,83 +26,90 @@ export function calculateCommission(params: CommissionCalculationParams): Commis
     baseAmount = originalAmount;
   }
   
-  const commissionAmount = baseAmount * (commissionRate / 100);
+  const commissionAmount = baseAmount * commissionRate;
   
   return {
-    commissionAmount: Math.round(commissionAmount * 100) / 100, // Round to 2 decimal places
+    commissionAmount,
     calculationBase,
-    baseAmount,
+    originalAmount,
+    discountedAmount,
     commissionRate,
   };
 }
 
-/**
- * Example usage:
- * 
- * // For a $100 order with 20% discount and 5% commission
- * const result = calculateCommission({
- *   originalAmount: 100,
- *   discountedAmount: 80,
- *   commissionRate: 5,
- *   calculationBase: 'DISCOUNTED_AMOUNT' // or 'ORIGINAL_AMOUNT'
- * });
- * 
- * // Result:
- * // - DISCOUNTED_AMOUNT: $4.00 commission (5% of $80)
- * // - ORIGINAL_AMOUNT: $5.00 commission (5% of $100)
- */
+export async function createPayout(params: {
+  merchantId: string;
+  influencerId: string;
+  orderId: string;
+  originalAmount: number;
+  discountedAmount: number;
+  commissionAmount: number;
+  commissionRate: number;
+  discountCode: string;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+}) {
+  const {
+    merchantId,
+    influencerId,
+    orderId,
+    originalAmount,
+    discountedAmount,
+    commissionAmount,
+    commissionRate,
+    discountCode,
+    status,
+  } = params;
 
-export const createPayoutRecord = async (
-  merchantId: string,
-  calculation: PayoutCalculation
-) => {
   return await prisma.payout.create({
     data: {
       merchantId,
-      influencerId: calculation.influencerId,
-      amount: calculation.amount,
-      status: 'PENDING',
-      periodStart: calculation.periodStart,
-      periodEnd: calculation.periodEnd,
+      influencerId,
+      orderId,
+      originalAmount,
+      discountedAmount,
+      commissionAmount,
+      commissionRate,
+      discountCode,
+      status,
+      periodStart: new Date(),
+      periodEnd: new Date(),
     },
-    include: { influencer: true },
   });
-};
+}
 
-export const processPayoutViaStripe = async (payoutId: string) => {
-  // Check if Stripe is configured
-  if (!stripe) {
-    throw new Error('Stripe not configured for payout processing');
-  }
-
-  const payout = await prisma.payout.findUnique({
-    where: { id: payoutId },
-    include: { influencer: true },
-  });
-
-  if (!payout) {
-    throw new Error('Payout not found');
-  }
-
-  if (!payout.influencer.stripeAccountId) {
-    throw new Error('Influencer has no Stripe account connected');
-  }
-
+export async function processPayoutViaStripe(payoutId: string, merchantId: string) {
   try {
-    // Create transfer to influencer's Stripe account
-    const transfer = await stripe.transfers.create({
-      amount: payout.amount,
-      currency: 'usd',
-      destination: payout.influencer.stripeAccountId,
-      description: `Commission payout for ${payout.influencer.name}`,
-      metadata: {
-        payoutId: payout.id,
-        influencerId: payout.influencerId,
-        merchantId: payout.merchantId,
+    // Get payout with influencer details
+    const payout = await prisma.payout.findUnique({
+      where: { id: payoutId },
+      include: {
+        influencer: true,
       },
     });
 
-    // Update payout record
+    if (!payout || !payout.influencer.stripeAccountId) {
+      console.error('Payout or Stripe account not found:', payoutId);
+      return { success: false, error: 'Payout or Stripe account not found' };
+    }
+
+    // Import Stripe
+    const { stripe } = await import('@/lib/stripe');
+
+    // Create transfer to influencer's Stripe account
+    const transfer = await stripe.transfers.create({
+      amount: Math.round(payout.commissionAmount * 100), // Convert to cents
+      currency: 'usd',
+      destination: payout.influencer.stripeAccountId,
+      description: `Commission for order ${payout.orderId} - ${payout.discountCode}`,
+      metadata: {
+        payoutId: payout.id,
+        orderId: payout.orderId,
+        influencerId: payout.influencerId,
+        discountCode: payout.discountCode,
+      },
+    });
+
+    // Update payout status
     await prisma.payout.update({
       where: { id: payoutId },
       data: {
@@ -124,8 +119,10 @@ export const processPayoutViaStripe = async (payoutId: string) => {
       },
     });
 
-    return transfer;
+    return { success: true, transferId: transfer.id };
   } catch (error) {
+    console.error('Error processing payout via Stripe:', error);
+    
     // Update payout status to failed
     await prisma.payout.update({
       where: { id: payoutId },
@@ -135,21 +132,23 @@ export const processPayoutViaStripe = async (payoutId: string) => {
       },
     });
 
-    throw error;
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
-};
+}
 
 export const checkAutoPayoutConditions = async (merchantId: string, influencerId: string) => {
-  // Get merchant settings
-  const merchantSettings = await prisma.merchantSettings.findUnique({
-    where: { merchantId },
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    include: { merchantSettings: true },
   });
 
-  if (!merchantSettings?.payoutSettings?.autoPayout) {
-    return { shouldProcess: false, reason: 'Auto-payout disabled' };
+  if (!merchant?.merchantSettings?.payoutSettings?.autoPayout) {
+    return false;
   }
 
-  // Get influencer's pending payouts
+  const minimumAmount = merchant.merchantSettings.payoutSettings.minimumPayoutAmount || 0;
+  
+  // Get total pending payouts for this influencer
   const pendingPayouts = await prisma.payout.findMany({
     where: {
       merchantId,
@@ -158,109 +157,95 @@ export const checkAutoPayoutConditions = async (merchantId: string, influencerId
     },
   });
 
-  const totalPendingAmount = pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0) / 100; // Convert from cents
-  const minimumAmount = merchantSettings.payoutSettings.minimumPayoutAmount;
-
-  if (totalPendingAmount >= minimumAmount) {
-    return { 
-      shouldProcess: true, 
-      reason: `Threshold met: $${totalPendingAmount.toFixed(2)} >= $${minimumAmount}`,
-      totalAmount: totalPendingAmount,
-      payoutIds: pendingPayouts.map(p => p.id),
-    };
-  }
-
-  return { 
-    shouldProcess: false, 
-    reason: `Threshold not met: $${totalPendingAmount.toFixed(2)} < $${minimumAmount}`,
-    totalAmount: totalPendingAmount,
-  };
+  const totalAmount = pendingPayouts.reduce((sum, payout) => sum + payout.commissionAmount, 0);
+  
+  return totalAmount >= minimumAmount;
 };
 
 export const processAutoPayouts = async (merchantId: string) => {
-  // Get merchant settings
-  const merchantSettings = await prisma.merchantSettings.findUnique({
-    where: { merchantId },
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: merchantId },
+    include: { merchantSettings: true },
   });
 
-  if (!merchantSettings?.payoutSettings?.autoPayout) {
+  if (!merchant?.merchantSettings?.payoutSettings?.autoPayout) {
     return { processed: 0, skipped: 0, errors: [] };
   }
 
-  // Get all influencers with pending payouts
-  const influencersWithPayouts = await prisma.influencer.findMany({
-    where: {
-      merchantId,
-      payouts: {
-        some: {
-          status: 'PENDING',
-        },
-      },
-    },
-    include: {
-      payouts: {
-        where: { status: 'PENDING' },
-      },
-    },
-  });
-
-  const results = {
-    processed: 0,
-    skipped: 0,
-    errors: [] as string[],
-  };
-
-  for (const influencer of influencersWithPayouts) {
-    try {
-      const autoPayoutCheck = await checkAutoPayoutConditions(merchantId, influencer.id);
-      
-      if (autoPayoutCheck.shouldProcess) {
-        // Process all pending payouts for this influencer
-        for (const payout of influencer.payouts) {
-          try {
-            await processPayoutViaStripe(payout.id);
-            results.processed++;
-          } catch (error) {
-            results.errors.push(`Payout ${payout.id}: ${error}`);
-          }
-        }
-      } else {
-        results.skipped++;
-      }
-    } catch (error) {
-      results.errors.push(`Influencer ${influencer.id}: ${error}`);
-    }
-  }
-
-  return results;
-};
-
-export const processBulkPayouts = async (merchantId: string) => {
+  const minimumAmount = merchant.merchantSettings.payoutSettings.minimumPayoutAmount || 0;
+  
+  // Get all pending payouts for this merchant
   const pendingPayouts = await prisma.payout.findMany({
     where: {
       merchantId,
       status: 'PENDING',
     },
-    include: { influencer: true },
+    include: {
+      influencer: true,
+    },
   });
 
-  const results = {
-    processed: 0,
-    failed: 0,
-    errors: [] as string[],
-  };
+  let processed = 0;
+  let skipped = 0;
+  const errors: string[] = [];
 
-  for (const payout of pendingPayouts) {
-    try {
-      await processPayoutViaStripe(payout.id);
-      results.processed++;
-    } catch (error) {
-      results.failed++;
-      results.errors.push(`Payout ${payout.id}: ${error}`);
+  // Group payouts by influencer
+  const payoutsByInfluencer = pendingPayouts.reduce((acc, payout) => {
+    if (!acc[payout.influencerId]) {
+      acc[payout.influencerId] = [];
+    }
+    acc[payout.influencerId].push(payout);
+    return acc;
+  }, {} as Record<string, typeof pendingPayouts>);
+
+  // Process each influencer's payouts
+  for (const [influencerId, payouts] of Object.entries(payoutsByInfluencer)) {
+    const totalAmount = payouts.reduce((sum, payout) => sum + payout.commissionAmount, 0);
+    
+    if (totalAmount >= minimumAmount) {
+      // Process all payouts for this influencer
+      for (const payout of payouts) {
+        const result = await processPayoutViaStripe(payout.id, merchantId);
+        if (result.success) {
+          processed++;
+        } else {
+          errors.push(`Failed to process payout ${payout.id}: ${result.error}`);
+        }
+      }
+    } else {
+      skipped += payouts.length;
     }
   }
 
-  return results;
+  return { processed, skipped, errors };
+};
+
+export const processBulkPayouts = async (merchantId: string) => {
+  // Get all pending payouts for this merchant
+  const pendingPayouts = await prisma.payout.findMany({
+    where: {
+      merchantId,
+      status: 'PENDING',
+    },
+    include: {
+      influencer: true,
+    },
+  });
+
+  let processed = 0;
+  const errors: string[] = [];
+
+  // Process each payout
+  for (const payout of pendingPayouts) {
+    const result = await processPayoutViaStripe(payout.id, merchantId);
+    if (result.success) {
+      processed++;
+    } else {
+      errors.push(`Failed to process payout ${payout.id}: ${result.error}`);
+    }
+  }
+
+  return { processed, skipped: 0, errors };
 };
 
 export const getPayoutSummary = async (merchantId: string) => {

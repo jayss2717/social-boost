@@ -188,24 +188,32 @@ enum CodeType {
 }
 
 model Payout {
-  id              String   @id @default(cuid())
-  merchantId      String
-  influencerId    String
-  amount          Int      // in cents
-  stripeTransferId String?
-  status          PayoutStatus @default(PENDING)
-  periodStart     DateTime
-  periodEnd       DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relations
-  merchant        Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  influencer      Influencer  @relation(fields: [influencerId], references: [id])
+  id                String   @id @default(cuid())
+  merchantId        String
+  influencerId      String
+  orderId           String?  // Link to Shopify order
+  originalAmount    Float    // Original order amount
+  discountedAmount  Float    // Amount after discount
+  commissionAmount  Float    // Commission amount
+  commissionRate    Float    // Commission rate used
+  discountCode      String?  // Discount code used
+  status            PayoutStatus @default(PENDING)
+  stripeTransferId  String?
+  periodStart       DateTime
+  periodEnd         DateTime
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  merchant          Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  influencer        Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
   commissionPerformance CommissionPerformance?
   commissionInsights CommissionInsights?
-  
-  @@map("payouts")
+
+  @@index([merchantId])
+  @@index([influencerId])
+  @@index([status])
+  @@index([orderId])
 }
 
 enum PayoutStatus {
