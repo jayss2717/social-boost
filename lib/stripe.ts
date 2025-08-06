@@ -148,8 +148,11 @@ export async function createConnectedAccount(influencerId: string): Promise<stri
     });
 
     if (!influencer) {
+      console.error('Influencer not found:', influencerId);
       throw new Error('Influencer not found');
     }
+
+    console.log('Creating Stripe Connect account for influencer:', influencer.name, influencer.email);
 
     // Create Stripe Connect account
     const account = await stripe.accounts.create({
@@ -166,11 +169,15 @@ export async function createConnectedAccount(influencerId: string): Promise<stri
       },
     });
 
+    console.log('Stripe account created:', account.id);
+
     // Update influencer with Stripe account ID
     await prisma.influencer.update({
       where: { id: influencerId },
       data: { stripeAccountId: account.id },
     });
+
+    console.log('Influencer updated with Stripe account ID');
 
     return account.id;
   } catch (error) {
