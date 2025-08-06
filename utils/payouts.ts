@@ -255,13 +255,13 @@ export const getPayoutSummary = async (merchantId: string) => {
     orderBy: { createdAt: 'desc' },
   });
 
-  const totalAmount = payouts.reduce((sum, payout) => sum + payout.amount, 0);
+  const totalAmount = payouts.reduce((sum, payout) => sum + payout.commissionAmount, 0);
   const pendingAmount = payouts
     .filter(payout => payout.status === 'PENDING')
-    .reduce((sum, payout) => sum + payout.amount, 0);
+    .reduce((sum, payout) => sum + payout.commissionAmount, 0);
   const completedAmount = payouts
     .filter(payout => payout.status === 'COMPLETED')
-    .reduce((sum, payout) => sum + payout.amount, 0);
+    .reduce((sum, payout) => sum + payout.commissionAmount, 0);
 
   return {
     totalAmount,

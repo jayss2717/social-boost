@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const merchantId = requireMerchantId(request);
+    
     const { searchParams } = new URL(request.url);
     
     const status = searchParams.get('status');
@@ -104,12 +105,15 @@ export async function POST(request: NextRequest) {
     // Create payout with calculated commission
     const payout = await prisma.payout.create({
       data: {
+        merchantId,
         influencerId,
-        amount: Math.round(commissionResult.commissionAmount * 100), // Convert to cents
+        originalAmount,
+        discountedAmount,
+        commissionAmount: commissionResult.commissionAmount,
+        commissionRate: influencer.commissionRate,
         status: 'PENDING',
         periodStart: new Date(),
         periodEnd: new Date(),
-        merchantId,
       },
       include: {
         influencer: {

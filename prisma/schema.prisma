@@ -214,6 +214,7 @@ model Payout {
   @@index([influencerId])
   @@index([status])
   @@index([orderId])
+  @@map("payouts")
 }
 
 enum PayoutStatus {

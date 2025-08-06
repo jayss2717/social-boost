@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('Merchant ID required', 401);
     }
 
-
-
     const summary = await getPayoutSummary(merchantId);
 
     return createSuccessResponse(summary);
