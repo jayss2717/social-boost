@@ -52,6 +52,8 @@ export default function InfluencersPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAutomatedModal, setShowAutomatedModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailContent, setEmailContent] = useState<{ subject: string; body: string; to: string } | null>(null);
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -909,18 +911,28 @@ export default function InfluencersPage() {
                                     size="slim"
                                     variant="primary"
                                     onClick={() => {
-                                      // Open email client with pre-filled content
-                                      const subject = encodeURIComponent(`Your Discount Code: ${code.code}`);
-                                      const body = encodeURIComponent(
-                                        `Hi ${selectedInfluencer.name},\n\n` +
-                                        `Here's your exclusive discount code: ${code.code}\n\n` +
-                                        `Discount: ${code.discountType === 'PERCENTAGE' ? `${code.discountValue}% off` : `$${code.discountValue} off`}\n` +
-                                        `${code.uniqueLink ? `Direct link: ${code.uniqueLink.replace('{code}', code.code)}\n\n` : '\n'}` +
-                                        `Thank you for your partnership!\n\n` +
-                                        `Best regards,\n` +
-                                        `Your Brand Team`
-                                      );
-                                      window.open(`mailto:${selectedInfluencer.email}?subject=${subject}&body=${body}`);
+                                      // Create email content
+                                      const subject = `Your Discount Code: ${code.code}`;
+                                      const body = 
+`Hi ${selectedInfluencer.name},
+
+Here's your exclusive discount code: ${code.code}
+
+Discount: ${code.discountType === 'PERCENTAGE' ? `${code.discountValue}% off` : `$${code.discountValue} off`}
+${code.uniqueLink ? `Direct link: ${code.uniqueLink.replace('{code}', code.code)}` : ''}
+
+Thank you for your partnership!
+
+Best regards,
+Your Brand Team`;
+
+                                      // Show email modal with content
+                                      setEmailContent({
+                                        subject,
+                                        body,
+                                        to: selectedInfluencer.email
+                                      });
+                                      setShowEmailModal(true);
                                     }}
                                   >
                                     Send Email
@@ -965,6 +977,85 @@ export default function InfluencersPage() {
                   Edit
                 </Button>
               )}
+            </InlineStack>
+          </Modal.Section>
+        </Modal>
+
+        {/* Email Modal */}
+        <Modal
+          open={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          title="Send Email to Influencer"
+        >
+          <Modal.Section>
+            {emailContent && (
+              <BlockStack gap="400">
+                <div>
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    To
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    {emailContent.to}
+                  </Text>
+                </div>
+                <div>
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Subject
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    {emailContent.subject}
+                  </Text>
+                </div>
+                <div>
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Message
+                  </Text>
+                  <div style={{ 
+                    backgroundColor: '#f6f6f6', 
+                    padding: '12px', 
+                    borderRadius: '8px',
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre-wrap',
+                    fontSize: '14px',
+                    lineHeight: '1.4'
+                  }}>
+                    {emailContent.body}
+                  </div>
+                </div>
+              </BlockStack>
+            )}
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowEmailModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (emailContent) {
+                    navigator.clipboard.writeText(`Subject: ${emailContent.subject}\n\n${emailContent.body}`);
+                    alert('Email content copied to clipboard!');
+                  }
+                }}
+              >
+                Copy to Clipboard
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (emailContent) {
+                    const mailtoLink = `mailto:${emailContent.to}?subject=${encodeURIComponent(emailContent.subject)}&body=${encodeURIComponent(emailContent.body)}`;
+                    window.open(mailtoLink);
+                    setShowEmailModal(false);
+                  }
+                }}
+              >
+                Open Email Client
+              </Button>
             </InlineStack>
           </Modal.Section>
         </Modal>
