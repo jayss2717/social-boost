@@ -39,8 +39,8 @@ export async function POST(
     }
 
     // Generate onboarding link
-    const refreshUrl = `${process.env.NEXT_PUBLIC_APP_URL}/influencers/${influencerId}/stripe-connect/refresh`;
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/influencers/${influencerId}/stripe-connect/complete`;
+    const refreshUrl = `${process.env.SHOPIFY_APP_URL}/influencers/${influencerId}/stripe-connect/refresh`;
+    const returnUrl = `${process.env.SHOPIFY_APP_URL}/influencers/${influencerId}/stripe-connect/complete`;
     
     const accountLink = await getAccountLink(accountId, refreshUrl, returnUrl);
     
