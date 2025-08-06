@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Processing onboarding for shop:', shop);
+    console.log('Onboarding data:', onboardingData);
     console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
     try {
@@ -41,6 +42,70 @@ export async function POST(request: NextRequest) {
       });
 
       console.log('Merchant created/updated successfully:', merchant.id);
+
+      // 🆕 CREATE SUBSCRIPTION BASED ON SELECTED PLAN
+      const selectedPlan = onboardingData?.selectedPlan || 'STARTER';
+      console.log('Selected plan during onboarding:', selectedPlan);
+
+      // Get the plan from database
+      const plan = await prisma.plan.findUnique({
+        where: { name: selectedPlan },
+      });
+
+      if (plan) {
+        console.log('Plan found:', { id: plan.id, name: plan.name, limits: { ugc: plan.ugcLimit, influencers: plan.influencerLimit } });
+
+        // Create or update subscription
+        const subscription = await prisma.subscription.upsert({
+          where: { merchantId: merchant.id },
+          update: {
+            planId: plan.id,
+            status: 'ACTIVE',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            updatedAt: new Date(),
+          },
+          create: {
+            merchantId: merchant.id,
+            planId: plan.id,
+            status: 'ACTIVE',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            stripeSubId: null, // Will be updated when payment is processed
+          },
+        });
+
+        console.log('Subscription created/updated:', {
+          id: subscription.id,
+          planId: subscription.planId,
+          status: subscription.status,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+        });
+      } else {
+        console.error('Plan not found for:', selectedPlan);
+        // Fallback to STARTER plan
+        const starterPlan = await prisma.plan.findUnique({
+          where: { name: 'STARTER' },
+        });
+
+        if (starterPlan) {
+          await prisma.subscription.upsert({
+            where: { merchantId: merchant.id },
+            update: {
+              planId: starterPlan.id,
+              status: 'ACTIVE',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date(),
+            },
+            create: {
+              merchantId: merchant.id,
+              planId: starterPlan.id,
+              status: 'ACTIVE',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              stripeSubId: null,
+            },
+          });
+          console.log('Created fallback STARTER subscription');
+        }
+      }
 
       // Sync onboarding data to MerchantSettings
       try {
@@ -109,6 +174,9 @@ export async function POST(request: NextRequest) {
           id: merchant.id,
           shop: merchant.shop,
           onboardingCompleted: merchant.onboardingCompleted,
+        },
+        subscription: {
+          plan: selectedPlan,
         }
       });
 
