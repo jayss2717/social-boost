@@ -238,7 +238,7 @@ export function withDatabaseLogging<T>(
 export function getHealthMetrics() {
   const loggerInstance = Logger.getInstance();
   return {
-    performanceMetrics: (loggerInstance as any).performanceMetrics?.length || 0,
+    performanceMetrics: (loggerInstance as Logger).performanceMetrics?.length || 0,
     uptime: process.uptime(),
     memoryUsage: process.memoryUsage(),
     nodeVersion: process.version,
