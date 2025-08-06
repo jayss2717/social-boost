@@ -896,10 +896,11 @@ export default function InfluencersPage() {
                                     <Button
                                       size="slim"
                                       variant="secondary"
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(code.uniqueLink);
-                                        // You could add a toast notification here
-                                      }}
+                                                                             onClick={() => {
+                                         const actualLink = code.uniqueLink?.replace('{code}', code.code) || code.uniqueLink;
+                                         navigator.clipboard.writeText(actualLink);
+                                         // You could add a toast notification here
+                                       }}
                                     >
                                       Copy Link
                                     </Button>
@@ -914,7 +915,7 @@ export default function InfluencersPage() {
                                         `Hi ${selectedInfluencer.name},\n\n` +
                                         `Here's your exclusive discount code: ${code.code}\n\n` +
                                         `Discount: ${code.discountType === 'PERCENTAGE' ? `${code.discountValue}% off` : `$${code.discountValue} off`}\n` +
-                                        `${code.uniqueLink ? `Direct link: ${code.uniqueLink}\n\n` : '\n'}` +
+                                        `${code.uniqueLink ? `Direct link: ${code.uniqueLink.replace('{code}', code.code)}\n\n` : '\n'}` +
                                         `Thank you for your partnership!\n\n` +
                                         `Best regards,\n` +
                                         `Your Brand Team`
