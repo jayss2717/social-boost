@@ -58,6 +58,22 @@ export default function InfluencersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [automatedResults, setAutomatedResults] = useState<AutomatedCodeResult[]>([]);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [influencerSettings, setInfluencerSettings] = useState({
+    autoApprove: false,
+    minFollowers: 1000,
+    minEngagementRate: 2.0,
+    maxInfluencers: 1000,
+    minPayoutAmount: 50,
+    defaultCommissionRate: 10,
+    maxCommissionRate: 25,
+    minCommissionRate: 5,
+    autoPayout: false,
+    defaultDiscountPercentage: 20,
+    maxDiscountPercentage: 50,
+    minDiscountPercentage: 5,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -90,6 +106,119 @@ export default function InfluencersPage() {
     dynamicPricing: true,
     seasonalAdjustment: true,
   });
+
+  // Fetch influencer settings on component mount
+  React.useEffect(() => {
+    fetchInfluencerSettings();
+  }, []);
+
+  const fetchInfluencerSettings = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.error('No merchant ID found');
+        return;
+      }
+
+      const response = await fetch('/api/settings', {
+        headers: {
+          'x-merchant-id': merchantId,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setInfluencerSettings({
+            autoApprove: data.data.influencerSettings?.autoApprove || false,
+            minFollowers: data.data.influencerSettings?.minFollowers || 1000,
+            minEngagementRate: data.data.influencerSettings?.minEngagementRate || 2.0,
+            maxInfluencers: data.data.influencerSettings?.maxInfluencers || 1000,
+            minPayoutAmount: data.data.influencerSettings?.minPayoutAmount || 50,
+            defaultCommissionRate: data.data.commissionSettings?.defaultRate || 10,
+            maxCommissionRate: data.data.commissionSettings?.maxRate || 25,
+            minCommissionRate: data.data.commissionSettings?.minRate || 5,
+            autoPayout: data.data.commissionSettings?.autoPayout || false,
+            defaultDiscountPercentage: data.data.discountSettings?.defaultPercentage || 20,
+            maxDiscountPercentage: data.data.discountSettings?.maxPercentage || 50,
+            minDiscountPercentage: data.data.discountSettings?.minPercentage || 5,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch influencer settings:', error);
+    }
+  };
+
+  const saveInfluencerSettings = async () => {
+    try {
+      setIsSavingSettings(true);
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.error('No merchant ID found');
+        return;
+      }
+
+      // Get current settings first
+      const currentResponse = await fetch('/api/settings', {
+        headers: {
+          'x-merchant-id': merchantId,
+        },
+      });
+
+      if (!currentResponse.ok) {
+        console.error('Failed to fetch current settings');
+        return;
+      }
+
+      const currentData = await currentResponse.json();
+      const currentSettings = currentData.data;
+
+      const updatedSettings = {
+        ...currentSettings,
+        influencerSettings: {
+          autoApprove: influencerSettings.autoApprove,
+          minFollowers: influencerSettings.minFollowers,
+          minEngagementRate: influencerSettings.minEngagementRate,
+          maxInfluencers: influencerSettings.maxInfluencers,
+          minPayoutAmount: influencerSettings.minPayoutAmount,
+        },
+        commissionSettings: {
+          ...currentSettings.commissionSettings,
+          defaultRate: influencerSettings.defaultCommissionRate,
+          maxRate: influencerSettings.maxCommissionRate,
+          minRate: influencerSettings.minCommissionRate,
+          autoPayout: influencerSettings.autoPayout,
+        },
+        discountSettings: {
+          ...currentSettings.discountSettings,
+          defaultPercentage: influencerSettings.defaultDiscountPercentage,
+          maxPercentage: influencerSettings.maxDiscountPercentage,
+          minPercentage: influencerSettings.minDiscountPercentage,
+        },
+      };
+
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
+        },
+        body: JSON.stringify(updatedSettings),
+      });
+
+      if (response.ok) {
+        console.log('✅ Influencer settings saved successfully');
+        setShowSettingsModal(false);
+      } else {
+        console.error('Failed to save influencer settings');
+      }
+    } catch (error) {
+      console.error('Error saving influencer settings:', error);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const getMerchantId = async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -327,6 +456,10 @@ export default function InfluencersPage() {
         {
           content: 'Automated Codes',
           onAction: () => setShowAutomatedModal(true),
+        },
+        {
+          content: 'Settings',
+          onAction: () => setShowSettingsModal(true),
         },
       ]}
     >
@@ -1056,6 +1189,237 @@ Your Brand Team`;
               >
                 Open Email Client
               </Button>
+            </InlineStack>
+          </Modal.Section>
+        </Modal>
+
+        {/* Influencer Settings Modal */}
+        <Modal
+          open={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          title="Influencer Settings"
+        >
+          <Modal.Section>
+            <BlockStack gap="400">
+              {/* Influencer Management Settings */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Influencer Management
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <Select
+                    label="Auto-Approve Influencers"
+                    options={[
+                      { label: 'Yes', value: 'true' },
+                      { label: 'No', value: 'false' },
+                    ]}
+                    value={influencerSettings.autoApprove ? 'true' : 'false'}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      autoApprove: value === 'true'
+                    })}
+                  />
+                  <TextField
+                    label="Minimum Follower Count"
+                    type="number"
+                    value={String(influencerSettings.minFollowers)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      minFollowers: parseInt(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Minimum Engagement Rate (%)"
+                    type="number"
+                    value={String(influencerSettings.minEngagementRate)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      minEngagementRate: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    step={0.1}
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Maximum Influencers"
+                    type="number"
+                    value={String(influencerSettings.maxInfluencers)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      maxInfluencers: parseInt(value) || 0
+                    })}
+                    min="1"
+                    max="10000"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Auto-approve influencers with {influencerSettings.minFollowers}+ followers and {influencerSettings.minEngagementRate}%+ engagement rate. 
+                    Maximum {influencerSettings.maxInfluencers} influencers allowed.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Commission Configuration */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Commission Configuration
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                  <TextField
+                    label="Default Commission Rate (%)"
+                    type="number"
+                    value={String(influencerSettings.defaultCommissionRate)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      defaultCommissionRate: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Minimum Commission (%)"
+                    type="number"
+                    value={String(influencerSettings.minCommissionRate)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      minCommissionRate: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Maximum Commission (%)"
+                    type="number"
+                    value={String(influencerSettings.maxCommissionRate)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      maxCommissionRate: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Default commission rate: {influencerSettings.defaultCommissionRate}%. 
+                    Range: {influencerSettings.minCommissionRate}% - {influencerSettings.maxCommissionRate}%.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Discount Configuration */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Discount Configuration
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                  <TextField
+                    label="Default Discount (%)"
+                    type="number"
+                    value={String(influencerSettings.defaultDiscountPercentage)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      defaultDiscountPercentage: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Minimum Discount (%)"
+                    type="number"
+                    value={String(influencerSettings.minDiscountPercentage)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      minDiscountPercentage: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Maximum Discount (%)"
+                    type="number"
+                    value={String(influencerSettings.maxDiscountPercentage)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      maxDiscountPercentage: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max="100"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Default discount: {influencerSettings.defaultDiscountPercentage}%. 
+                    Range: {influencerSettings.minDiscountPercentage}% - {influencerSettings.maxDiscountPercentage}%.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Payout Configuration */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Payout Configuration
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <Select
+                    label="Auto-Payout"
+                    options={[
+                      { label: 'Yes', value: 'true' },
+                      { label: 'No', value: 'false' },
+                    ]}
+                    value={influencerSettings.autoPayout ? 'true' : 'false'}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      autoPayout: value === 'true'
+                    })}
+                  />
+                  <TextField
+                    label="Minimum Payout Amount ($)"
+                    type="number"
+                    value={String(influencerSettings.minPayoutAmount)}
+                    onChange={(value) => setInfluencerSettings({
+                      ...influencerSettings,
+                      minPayoutAmount: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    {influencerSettings.autoPayout ? 'Automatically' : 'Manually'} process payouts when balance reaches ${influencerSettings.minPayoutAmount}.
+                  </Text>
+                </div>
+              </div>
+            </BlockStack>
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={saveInfluencerSettings}
+                loadingText="Saving Settings..."
+                loading={isSavingSettings}
+              >
+                Save Settings
+              </LoadingButton>
             </InlineStack>
           </Modal.Section>
         </Modal>
