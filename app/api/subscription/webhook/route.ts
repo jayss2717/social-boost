@@ -81,6 +81,16 @@ async function processWebhookEvent(event: Stripe.Event) {
           console.log('Customer metadata:', customer.metadata);
           console.log('Shop from metadata:', shop);
           
+          // Enhanced logging for debugging
+          console.log('🔍 Session details:', {
+            id: session.id,
+            mode: session.mode,
+            customer: session.customer,
+            subscription: session.subscription,
+            success_url: session.success_url,
+            cancel_url: session.cancel_url,
+          });
+          
           if (shop) {
             const merchant = await prisma.merchant.findUnique({
               where: { shop },
@@ -88,11 +98,27 @@ async function processWebhookEvent(event: Stripe.Event) {
             });
 
             if (merchant) {
+              console.log('✅ Found merchant:', {
+                id: merchant.id,
+                shop: merchant.shop,
+                shopName: merchant.shopName,
+                hasSubscription: !!merchant.subscription,
+              });
+              
               const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
               const product = await stripe.products.retrieve(subscription.items.data[0].price.product as string);
               const planName = product.name;
               
               console.log('🔍 Stripe product name:', planName);
+              console.log('🔍 Stripe subscription details:', {
+                id: subscription.id,
+                status: subscription.status,
+                current_period_end: subscription.current_period_end,
+                items: subscription.items.data.map(item => ({
+                  price: item.price.id,
+                  product: item.price.product,
+                })),
+              });
               
               // Enhanced production-ready plan mapping with validation
               const planNameMapping: { [key: string]: string } = {
@@ -186,33 +212,33 @@ async function processWebhookEvent(event: Stripe.Event) {
               const plan = await prisma.plan.findUnique({
                 where: { name: mappedPlanName },
               });
-
-                              // Validate plan exists and has correct limits
-                if (plan) {
-                  console.log('✅ Plan found in database:', {
-                    id: plan.id,
-                    name: plan.name,
-                    ugcLimit: plan.ugcLimit,
-                    influencerLimit: plan.influencerLimit,
-                  });
-                  
-                  // Validate plan limits match expected values
-                  const expectedLimits = {
-                    'Pro': { ugcLimit: 300, influencerLimit: 10 },
-                    'Scale': { ugcLimit: 1000, influencerLimit: 50 },
-                    'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
-                    'STARTER': { ugcLimit: 5, influencerLimit: 1 },
-                  };
-                  
-                  const expected = expectedLimits[plan.name as keyof typeof expectedLimits];
-                  if (expected && (plan.ugcLimit !== expected.ugcLimit || plan.influencerLimit !== expected.influencerLimit)) {
-                    console.error('❌ CRITICAL: Plan limits mismatch!');
-                    console.error('❌ Expected:', expected);
-                    console.error('❌ Actual:', { ugcLimit: plan.ugcLimit, influencerLimit: plan.influencerLimit });
-                    throw new Error(`Plan "${plan.name}" has incorrect limits in database`);
-                  }
-                  
-                  try {
+              
+              // Validate plan exists and has correct limits
+              if (plan) {
+                console.log('✅ Plan found in database:', {
+                  id: plan.id,
+                  name: plan.name,
+                  ugcLimit: plan.ugcLimit,
+                  influencerLimit: plan.influencerLimit,
+                });
+                
+                // Validate plan limits match expected values
+                const expectedLimits = {
+                  'Pro': { ugcLimit: 300, influencerLimit: 10 },
+                  'Scale': { ugcLimit: 1000, influencerLimit: 50 },
+                  'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
+                  'STARTER': { ugcLimit: 5, influencerLimit: 1 },
+                };
+                
+                const expected = expectedLimits[plan.name as keyof typeof expectedLimits];
+                if (expected && (plan.ugcLimit !== expected.ugcLimit || plan.influencerLimit !== expected.influencerLimit)) {
+                  console.error('❌ CRITICAL: Plan limits mismatch!');
+                  console.error('❌ Expected:', expected);
+                  console.error('❌ Actual:', { ugcLimit: plan.ugcLimit, influencerLimit: plan.influencerLimit });
+                  throw new Error(`Plan "${plan.name}" has incorrect limits in database`);
+                }
+                
+                try {
                   if (merchant.subscription) {
                     // Update existing subscription
                     await prisma.subscription.update({
@@ -301,10 +327,33 @@ async function processWebhookEvent(event: Stripe.Event) {
               }
             } else {
               console.error(`❌ Merchant not found for shop: ${shop}`);
+              console.error('❌ Available merchants:', await prisma.merchant.findMany({
+                select: { id: true, shop: true, shopName: true }
+              }));
             }
           } else {
             console.error('❌ No shop found in customer metadata');
+            console.error('❌ Customer metadata:', customer.metadata);
+            console.error('❌ Session success_url:', session.success_url);
+            console.error('❌ Session cancel_url:', session.cancel_url);
+            
+            // Try to extract shop from success_url or cancel_url
+            const urlToCheck = session.success_url || session.cancel_url;
+            if (urlToCheck) {
+              try {
+                const url = new URL(urlToCheck);
+                const shopParam = url.searchParams.get('shop');
+                if (shopParam) {
+                  console.log('🔍 Found shop in URL:', shopParam);
+                  // You could add logic here to handle this case
+                }
+              } catch (urlError) {
+                console.error('❌ Failed to parse URL:', urlError);
+              }
+            }
           }
+        } else {
+          console.log('Session is not a subscription or has no customer');
         }
         break;
       }
