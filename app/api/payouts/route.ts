@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
 import { requireMerchantId } from '@/lib/auth';
+import { calculateCommission } from '@/utils/payouts';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,10 +69,10 @@ export async function POST(request: NextRequest) {
     const merchantId = requireMerchantId(request);
     const body = await request.json();
 
-    const { influencerId, amount, salesAmount } = body;
+    const { influencerId, originalAmount, discountedAmount, salesAmount } = body;
 
     // Validate required fields
-    if (!influencerId || !amount || !salesAmount) {
+    if (!influencerId || !originalAmount || !discountedAmount || !salesAmount) {
       return createErrorResponse('Missing required fields', 400);
     }
 
@@ -87,14 +88,24 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Influencer not found', 404);
     }
 
-    // Calculate commission
-    const commissionAmount = Math.round(amount * influencer.commissionRate);
+    // Get merchant settings for commission calculation preference
+    const merchantSettings = await prisma.merchantSettings.findUnique({
+      where: { merchantId },
+    });
 
-    // Create payout
+    // Calculate commission using merchant's preference
+    const commissionResult = calculateCommission({
+      originalAmount,
+      discountedAmount,
+      commissionRate: influencer.commissionRate,
+      calculationBase: merchantSettings?.commissionSettings?.commissionCalculationBase || 'DISCOUNTED_AMOUNT',
+    });
+
+    // Create payout with calculated commission
     const payout = await prisma.payout.create({
       data: {
         influencerId,
-        amount: commissionAmount,
+        amount: Math.round(commissionResult.commissionAmount * 100), // Convert to cents
         status: 'PENDING',
         periodStart: new Date(),
         periodEnd: new Date(),
@@ -112,7 +123,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return createSuccessResponse(payout, 'Payout created successfully');
+    return createSuccessResponse({
+      ...payout,
+      commissionCalculation: commissionResult,
+    }, 'Payout created successfully');
   } catch (error) {
     console.error('Failed to create payout:', error);
     if (error instanceof Error && error.message === 'Merchant ID required') {

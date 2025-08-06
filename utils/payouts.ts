@@ -120,6 +120,7 @@ export const processPayoutViaStripe = async (payoutId: string) => {
       data: {
         status: 'COMPLETED',
         stripeTransferId: transfer.id,
+        processedAt: new Date(),
       },
     });
 
@@ -130,11 +131,108 @@ export const processPayoutViaStripe = async (payoutId: string) => {
       where: { id: payoutId },
       data: {
         status: 'FAILED',
+        processedAt: new Date(),
       },
     });
 
     throw error;
   }
+};
+
+export const checkAutoPayoutConditions = async (merchantId: string, influencerId: string) => {
+  // Get merchant settings
+  const merchantSettings = await prisma.merchantSettings.findUnique({
+    where: { merchantId },
+  });
+
+  if (!merchantSettings?.payoutSettings?.autoPayout) {
+    return { shouldProcess: false, reason: 'Auto-payout disabled' };
+  }
+
+  // Get influencer's pending payouts
+  const pendingPayouts = await prisma.payout.findMany({
+    where: {
+      merchantId,
+      influencerId,
+      status: 'PENDING',
+    },
+  });
+
+  const totalPendingAmount = pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0) / 100; // Convert from cents
+  const minimumAmount = merchantSettings.payoutSettings.minimumPayoutAmount;
+
+  if (totalPendingAmount >= minimumAmount) {
+    return { 
+      shouldProcess: true, 
+      reason: `Threshold met: $${totalPendingAmount.toFixed(2)} >= $${minimumAmount}`,
+      totalAmount: totalPendingAmount,
+      payoutIds: pendingPayouts.map(p => p.id),
+    };
+  }
+
+  return { 
+    shouldProcess: false, 
+    reason: `Threshold not met: $${totalPendingAmount.toFixed(2)} < $${minimumAmount}`,
+    totalAmount: totalPendingAmount,
+  };
+};
+
+export const processAutoPayouts = async (merchantId: string) => {
+  // Get merchant settings
+  const merchantSettings = await prisma.merchantSettings.findUnique({
+    where: { merchantId },
+  });
+
+  if (!merchantSettings?.payoutSettings?.autoPayout) {
+    return { processed: 0, skipped: 0, errors: [] };
+  }
+
+  // Get all influencers with pending payouts
+  const influencersWithPayouts = await prisma.influencer.findMany({
+    where: {
+      merchantId,
+      payouts: {
+        some: {
+          status: 'PENDING',
+        },
+      },
+    },
+    include: {
+      payouts: {
+        where: { status: 'PENDING' },
+      },
+    },
+  });
+
+  const results = {
+    processed: 0,
+    skipped: 0,
+    errors: [] as string[],
+  };
+
+  for (const influencer of influencersWithPayouts) {
+    try {
+      const autoPayoutCheck = await checkAutoPayoutConditions(merchantId, influencer.id);
+      
+      if (autoPayoutCheck.shouldProcess) {
+        // Process all pending payouts for this influencer
+        for (const payout of influencer.payouts) {
+          try {
+            await processPayoutViaStripe(payout.id);
+            results.processed++;
+          } catch (error) {
+            results.errors.push(`Payout ${payout.id}: ${error}`);
+          }
+        }
+      } else {
+        results.skipped++;
+      }
+    } catch (error) {
+      results.errors.push(`Influencer ${influencer.id}: ${error}`);
+    }
+  }
+
+  return results;
 };
 
 export const processBulkPayouts = async (merchantId: string) => {

@@ -87,8 +87,16 @@ export const settingsSchema = z.object({
   }),
   payoutSettings: z.object({
     autoPayout: z.boolean(),
+    minimumPayoutAmount: z.number().min(0),
     payoutSchedule: z.enum(['WEEKLY', 'MONTHLY', 'MANUAL']),
-    minimumPayout: z.number().min(0),
+    payoutDay: z.number().min(1).max(31),
+    payoutTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+    payoutCurrency: z.string(),
+    payoutMethod: z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER']),
+    notificationEmail: z.boolean(),
+    notificationSMS: z.boolean(),
+    autoApproveThreshold: z.number().min(0),
+    requireManualApproval: z.boolean(),
   }),
 });
 

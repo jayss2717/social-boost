@@ -2,9 +2,10 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, DataTable, Badge, Banner, InlineStack, Modal, TextField, Select } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { DollarSign, CreditCard, Clock, CheckCircle, Filter, Download, Eye, Send } from 'lucide-react';
+import { DollarSign, CreditCard, Clock, CheckCircle, Filter, Download, Eye, Send, Settings } from 'lucide-react';
 import React from 'react';
 import { apiFetch } from '@/utils/api';
+
 
 interface Payout {
   id: string;
@@ -31,20 +32,49 @@ interface PayoutSummary {
   completedPayouts: number;
 }
 
+interface PayoutSettings {
+  autoPayout: boolean;
+  minimumPayoutAmount: number;
+  payoutSchedule: 'WEEKLY' | 'MONTHLY' | 'MANUAL';
+  payoutDay: number; // Day of week (1-7) or month (1-31)
+  payoutTime: string; // Time of day (HH:MM)
+  payoutCurrency: string;
+  payoutMethod: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER';
+  notificationEmail: boolean;
+  notificationSMS: boolean;
+  autoApproveThreshold: number;
+  requireManualApproval: boolean;
+}
+
 export default function PayoutsPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [filteredPayouts, setFilteredPayouts] = useState<Payout[]>([]);
   const [summary, setSummary] = useState<PayoutSummary | null>(null);
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [payoutSettings, setPayoutSettings] = useState<PayoutSettings>({
+    autoPayout: false,
+    minimumPayoutAmount: 50,
+    payoutSchedule: 'MANUAL',
+    payoutDay: 1,
+    payoutTime: '09:00',
+    payoutCurrency: 'USD',
+    payoutMethod: 'STRIPE',
+    notificationEmail: true,
+    notificationSMS: false,
+    autoApproveThreshold: 100,
+    requireManualApproval: true,
+  });
+    const [isLoading, setIsLoading] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchPayouts(), fetchSummary()]);
+      await Promise.all([fetchPayouts(), fetchSummary(), fetchPayoutSettings()]);
       setIsLoading(false);
     };
     loadData();
@@ -101,6 +131,74 @@ export default function PayoutsPage() {
       }
     } catch (error) {
       console.error('❌ Failed to fetch payout summary:', error);
+    }
+  };
+
+  const fetchPayoutSettings = async () => {
+    try {
+      console.log('🔍 Fetching payout settings...');
+      const data = await apiFetch('/api/settings');
+      
+      if (data && data.payoutSettings) {
+        console.log('✅ Payout settings fetched successfully:', data.payoutSettings);
+        setPayoutSettings({
+          autoPayout: data.payoutSettings.autoPayout || false,
+          minimumPayoutAmount: data.payoutSettings.minimumPayoutAmount || 50,
+          payoutSchedule: data.payoutSettings.payoutSchedule || 'MANUAL',
+          payoutDay: data.payoutSettings.payoutDay || 1,
+          payoutTime: data.payoutSettings.payoutTime || '09:00',
+          payoutCurrency: data.payoutSettings.payoutCurrency || 'USD',
+          payoutMethod: data.payoutSettings.payoutMethod || 'STRIPE',
+          notificationEmail: data.payoutSettings.notificationEmail !== false,
+          notificationSMS: data.payoutSettings.notificationSMS || false,
+          autoApproveThreshold: data.payoutSettings.autoApproveThreshold || 100,
+          requireManualApproval: data.payoutSettings.requireManualApproval !== false,
+        });
+      } else {
+        console.log('⚠️ No payout settings found, using defaults');
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch payout settings:', error);
+    }
+  };
+
+  const savePayoutSettings = async () => {
+    try {
+      setIsSavingSettings(true);
+      console.log('💾 Saving payout settings...');
+      
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payoutSettings: {
+            autoPayout: payoutSettings.autoPayout,
+            minimumPayoutAmount: payoutSettings.minimumPayoutAmount,
+            payoutSchedule: payoutSettings.payoutSchedule,
+            payoutDay: payoutSettings.payoutDay,
+            payoutTime: payoutSettings.payoutTime,
+            payoutCurrency: payoutSettings.payoutCurrency,
+            payoutMethod: payoutSettings.payoutMethod,
+            notificationEmail: payoutSettings.notificationEmail,
+            notificationSMS: payoutSettings.notificationSMS,
+            autoApproveThreshold: payoutSettings.autoApproveThreshold,
+            requireManualApproval: payoutSettings.requireManualApproval,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Payout settings saved successfully');
+        setShowSettingsModal(false);
+      } else {
+        console.error('❌ Failed to save payout settings');
+      }
+    } catch (error) {
+      console.error('❌ Error saving payout settings:', error);
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -194,10 +292,17 @@ export default function PayoutsPage() {
       title="Payouts"
       primaryAction={{
         content: 'Process All Pending',
-                    icon: () => React.createElement(Send, { size: 20 }),
+        icon: () => React.createElement(Send, { size: 20 }),
         onAction: bulkProcessPayouts,
         disabled: pendingPayouts.length === 0,
       }}
+      secondaryActions={[
+        {
+          content: 'Settings',
+          icon: () => React.createElement(Settings, { size: 20 }),
+          onAction: () => setShowSettingsModal(true),
+        },
+      ]}
     >
       <Layout>
         {/* Summary Cards */}
@@ -564,6 +669,241 @@ export default function PayoutsPage() {
                 )}
               </BlockStack>
             )}
+          </Modal.Section>
+        </Modal>
+
+        {/* Payout Settings Modal */}
+        <Modal
+          open={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          title="Payout Settings"
+          primaryAction={{
+            content: 'Save Settings',
+            onAction: savePayoutSettings,
+            loading: isSavingSettings,
+          }}
+          secondaryActions={[
+            {
+              content: 'Cancel',
+              onAction: () => setShowSettingsModal(false),
+            },
+          ]}
+        >
+          <Modal.Section>
+            <BlockStack gap="400">
+              {/* Auto Payout Configuration */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Auto Payout Configuration
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Text variant="bodyMd" as="p">
+                      Enable automatic payouts when threshold is reached
+                    </Text>
+                    <div className="mt-2">
+                      <Select
+                        label="Auto Payout"
+                        options={[
+                          { label: 'Enabled', value: 'true' },
+                          { label: 'Disabled', value: 'false' },
+                        ]}
+                        value={payoutSettings.autoPayout ? 'true' : 'false'}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          autoPayout: value === 'true'
+                        })}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <TextField
+                      label="Minimum Payout Amount ($)"
+                      type="number"
+                      value={payoutSettings.minimumPayoutAmount.toString()}
+                      onChange={(value) => setPayoutSettings({
+                        ...payoutSettings,
+                        minimumPayoutAmount: parseFloat(value) || 0
+                      })}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payout Schedule */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Payout Schedule
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                  <Select
+                    label="Schedule"
+                    options={[
+                      { label: 'Manual', value: 'MANUAL' },
+                      { label: 'Weekly', value: 'WEEKLY' },
+                      { label: 'Monthly', value: 'MONTHLY' },
+                    ]}
+                    value={payoutSettings.payoutSchedule}
+                    onChange={(value) => setPayoutSettings({
+                      ...payoutSettings,
+                      payoutSchedule: value as 'WEEKLY' | 'MONTHLY' | 'MANUAL'
+                    })}
+                  />
+                  
+                  {payoutSettings.payoutSchedule !== 'MANUAL' && (
+                    <>
+                      <TextField
+                        label={payoutSettings.payoutSchedule === 'WEEKLY' ? 'Day of Week (1-7)' : 'Day of Month (1-31)'}
+                        type="number"
+                        value={payoutSettings.payoutDay.toString()}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          payoutDay: parseInt(value) || 1
+                        })}
+                        autoComplete="off"
+                      />
+                      
+                      <TextField
+                        label="Time (HH:MM)"
+                        type="time"
+                        value={payoutSettings.payoutTime}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          payoutTime: value
+                        })}
+                        autoComplete="off"
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Payout Method */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Payout Method
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <Select
+                    label="Payment Method"
+                    options={[
+                      { label: 'Stripe Connect', value: 'STRIPE' },
+                      { label: 'PayPal', value: 'PAYPAL' },
+                      { label: 'Bank Transfer', value: 'BANK_TRANSFER' },
+                    ]}
+                    value={payoutSettings.payoutMethod}
+                    onChange={(value) => setPayoutSettings({
+                      ...payoutSettings,
+                      payoutMethod: value as 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER'
+                    })}
+                  />
+                  
+                  <Select
+                    label="Currency"
+                    options={[
+                      { label: 'USD', value: 'USD' },
+                      { label: 'EUR', value: 'EUR' },
+                      { label: 'GBP', value: 'GBP' },
+                      { label: 'CAD', value: 'CAD' },
+                    ]}
+                    value={payoutSettings.payoutCurrency}
+                    onChange={(value) => setPayoutSettings({
+                      ...payoutSettings,
+                      payoutCurrency: value
+                    })}
+                  />
+                </div>
+              </div>
+
+              {/* Notifications */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Notifications
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Text variant="bodyMd" as="p">
+                      Email notifications for payout events
+                    </Text>
+                    <div className="mt-2">
+                      <Select
+                        label="Email Notifications"
+                        options={[
+                          { label: 'Enabled', value: 'true' },
+                          { label: 'Disabled', value: 'false' },
+                        ]}
+                        value={payoutSettings.notificationEmail ? 'true' : 'false'}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          notificationEmail: value === 'true'
+                        })}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Text variant="bodyMd" as="p">
+                      SMS notifications for payout events
+                    </Text>
+                    <div className="mt-2">
+                      <Select
+                        label="SMS Notifications"
+                        options={[
+                          { label: 'Enabled', value: 'true' },
+                          { label: 'Disabled', value: 'false' },
+                        ]}
+                        value={payoutSettings.notificationSMS ? 'true' : 'false'}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          notificationSMS: value === 'true'
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Approval Settings */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Approval Settings
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Text variant="bodyMd" as="p">
+                      Auto-approve payouts below threshold
+                    </Text>
+                    <div className="mt-2">
+                      <Select
+                        label="Require Manual Approval"
+                        options={[
+                          { label: 'Yes', value: 'true' },
+                          { label: 'No', value: 'false' },
+                        ]}
+                        value={payoutSettings.requireManualApproval ? 'true' : 'false'}
+                        onChange={(value) => setPayoutSettings({
+                          ...payoutSettings,
+                          requireManualApproval: value === 'true'
+                        })}
+                      />
+                    </div>
+                  </div>
+                  
+                  <TextField
+                    label="Auto-Approve Threshold ($)"
+                    type="number"
+                    value={payoutSettings.autoApproveThreshold.toString()}
+                    onChange={(value) => setPayoutSettings({
+                      ...payoutSettings,
+                      autoApproveThreshold: parseFloat(value) || 0
+                    })}
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+            </BlockStack>
           </Modal.Section>
         </Modal>
       </Layout>

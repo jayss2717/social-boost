@@ -144,8 +144,16 @@ export interface UgcSettings {
 
 export interface PayoutSettings {
   autoPayout: boolean;
-  payoutSchedule: 'WEEKLY' | 'MONTHLY';
-  minimumPayout: number;
+  minimumPayoutAmount: number;
+  payoutSchedule: 'WEEKLY' | 'MONTHLY' | 'MANUAL';
+  payoutDay: number;
+  payoutTime: string;
+  payoutCurrency: string;
+  payoutMethod: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER';
+  notificationEmail: boolean;
+  notificationSMS: boolean;
+  autoApproveThreshold: number;
+  requireManualApproval: boolean;
 }
 
 export interface MerchantSettings {

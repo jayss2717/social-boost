@@ -61,8 +61,16 @@ export async function GET(request: NextRequest) {
         },
         payoutSettings: {
           autoPayout: false,
-          payoutSchedule: 'WEEKLY',
-          minimumPayout: 50,
+          minimumPayoutAmount: 50,
+          payoutSchedule: 'MANUAL',
+          payoutDay: 1,
+          payoutTime: '09:00',
+          payoutCurrency: 'USD',
+          payoutMethod: 'STRIPE',
+          notificationEmail: true,
+          notificationSMS: false,
+          autoApproveThreshold: 100,
+          requireManualApproval: true,
         },
       };
 
