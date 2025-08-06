@@ -19,24 +19,9 @@ export default function DashboardPage() {
   // Fallback: If we have a shop but no merchant ID, try to get it
   useEffect(() => {
     if (shop && !merchantId) {
-      console.log('Shop detected but no merchant ID, attempting to fetch...');
-      const fetchMerchantId = async () => {
-        try {
-          const response = await fetch(`/api/merchant?shop=${shop}`);
-          if (response.ok) {
-            const merchantData = await response.json();
-            localStorage.setItem('merchantId', merchantData.id);
-            window.dispatchEvent(new CustomEvent('merchantIdSet', { 
-              detail: merchantData.id 
-            }));
-            console.log('Merchant ID fetched and set:', merchantData.id);
-          }
-        } catch (error) {
-          console.error('Error fetching merchant ID:', error);
-        }
-      };
-      
-      fetchMerchantId();
+      console.log('Shop detected but no merchant ID, waiting for MerchantInitializer...');
+      // Don't fetch merchant here - let MerchantInitializer handle it
+      // This prevents duplicate API calls
     }
   }, [shop, merchantId]);
   

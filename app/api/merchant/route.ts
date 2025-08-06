@@ -11,8 +11,12 @@ export async function GET(request: NextRequest) {
     const host = searchParams.get('host');
 
     console.log(`🔍 Merchant API called with shop: ${shop}, host: ${host}`);
+    console.log(`🔍 Request URL: ${request.url}`);
+    console.log(`🔍 User Agent: ${request.headers.get('user-agent')}`);
+    console.log(`🔍 Referer: ${request.headers.get('referer')}`);
 
     if (!shop && !host) {
+      console.log(`❌ Missing shop and host parameters`);
       return NextResponse.json({ error: 'Missing shop or host parameter' }, { status: 400 });
     }
 
@@ -20,6 +24,7 @@ export async function GET(request: NextRequest) {
     const shopDomain = shop || (host ? `${host.replace('.myshopify.com', '')}.myshopify.com` : null);
     
     if (!shopDomain) {
+      console.log(`❌ Could not determine shop domain from shop: ${shop}, host: ${host}`);
       return NextResponse.json({ error: 'Could not determine shop domain' }, { status: 400 });
     }
 
@@ -32,160 +37,129 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // If merchant doesn't exist, create a new one for fresh installations
-    if (!merchant) {
-      console.log(`🔄 Creating new merchant for shop: ${shopDomain}`);
-      
-      try {
-        merchant = await prisma.merchant.create({
-          data: {
-            shop: shopDomain,
-            accessToken: 'pending', // Will be updated during OAuth
-            scope: 'read_products,write_products',
-            shopifyShopId: null, // Will be updated during OAuth
-            shopName: shopDomain.replace('.myshopify.com', ''),
-            shopEmail: `admin@${shopDomain}`,
-            shopDomain: shopDomain,
-            shopCurrency: 'USD',
-            shopTimezone: 'America/New_York',
-            shopLocale: 'en',
-            onboardingCompleted: false,
-            onboardingStep: 1,
-            onboardingData: {
-              businessType: 'ECOMMERCE',
-              industry: 'General',
-              goals: ['Increase brand awareness'],
-              commissionRate: 10,
-              autoApprove: false,
-              minEngagement: 100,
-              payoutSchedule: 'WEEKLY',
-              teamSize: '1-5',
-            },
-          },
-          include: {
-            settings: true,
-          },
-        });
-
-            // Get or create the Starter plan
-    const starterPlan = await prisma.plan.upsert({
-      where: { name: 'STARTER' },
-      update: {},
-      create: {
-        name: 'STARTER',
-        priceCents: 0,
-        ugcLimit: 5,        // Updated to match Starter plan
-        influencerLimit: 1,  // Updated to match Starter plan
-      },
-    });
-
-        // Create default subscription
-        await prisma.subscription.create({
-          data: {
-            merchantId: merchant.id,
-            planId: starterPlan.id, // Use the actual plan ID
-            status: 'ACTIVE',
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-          },
-        });
-
-        // Create default merchant settings
-        await prisma.merchantSettings.create({
-          data: {
-            merchantId: merchant.id,
-            name: merchant.shopName || shop.replace('.myshopify.com', ''),
-            email: merchant.shopEmail || `admin@${shop}`,
-            website: `https://${shop}`,
-            linkPattern: '/discount/{code}',
-            socialMedia: {
-              instagram: '',
-              tiktok: '',
-              twitter: '',
-              youtube: '',
-            },
-            discountSettings: {
-              defaultPercentage: 15,
-              minPercentage: 5,
-              maxPercentage: 50,
-              autoApprove: false,
-            },
-            commissionSettings: {
-              defaultRate: 10,
-              minRate: 5,
-              maxRate: 25,
-              autoPayout: false,
-            },
-            ugcSettings: {
-              autoApprove: false,
-              minEngagement: 100,
-              hashtags: ['#sponsored'],
-              timerSettings: {
-                enabled: true,
-                duration: 24, // hours
-              },
-            },
-            payoutSettings: {
-              autoPayout: false,
-              schedule: 'WEEKLY',
-              minimumAmount: 5000, // $50
-            },
-          },
-        });
-
-        console.log(`✅ Created new merchant: ${merchant.id}`);
-        
-        // Return the merchant ID in the response so it can be stored in localStorage
-        const response = {
-          id: merchant.id,
-          shop: merchant.shop,
-          accessToken: merchant.accessToken,
-          shopifyShopId: merchant.shopifyShopId,
-          scope: merchant.scope,
-          shopName: merchant.shopName,
-          shopEmail: merchant.shopEmail,
-          shopDomain: merchant.shopDomain,
-          shopCurrency: merchant.shopCurrency,
-          shopTimezone: merchant.shopTimezone,
-          shopLocale: merchant.shopLocale,
-          isActive: merchant.isActive,
-          onboardingCompleted: merchant.onboardingCompleted,
-          onboardingStep: merchant.onboardingStep,
-          onboardingData: merchant.onboardingData,
-          settings: merchant.settings,
-          _newMerchant: true, // Flag to indicate this is a new merchant
-        };
-        
-        console.log('Merchant API response:', response);
-        return NextResponse.json(response);
-      } catch (createError) {
-        console.error('Failed to create merchant:', createError);
-        return NextResponse.json({ error: 'Failed to create merchant' }, { status: 500 });
-      }
+    if (merchant) {
+      console.log(`✅ Found existing merchant: ${merchant.id} for shop: ${shopDomain}`);
+      return NextResponse.json(merchant);
     }
 
-    const response = {
-      id: merchant.id,
-      shop: merchant.shop,
-      accessToken: merchant.accessToken,
-      shopifyShopId: merchant.shopifyShopId,
-      scope: merchant.scope,
-      shopName: merchant.shopName,
-      shopEmail: merchant.shopEmail,
-      shopDomain: merchant.shopDomain,
-      shopCurrency: merchant.shopCurrency,
-      shopTimezone: merchant.shopTimezone,
-      shopLocale: merchant.shopLocale,
-      isActive: merchant.isActive,
-      onboardingCompleted: merchant.onboardingCompleted,
-      onboardingStep: merchant.onboardingStep,
-      onboardingData: merchant.onboardingData,
-      settings: merchant.settings,
-    };
+    // If merchant doesn't exist, create a new one for fresh installations
+    console.log(`🔄 Creating new merchant for shop: ${shopDomain}`);
+    console.log(`🔄 This is a fresh installation or new store`);
     
-    console.log('Merchant API response:', response);
-    return NextResponse.json(response);
+    try {
+      merchant = await prisma.merchant.create({
+        data: {
+          shop: shopDomain,
+          accessToken: 'pending', // Will be updated during OAuth
+          scope: 'read_products,write_products',
+          shopifyShopId: null, // Will be updated during OAuth
+          shopName: shopDomain.replace('.myshopify.com', ''),
+          shopEmail: `admin@${shopDomain}`,
+          shopDomain: shopDomain,
+          shopCurrency: 'USD',
+          shopTimezone: 'America/New_York',
+          shopLocale: 'en',
+          onboardingCompleted: false,
+          onboardingStep: 1,
+          onboardingData: {
+            businessType: 'ECOMMERCE',
+            industry: 'General',
+            goals: ['Increase brand awareness'],
+            commissionRate: 10,
+            autoApprove: false,
+            minEngagement: 100,
+            payoutSchedule: 'WEEKLY',
+            teamSize: '1-5',
+          },
+        },
+        include: {
+          settings: true,
+        },
+      });
+
+      console.log(`✅ Successfully created merchant: ${merchant.id} for shop: ${shopDomain}`);
+
+      // Get or create the Starter plan
+      const starterPlan = await prisma.plan.upsert({
+        where: { name: 'STARTER' },
+        update: {},
+        create: {
+          name: 'STARTER',
+          priceCents: 0,
+          ugcLimit: 5,        // Updated to match Starter plan
+          influencerLimit: 1,  // Updated to match Starter plan
+        },
+      });
+
+      // Create default subscription
+      await prisma.subscription.create({
+        data: {
+          merchantId: merchant.id,
+          planId: starterPlan.id, // Use the actual plan ID
+          status: 'ACTIVE',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        },
+      });
+
+      // Create default merchant settings
+      await prisma.merchantSettings.create({
+        data: {
+          merchantId: merchant.id,
+          name: merchant.shopName || shopDomain.replace('.myshopify.com', ''),
+          email: merchant.shopEmail || `admin@${shopDomain}`,
+          website: `https://${shopDomain}`,
+          linkPattern: '/discount/{code}',
+          socialMedia: {
+            instagram: false,
+            tiktok: false,
+            youtube: false,
+          },
+          ugcSettings: {
+            autoDetect: true,
+            autoApprove: false,
+            minEngagement: 100,
+            rewardType: 'DISCOUNT_CODE',
+            rewardValue: 10,
+          },
+          influencerSettings: {
+            commissionRate: 10,
+            commissionCalculation: 'DISCOUNTED_AMOUNT',
+            autoPayout: false,
+            minimumPayout: 50,
+            payoutSchedule: 'WEEKLY',
+          },
+          payoutSettings: {
+            autoPayout: false,
+            minimumPayout: 50,
+            payoutSchedule: 'WEEKLY',
+            payoutDay: 1,
+          },
+        },
+      });
+
+      console.log(`✅ Successfully created all associated data for merchant: ${merchant.id}`);
+
+      return NextResponse.json(merchant);
+    } catch (createError) {
+      console.error(`❌ Error creating merchant for shop: ${shopDomain}`, createError);
+      
+      // Check if merchant was created by another request
+      const existingMerchant = await prisma.merchant.findUnique({
+        where: { shop: shopDomain },
+        include: {
+          settings: true,
+        },
+      });
+      
+      if (existingMerchant) {
+        console.log(`✅ Found merchant created by another request: ${existingMerchant.id}`);
+        return NextResponse.json(existingMerchant);
+      }
+      
+      return NextResponse.json({ error: 'Failed to create merchant' }, { status: 500 });
+    }
   } catch (error) {
-    console.error('Failed to fetch merchant:', error);
+    console.error('❌ Merchant API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 
