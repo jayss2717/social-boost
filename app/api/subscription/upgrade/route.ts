@@ -53,29 +53,40 @@ export async function POST(request: NextRequest) {
     customer = existingCustomers.data.find(c => c.metadata?.shop === shop);
     
     if (!customer) {
+      // Create new customer with proper metadata
       customer = await stripe.customers.create({
         email: merchant.shopEmail || `${storeName}@example.com`,
         metadata: {
-          shop,
-          merchantId,
+          shop: shop,
+          merchantId: merchant.id,
+          shopName: merchant.shopName || storeName,
         },
         name: merchant.shopName || storeName,
       });
-      console.log(`Created new Stripe customer for ${shop}`);
+      console.log('✅ Created new Stripe customer with metadata:', {
+        id: customer.id,
+        shop: shop,
+        merchantId: merchant.id,
+      });
     } else {
-      // Update existing customer metadata if needed
-      if (customer.metadata?.shop !== shop) {
+      // Update existing customer metadata to ensure it's correct
+      if (customer.metadata?.shop !== shop || customer.metadata?.merchantId !== merchant.id) {
         customer = await stripe.customers.update(customer.id, {
           metadata: {
-            ...customer.metadata,
-            shop,
-            merchantId,
+            shop: shop,
+            merchantId: merchant.id,
+            shopName: merchant.shopName || storeName,
           },
         });
-        console.log(`Updated Stripe customer metadata for ${shop}`);
+        console.log('✅ Updated existing Stripe customer metadata:', {
+          id: customer.id,
+          shop: shop,
+          merchantId: merchant.id,
+        });
       }
     }
-    
+
+    // Create checkout session with enhanced metadata
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       payment_method_types: ['card'],
@@ -87,19 +98,42 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'subscription',
       success_url: `${shopifyAppUrl}?payment_success=true&plan=${plan}`,
-      cancel_url: `${shopifyAppUrl}`,
+      cancel_url: `${shopifyAppUrl}?payment_canceled=true`,
       metadata: {
-        merchantId,
-        plan,
-        shop,
+        shop: shop,
+        merchantId: merchant.id,
+        plan: plan,
+        shopName: merchant.shopName || storeName,
+      },
+      subscription_data: {
+        metadata: {
+          shop: shop,
+          merchantId: merchant.id,
+          plan: plan,
+          shopName: merchant.shopName || storeName,
+        },
       },
     });
 
-    console.log(`Created checkout session for ${shop} to upgrade to ${plan}`);
-    console.log(`Success URL: ${shopifyAppUrl}?payment_success=true&plan=${plan}`);
-    return NextResponse.json({ url: session.url });
+    console.log('✅ Created checkout session with enhanced metadata:', {
+      sessionId: session.id,
+      shop: shop,
+      merchantId: merchant.id,
+      plan: plan,
+      customerId: customer.id,
+    });
+
+    return NextResponse.json({
+      success: true,
+      url: session.url,
+      sessionId: session.id,
+    });
+
   } catch (error) {
-    console.error('Subscription upgrade error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Error creating checkout session:', error);
+    return NextResponse.json(
+      { error: 'Failed to create checkout session' },
+      { status: 500 }
+    );
   }
 } 
