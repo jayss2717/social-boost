@@ -78,7 +78,11 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Merchant not found', 404);
     }
 
-    console.log('Merchant verified:', merchant.shop);
+    console.log('✅ Merchant verified:', {
+      id: merchant.id,
+      shop: merchant.shop,
+      shopName: merchant.shopName,
+    });
 
     // Check influencer limit
     try {
@@ -130,6 +134,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (duplicateConditions.length > 0) {
+      console.log('🔍 Checking for duplicate influencers with merchantId:', merchantId);
+      console.log('🔍 Duplicate conditions:', duplicateConditions);
+      
       const existingInfluencer = await prisma.influencer.findFirst({
         where: {
           merchantId,
@@ -138,8 +145,34 @@ export async function POST(request: NextRequest) {
       });
 
       if (existingInfluencer) {
-        console.log('Duplicate influencer found:', existingInfluencer.id);
+        console.log('❌ Duplicate influencer found:', {
+          id: existingInfluencer.id,
+          merchantId: existingInfluencer.merchantId,
+          name: existingInfluencer.name,
+          email: existingInfluencer.email,
+          instagramHandle: existingInfluencer.instagramHandle,
+          tiktokHandle: existingInfluencer.tiktokHandle,
+        });
         return createErrorResponse('Influencer already exists with this email or social media handle', 409);
+      } else {
+        console.log('✅ No duplicate influencer found');
+      }
+      
+      // Additional debug: Check if this email/username exists in ANY merchant (shouldn't happen)
+      if (validatedData.email) {
+        const globalDuplicate = await prisma.influencer.findFirst({
+          where: {
+            email: validatedData.email,
+            merchantId: { not: merchantId }, // Different merchant
+          },
+        });
+        if (globalDuplicate) {
+          console.log('⚠️ Found influencer with same email in different merchant:', {
+            influencerId: globalDuplicate.id,
+            merchantId: globalDuplicate.merchantId,
+            email: globalDuplicate.email,
+          });
+        }
       }
     }
 
