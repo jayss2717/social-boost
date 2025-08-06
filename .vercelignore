@@ -10,16 +10,20 @@ extensions/web-pixel/.shopify/
 .env.development
 .env.test
 
-# Exclude test files
-test/
-__tests__/
-*.test.ts
-*.test.js
-*.spec.ts
-*.spec.js
-
-# Exclude documentation (optional)
-docs/
-
-# Exclude scripts
-scripts/ 
+# Exclude scripts (keep only production scripts)
+scripts/setup-test-data.ts
+scripts/cleanup-test-data.js
+scripts/simple-test.js
+scripts/test-complete-flow.js
+scripts/test-starter-plan.js
+scripts/test-app.js
+scripts/test-shopify-install.js
+scripts/test-shopify.js
+scripts/setup-fresh-account.ts
+scripts/create-simple-merchant.ts
+scripts/set-merchant-id.js
+scripts/clear-database.ts
+scripts/fix-oauth-credentials.js
+scripts/fix-merchant-credentials.ts
+scripts/verify-build.js
+scripts/fix-scale-subscription.ts 

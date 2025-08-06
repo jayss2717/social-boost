@@ -6,9 +6,6 @@
 .pnp.js
 .yarn/install-state.gz
 
-# testing
-/coverage
-
 # next.js
 /.next/
 /out/
@@ -36,8 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# test files
-app/api/test/
-app/test-dashboard/
-app/test-onboarding/
-scripts/test-app.js 
+# IDE
+.vscode/
+.idea/ 

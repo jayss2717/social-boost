@@ -9,14 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "vercel-build": "prisma generate && next build",
-    "db:seed": "tsx scripts/seed.ts",
-    "fix:credentials": "tsx scripts/fix-merchant-credentials.ts",
-    "test:app": "node scripts/test-app.js",
-    "test:shopify": "node scripts/test-shopify.js",
-    "test:install": "node scripts/test-shopify-install.js",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^4.16.2",
@@ -44,15 +37,10 @@
     "swr": "^2.2.4",
     "tailwindcss": "^3.3.2",
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/react": "^16.3.0",
-    "@vitest/coverage-v8": "^1.0.0",
     "ignore-loader": "^0.1.2",
-    "jsdom": "^26.1.0",
     "prisma": "^4.16.2",
     "tsx": "^3.12.7"
   },

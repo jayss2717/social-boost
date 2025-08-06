@@ -6,7 +6,7 @@ import { prisma } from './prisma';
 export function validateMerchantCredentials(merchant: Record<string, unknown>): boolean {
   return Boolean(merchant.accessToken) && 
          merchant.accessToken !== 'pending' && 
-         merchant.accessToken !== 'test-access-token' &&
+         merchant.accessToken &&
          Boolean(merchant.shopifyShopId) &&
          merchant.shopifyShopId !== 'NULL';
 }

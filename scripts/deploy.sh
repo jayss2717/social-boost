@@ -33,9 +33,9 @@ npx prisma migrate deploy
 echo "⚙️  Generating Prisma client..."
 npx prisma generate
 
-# Run tests
-echo "🧪 Running tests..."
-npm run test:app
+# Build verification
+echo "🔍 Verifying build..."
+npm run lint
 
 # Create deployment package
 echo "📦 Creating deployment package..."

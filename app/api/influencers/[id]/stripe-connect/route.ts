@@ -11,8 +11,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔄 Stripe Connect POST request started');
     const merchantId = requireMerchantId(request);
     const { id: influencerId } = params;
+
+    console.log('🔍 Parameters:', { merchantId, influencerId });
 
     // Verify influencer belongs to merchant
     const influencer = await prisma.influencer.findFirst({
@@ -22,19 +25,28 @@ export async function POST(
       },
     });
 
+    console.log('🔍 Influencer found:', !!influencer, influencer ? { id: influencer.id, name: influencer.name, email: influencer.email } : null);
+
     if (!influencer) {
+      console.log('❌ Influencer not found');
       return createErrorResponse('Influencer not found', 404);
     }
 
     // Check if influencer already has Stripe account
     if (influencer.stripeAccountId) {
+      console.log('❌ Influencer already has Stripe account:', influencer.stripeAccountId);
       return createErrorResponse('Influencer already has a connected Stripe account', 400);
     }
 
+    console.log('🔄 Creating Stripe Connect account for influencer:', influencer.name);
+    
     // Create Stripe Connect account
     const accountId = await createConnectedAccount(influencerId);
     
+    console.log('🔍 Stripe account creation result:', accountId);
+    
     if (!accountId) {
+      console.log('❌ Failed to create Stripe Connect account');
       return createErrorResponse('Failed to create Stripe Connect account', 500);
     }
 
