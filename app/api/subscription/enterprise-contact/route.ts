@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store Enterprise contact details (you can extend this table as needed)
-    const enterpriseContact = await prisma.merchantSettings.upsert({
+    await prisma.merchantSettings.upsert({
       where: { merchantId: merchant.id },
       update: {
         enterpriseContact: {
