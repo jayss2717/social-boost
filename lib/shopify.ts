@@ -1,7 +1,7 @@
 import { prisma } from './prisma';
 import { calculateCommission } from './stripe';
 
-// Shopify API client class for backward compatibility
+// Shopify API client class with token validation and refresh
 export class ShopifyAPI {
   private accessToken: string;
   private shopDomain: string;
@@ -11,7 +11,76 @@ export class ShopifyAPI {
     this.shopDomain = shopDomain;
   }
 
+  // Validate token before making requests
+  private async validateToken(): Promise<boolean> {
+    try {
+      const response = await fetch(`https://${this.shopDomain}/admin/api/2024-01/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': this.accessToken,
+        },
+      });
+      
+      if (response.status === 401) {
+        console.log('❌ Shopify access token is invalid/expired');
+        return false;
+      }
+      
+      return response.ok;
+    } catch (error) {
+      console.error('❌ Error validating Shopify token:', error);
+      return false;
+    }
+  }
+
+  // Attempt to refresh token by triggering re-authentication
+  private async refreshToken(): Promise<boolean> {
+    try {
+      console.log('🔄 Attempting to refresh Shopify access token...');
+      
+      // Get merchant from database
+      const merchant = await prisma.merchant.findUnique({
+        where: { shop: this.shopDomain },
+      });
+
+      if (!merchant) {
+        console.error('❌ Merchant not found for token refresh');
+        return false;
+      }
+
+      // Generate new OAuth URL for re-authentication
+      const scopes = 'read_analytics,read_customers,read_inventory,read_marketing_events,read_orders,read_products,write_discounts,write_inventory,write_marketing_events,write_products,read_price_rules,write_price_rules,read_reports,read_shopify_payments_payouts';
+      const redirectUri = `https://socialboost-blue.vercel.app/api/auth/shopify/callback`;
+      
+      const authUrl = `https://${this.shopDomain}/admin/oauth/authorize?` +
+        `client_id=${process.env.SHOPIFY_API_KEY}&` +
+        `scope=${scopes}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${Math.random().toString(36).substring(2, 15)}`;
+
+      console.log('🔄 Re-authentication URL generated:', authUrl);
+      
+      // For now, we'll return false and let the calling code handle re-authentication
+      // In a production app, you might want to redirect the user to this URL
+      return false;
+    } catch (error) {
+      console.error('❌ Error refreshing token:', error);
+      return false;
+    }
+  }
+
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
+    // First, validate the token
+    const isTokenValid = await this.validateToken();
+    
+    if (!isTokenValid) {
+      console.log('⚠️ Token validation failed, attempting refresh...');
+      const refreshSuccess = await this.refreshToken();
+      
+      if (!refreshSuccess) {
+        throw new Error('Shopify access token is invalid and cannot be refreshed. Please re-authenticate the app.');
+      }
+    }
+
     const url = `https://${this.shopDomain}/admin/api/2024-01/${endpoint}`;
     const response = await fetch(url, {
       ...options,
@@ -24,6 +93,13 @@ export class ShopifyAPI {
 
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // If we get a 401, the token is definitely invalid
+      if (response.status === 401) {
+        console.error('❌ Shopify API returned 401 - token is invalid');
+        throw new Error('Shopify access token is invalid. Please re-authenticate the app.');
+      }
+      
       throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
     }
 

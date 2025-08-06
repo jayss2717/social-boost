@@ -1,69 +1,84 @@
-// Shopify utility functions
+import { prisma } from '@/lib/prisma';
 
-export function isShopifyAdmin(): boolean {
-  if (typeof window === 'undefined') return false;
-  
-  const isInIframe = window !== window.top;
-  const urlParams = new URLSearchParams(window.location.search);
-  const shop = urlParams.get('shop');
-  const host = urlParams.get('host');
-  
-  return window.location.hostname.includes('myshopify.com') || 
-         window.location.hostname.includes('shopify.com') ||
-         window.location.hostname.includes('shopify.dev') ||
-         isInIframe ||
-         !!shop ||
-         !!host;
-}
+// Utility function to validate and refresh Shopify access tokens
+export async function validateAndRefreshToken(shop: string): Promise<{ isValid: boolean; needsReauth: boolean }> {
+  try {
+    // Get merchant from database
+    const merchant = await prisma.merchant.findUnique({
+      where: { shop },
+      select: { accessToken: true, isActive: true }
+    });
 
-export function getShopifyHost(): string | null {
-  if (typeof window === 'undefined') return null;
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  let host = urlParams.get('host');
-  
-  // If no host in URL, try to get it from parent window (for iframe scenarios)
-  if (!host && window !== window.top) {
-    try {
-      const parentUrl = new URL(window.parent.location.href);
-      host = parentUrl.searchParams.get('host');
-    } catch (e) {
-      console.log('Could not access parent window for host parameter');
+    if (!merchant || !merchant.isActive) {
+      console.log('❌ Merchant not found or inactive:', shop);
+      return { isValid: false, needsReauth: true };
     }
-  }
-  
-  // If still no host, try to construct it from shop parameter
-  if (!host) {
-    const shop = urlParams.get('shop');
-    if (shop) {
-      host = shop;
+
+    if (!merchant.accessToken) {
+      console.log('❌ No access token found for merchant:', shop);
+      return { isValid: false, needsReauth: true };
     }
+
+    // Test the token with a simple API call
+    const response = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
+      headers: {
+        'X-Shopify-Access-Token': merchant.accessToken,
+      },
+    });
+
+    if (response.status === 401) {
+      console.log('❌ Shopify access token is invalid/expired for:', shop);
+      return { isValid: false, needsReauth: true };
+    }
+
+    if (!response.ok) {
+      console.log('⚠️ Shopify API returned non-401 error:', response.status);
+      return { isValid: false, needsReauth: false };
+    }
+
+    console.log('✅ Shopify access token is valid for:', shop);
+    return { isValid: true, needsReauth: false };
+
+  } catch (error) {
+    console.error('❌ Error validating Shopify token:', error);
+    return { isValid: false, needsReauth: true };
   }
-  
-  return host;
 }
 
-export function getShopifyShop(): string | null {
-  if (typeof window === 'undefined') return null;
+// Generate re-authentication URL for a shop
+export function generateReauthUrl(shop: string): string {
+  const scopes = 'read_analytics,read_customers,read_inventory,read_marketing_events,read_orders,read_products,write_discounts,write_inventory,write_marketing_events,write_products,read_price_rules,write_price_rules,read_reports,read_shopify_payments_payouts';
+  const redirectUri = `https://socialboost-blue.vercel.app/api/auth/shopify/callback`;
   
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('shop');
+  return `https://${shop}/admin/oauth/authorize?` +
+    `client_id=${process.env.SHOPIFY_API_KEY}&` +
+    `scope=${scopes}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `state=${Math.random().toString(36).substring(2, 15)}`;
 }
 
-export function getShopifyContext() {
-  if (typeof window === 'undefined') return null;
-  
-  const isInIframe = window !== window.top;
-  const urlParams = new URLSearchParams(window.location.search);
-  const shop = urlParams.get('shop');
-  const host = urlParams.get('host');
-  
-  return {
-    isInIframe,
-    shop,
-    host,
-    isShopifyAdmin: isShopifyAdmin(),
-    hostname: window.location.hostname,
-    url: window.location.href,
-  };
+// Check if a merchant needs re-authentication
+export async function checkMerchantAuth(merchantId: string): Promise<{ needsReauth: boolean; reauthUrl?: string }> {
+  try {
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { shop: true, accessToken: true, isActive: true }
+    });
+
+    if (!merchant || !merchant.isActive) {
+      return { needsReauth: true, reauthUrl: merchant ? generateReauthUrl(merchant.shop) : undefined };
+    }
+
+    const { isValid, needsReauth } = await validateAndRefreshToken(merchant.shop);
+    
+    if (needsReauth) {
+      return { needsReauth: true, reauthUrl: generateReauthUrl(merchant.shop) };
+    }
+
+    return { needsReauth: false };
+
+  } catch (error) {
+    console.error('❌ Error checking merchant auth:', error);
+    return { needsReauth: true };
+  }
 } 

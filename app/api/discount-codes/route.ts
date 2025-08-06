@@ -4,6 +4,7 @@ import { discountCodeSchema } from '@/utils/validation';
 import { generateDiscountLink } from '@/utils/discount-links';
 import { ShopifyAPI } from '@/lib/shopify';
 import { checkUsageLimit } from '@/utils/subscription';
+import { checkMerchantAuth } from '@/utils/shopify';
 
 // Generate unique discount code for influencers
 function generateDiscountCode(influencerName: string, discountValue: number): string {
@@ -100,6 +101,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Merchant or influencer not found' }, { status: 404 });
       }
 
+      // Validate Shopify access token before proceeding
+      const authCheck = await checkMerchantAuth(merchantId);
+      if (authCheck.needsReauth) {
+        console.log('❌ Shopify authentication required for merchant:', merchantId);
+        return NextResponse.json({ 
+          error: 'Shopify authentication required',
+          message: 'Your Shopify access token has expired. Please re-authenticate the app.',
+          reauthUrl: authCheck.reauthUrl,
+          needsReauth: true
+        }, { status: 401 });
+      }
+
       if (!merchant.accessToken) {
         return NextResponse.json({ error: 'Shopify access token not found' }, { status: 400 });
       }
@@ -136,6 +149,17 @@ export async function POST(request: NextRequest) {
         console.log(`Created Shopify discount code: ${code} with ID: ${shopifyPriceRuleId}`);
       } catch (shopifyError) {
         console.error('Failed to create Shopify discount code:', shopifyError);
+        
+        // Check if it's an authentication error
+        if (shopifyError instanceof Error && shopifyError.message.includes('invalid')) {
+          return NextResponse.json({ 
+            error: 'Shopify authentication required',
+            message: 'Your Shopify access token has expired. Please re-authenticate the app.',
+            reauthUrl: authCheck.reauthUrl,
+            needsReauth: true
+          }, { status: 401 });
+        }
+        
         return NextResponse.json({ 
           error: 'Failed to create discount code in Shopify',
           details: shopifyError instanceof Error ? shopifyError.message : 'Unknown error'
