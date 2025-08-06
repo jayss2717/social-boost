@@ -96,17 +96,49 @@ async function processWebhookEvent(event: Stripe.Event) {
               
               // Map Stripe product names to database plan names
               const planNameMapping: { [key: string]: string } = {
+                // Common variations
                 'Pro Plan': 'Pro',
                 'Pro': 'Pro',
+                'Professional': 'Pro',
+                'Professional Plan': 'Pro',
                 'Scale Plan': 'Scale',
                 'Scale': 'Scale',
-                'Enterprise Plan': 'Enterprise',
-                'Enterprise': 'Enterprise',
-                'Starter Plan': 'Starter',
-                'Starter': 'Starter',
+                'Enterprise Plan': 'ENTERPRISE',
+                'Enterprise': 'ENTERPRISE',
+                'Starter Plan': 'STARTER',
+                'Starter': 'STARTER',
+                'Free Plan': 'STARTER',
+                'Free': 'STARTER',
+                // Handle case-insensitive matching
+                'pro': 'Pro',
+                'scale': 'Scale',
+                'enterprise': 'ENTERPRISE',
+                'starter': 'STARTER',
+                'free': 'STARTER',
               };
               
-              const mappedPlanName = planNameMapping[planName] || planName;
+              // Try exact match first, then case-insensitive
+              let mappedPlanName = planNameMapping[planName];
+              if (!mappedPlanName) {
+                // Try case-insensitive matching
+                const lowerPlanName = planName.toLowerCase();
+                mappedPlanName = planNameMapping[lowerPlanName];
+              }
+              
+              // If still no match, try to extract plan name from product name
+              if (!mappedPlanName) {
+                if (planName.toLowerCase().includes('pro')) {
+                  mappedPlanName = 'Pro';
+                } else if (planName.toLowerCase().includes('scale')) {
+                  mappedPlanName = 'Scale';
+                } else if (planName.toLowerCase().includes('enterprise')) {
+                  mappedPlanName = 'ENTERPRISE';
+                } else if (planName.toLowerCase().includes('starter') || planName.toLowerCase().includes('free')) {
+                  mappedPlanName = 'STARTER';
+                }
+              }
+              
+              console.log('Original Stripe product name:', planName);
               console.log('Mapped plan name:', mappedPlanName);
               
               const plan = await prisma.plan.findUnique({
@@ -114,34 +146,72 @@ async function processWebhookEvent(event: Stripe.Event) {
               });
 
               if (plan) {
-                if (merchant.subscription) {
-                  // Update existing subscription
-                  await prisma.subscription.update({
-                    where: { id: merchant.subscription.id },
-                    data: {
-                      planId: plan.id,
-                      status: 'ACTIVE',
-                      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                      stripeSubId: subscription.id,
-                    },
-                  });
-                  console.log(`✅ Updated subscription for ${merchant.shop} to ${mappedPlanName}`);
-                } else {
-                  // Create new subscription
-                  await prisma.subscription.create({
-                    data: {
-                      merchantId: merchant.id,
-                      planId: plan.id,
-                      status: 'ACTIVE',
-                      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                      stripeSubId: subscription.id,
-                    },
-                  });
-                  console.log(`✅ Created new subscription for ${merchant.shop} with ${mappedPlanName}`);
+                try {
+                  if (merchant.subscription) {
+                    // Update existing subscription
+                    await prisma.subscription.update({
+                      where: { id: merchant.subscription.id },
+                      data: {
+                        planId: plan.id,
+                        status: 'ACTIVE',
+                        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                        stripeSubId: subscription.id,
+                      },
+                    });
+                    console.log(`✅ Updated subscription for ${merchant.shop} to ${mappedPlanName} (Plan ID: ${plan.id})`);
+                  } else {
+                    // Create new subscription
+                    await prisma.subscription.create({
+                      data: {
+                        merchantId: merchant.id,
+                        planId: plan.id,
+                        status: 'ACTIVE',
+                        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                        stripeSubId: subscription.id,
+                      },
+                    });
+                    console.log(`✅ Created new subscription for ${merchant.shop} with ${mappedPlanName} (Plan ID: ${plan.id})`);
+                  }
+                } catch (error) {
+                  console.error(`❌ Failed to update/create subscription for ${merchant.shop}:`, error);
+                  throw error;
                 }
               } else {
                 console.error(`❌ Plan not found for name: ${mappedPlanName}`);
-                console.error('Available plans:', await prisma.plan.findMany());
+                const availablePlans = await prisma.plan.findMany();
+                console.error('Available plans:', availablePlans.map(p => ({ id: p.id, name: p.name })));
+                
+                // Try to create a fallback subscription with STARTER plan
+                const fallbackPlan = await prisma.plan.findUnique({ where: { name: 'STARTER' } });
+                if (fallbackPlan) {
+                  console.log(`⚠️ Creating fallback subscription with STARTER plan for ${merchant.shop}`);
+                  try {
+                    if (merchant.subscription) {
+                      await prisma.subscription.update({
+                        where: { id: merchant.subscription.id },
+                        data: {
+                          planId: fallbackPlan.id,
+                          status: 'ACTIVE',
+                          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                          stripeSubId: subscription.id,
+                        },
+                      });
+                    } else {
+                      await prisma.subscription.create({
+                        data: {
+                          merchantId: merchant.id,
+                          planId: fallbackPlan.id,
+                          status: 'ACTIVE',
+                          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+                          stripeSubId: subscription.id,
+                        },
+                      });
+                    }
+                    console.log(`✅ Created fallback subscription with STARTER plan for ${merchant.shop}`);
+                  } catch (fallbackError) {
+                    console.error(`❌ Failed to create fallback subscription:`, fallbackError);
+                  }
+                }
               }
             } else {
               console.error(`❌ Merchant not found for shop: ${shop}`);
@@ -261,17 +331,50 @@ async function processWebhookEvent(event: Stripe.Event) {
               
               // Map Stripe product names to database plan names
               const planNameMapping: { [key: string]: string } = {
+                // Common variations
                 'Pro Plan': 'Pro',
                 'Pro': 'Pro',
+                'Professional': 'Pro',
+                'Professional Plan': 'Pro',
                 'Scale Plan': 'Scale',
                 'Scale': 'Scale',
                 'Enterprise Plan': 'ENTERPRISE',
                 'Enterprise': 'ENTERPRISE',
                 'Starter Plan': 'STARTER',
                 'Starter': 'STARTER',
+                'Free Plan': 'STARTER',
+                'Free': 'STARTER',
+                // Handle case-insensitive matching
+                'pro': 'Pro',
+                'scale': 'Scale',
+                'enterprise': 'ENTERPRISE',
+                'starter': 'STARTER',
+                'free': 'STARTER',
               };
               
-              const mappedPlanName = planNameMapping[planName] || planName;
+              // Try exact match first, then case-insensitive
+              let mappedPlanName = planNameMapping[planName];
+              if (!mappedPlanName) {
+                // Try case-insensitive matching
+                const lowerPlanName = planName.toLowerCase();
+                mappedPlanName = planNameMapping[lowerPlanName];
+              }
+              
+              // If still no match, try to extract plan name from product name
+              if (!mappedPlanName) {
+                if (planName.toLowerCase().includes('pro')) {
+                  mappedPlanName = 'Pro';
+                } else if (planName.toLowerCase().includes('scale')) {
+                  mappedPlanName = 'Scale';
+                } else if (planName.toLowerCase().includes('enterprise')) {
+                  mappedPlanName = 'ENTERPRISE';
+                } else if (planName.toLowerCase().includes('starter') || planName.toLowerCase().includes('free')) {
+                  mappedPlanName = 'STARTER';
+                }
+              }
+              
+              console.log('Original Stripe product name:', planName);
+              console.log('Mapped plan name:', mappedPlanName);
               
               const plan = await prisma.plan.findUnique({
                 where: { name: mappedPlanName },
