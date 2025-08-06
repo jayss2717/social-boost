@@ -110,9 +110,22 @@ export async function GET(request: NextRequest) {
           website: `https://${shopDomain}`,
           linkPattern: '/discount/{code}',
           socialMedia: {
-            instagram: false,
-            tiktok: false,
-            youtube: false,
+            instagram: '',
+            tiktok: '',
+            twitter: '',
+            youtube: '',
+          },
+          discountSettings: {
+            defaultPercentage: 20,
+            minPercentage: 5,
+            maxPercentage: 50,
+            autoApprove: false,
+          },
+          commissionSettings: {
+            defaultRate: 10,
+            minRate: 5,
+            maxRate: 25,
+            autoPayout: false,
           },
           ugcSettings: {
             autoDetect: true,
@@ -120,13 +133,6 @@ export async function GET(request: NextRequest) {
             minEngagement: 100,
             rewardType: 'DISCOUNT_CODE',
             rewardValue: 10,
-          },
-          influencerSettings: {
-            commissionRate: 10,
-            commissionCalculation: 'DISCOUNTED_AMOUNT',
-            autoPayout: false,
-            minimumPayout: 50,
-            payoutSchedule: 'WEEKLY',
           },
           payoutSettings: {
             autoPayout: false,

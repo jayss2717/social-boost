@@ -18,6 +18,8 @@ interface Influencer {
   isActive: boolean;
   discountCodes: DiscountCode[];
   createdAt: string;
+  stripeAccountId?: string;
+  stripeAccountStatus?: 'NOT_CONNECTED' | 'PENDING_VERIFICATION' | 'ACTIVE' | 'ERROR';
 }
 
 interface DiscountCode {
@@ -47,34 +49,29 @@ interface AutomatedCodeResult {
 
 export default function InfluencersPage() {
   const { data: influencers, isLoading, mutate } = useInfluencers();
+  const [filteredData, setFilteredData] = useState<Influencer[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAutomatedModal, setShowAutomatedModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [editingInfluencer, setEditingInfluencer] = useState<Influencer | null>(null);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showAutomatedModal, setShowAutomatedModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailContent, setEmailContent] = useState<{ subject: string; body: string; to: string } | null>(null);
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [automatedResults, setAutomatedResults] = useState<AutomatedCodeResult[]>([]);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [influencerSettings, setInfluencerSettings] = useState({
     autoApprove: false,
     minFollowers: 1000,
     minEngagementRate: 2.0,
     maxInfluencers: 1000,
     minPayoutAmount: 50,
-    defaultCommissionRate: 10,
-    maxCommissionRate: 25,
-    minCommissionRate: 5,
-    autoPayout: false,
-    defaultDiscountPercentage: 20,
-    maxDiscountPercentage: 50,
-    minDiscountPercentage: 5,
     commissionCalculationBase: 'DISCOUNTED_AMOUNT' as 'DISCOUNTED_AMOUNT' | 'ORIGINAL_AMOUNT',
   });
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -136,13 +133,6 @@ export default function InfluencersPage() {
             minEngagementRate: data.data.influencerSettings?.minEngagementRate || 2.0,
             maxInfluencers: data.data.influencerSettings?.maxInfluencers || 1000,
             minPayoutAmount: data.data.influencerSettings?.minPayoutAmount || 50,
-            defaultCommissionRate: data.data.commissionSettings?.defaultRate || 10,
-            maxCommissionRate: data.data.commissionSettings?.maxRate || 25,
-            minCommissionRate: data.data.commissionSettings?.minRate || 5,
-            autoPayout: data.data.commissionSettings?.autoPayout || false,
-            defaultDiscountPercentage: data.data.discountSettings?.defaultPercentage || 20,
-            maxDiscountPercentage: data.data.discountSettings?.maxPercentage || 50,
-            minDiscountPercentage: data.data.discountSettings?.minPercentage || 5,
             commissionCalculationBase: data.data.commissionSettings?.commissionCalculationBase || 'DISCOUNTED_AMOUNT',
           });
         }
@@ -257,6 +247,26 @@ export default function InfluencersPage() {
     console.log('Stored merchant ID in localStorage:', merchantData.id);
 
     return merchantData.id;
+  };
+
+  const fetchStripeConnectStatus = async (influencerId: string) => {
+    try {
+      const merchantId = await getMerchantId();
+      
+      const response = await fetch(`/api/influencers/${influencerId}/stripe-connect`, {
+        headers: {
+          'x-merchant-id': merchantId,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.data.stripeAccount.status;
+      }
+    } catch (error) {
+      console.error('Error fetching Stripe Connect status:', error);
+    }
+    return 'NOT_CONNECTED';
   };
 
   // Filter influencers based on search query
