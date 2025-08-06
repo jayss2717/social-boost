@@ -92,11 +92,11 @@ async function processWebhookEvent(event: Stripe.Event) {
               const product = await stripe.products.retrieve(subscription.items.data[0].price.product as string);
               const planName = product.name;
               
-              console.log('Stripe product name:', planName);
+              console.log('🔍 Stripe product name:', planName);
               
-              // Map Stripe product names to database plan names
+              // Enhanced production-ready plan mapping with validation
               const planNameMapping: { [key: string]: string } = {
-                // Common variations
+                // Exact matches
                 'Pro Plan': 'Pro',
                 'Pro': 'Pro',
                 'Professional': 'Pro',
@@ -109,44 +109,110 @@ async function processWebhookEvent(event: Stripe.Event) {
                 'Starter': 'STARTER',
                 'Free Plan': 'STARTER',
                 'Free': 'STARTER',
-                // Handle case-insensitive matching
+                // Case-insensitive variations
                 'pro': 'Pro',
                 'scale': 'Scale',
                 'enterprise': 'ENTERPRISE',
                 'starter': 'STARTER',
                 'free': 'STARTER',
+                // Common product variations
+                'SocialBoost Pro': 'Pro',
+                'SocialBoost Scale': 'Scale',
+                'SocialBoost Enterprise': 'ENTERPRISE',
+                'SocialBoost Starter': 'STARTER',
+                'SB Pro': 'Pro',
+                'SB Scale': 'Scale',
+                'SB Enterprise': 'ENTERPRISE',
+                'SB Starter': 'STARTER',
               };
               
-              // Try exact match first, then case-insensitive
+              // Enhanced mapping logic with better validation
               let mappedPlanName = planNameMapping[planName];
+              
+              // Step 1: Try exact match
               if (!mappedPlanName) {
-                // Try case-insensitive matching
+                console.log('🔍 No exact match, trying case-insensitive...');
                 const lowerPlanName = planName.toLowerCase();
                 mappedPlanName = planNameMapping[lowerPlanName];
               }
               
-              // If still no match, try to extract plan name from product name
+              // Step 2: Try pattern matching with priority
               if (!mappedPlanName) {
-                if (planName.toLowerCase().includes('pro')) {
+                console.log('🔍 No case-insensitive match, trying pattern matching...');
+                const lowerPlanName = planName.toLowerCase();
+                
+                // Priority-based pattern matching (Pro first, then Scale, etc.)
+                if (lowerPlanName.includes('pro') || lowerPlanName.includes('professional')) {
                   mappedPlanName = 'Pro';
-                } else if (planName.toLowerCase().includes('scale')) {
+                } else if (lowerPlanName.includes('scale') || lowerPlanName.includes('growth')) {
                   mappedPlanName = 'Scale';
-                } else if (planName.toLowerCase().includes('enterprise')) {
+                } else if (lowerPlanName.includes('enterprise') || lowerPlanName.includes('unlimited')) {
                   mappedPlanName = 'ENTERPRISE';
-                } else if (planName.toLowerCase().includes('starter') || planName.toLowerCase().includes('free')) {
+                } else if (lowerPlanName.includes('starter') || lowerPlanName.includes('free') || lowerPlanName.includes('basic')) {
                   mappedPlanName = 'STARTER';
                 }
               }
               
-              console.log('Original Stripe product name:', planName);
-              console.log('Mapped plan name:', mappedPlanName);
+              // Step 3: Price-based fallback (if available)
+              if (!mappedPlanName && product.default_price) {
+                console.log('🔍 No pattern match, trying price-based mapping...');
+                const price = await stripe.prices.retrieve(product.default_price as string);
+                const amount = price.unit_amount || 0;
+                
+                // Map based on price (in cents)
+                if (amount >= 6999) {
+                  mappedPlanName = 'Scale';
+                } else if (amount >= 2999) {
+                  mappedPlanName = 'Pro';
+                } else if (amount > 0) {
+                  mappedPlanName = 'STARTER';
+                } else {
+                  mappedPlanName = 'STARTER'; // Free tier
+                }
+                console.log(`🔍 Price-based mapping: ${amount} cents → ${mappedPlanName}`);
+              }
+              
+              console.log('📋 Original Stripe product name:', planName);
+              console.log('📋 Mapped plan name:', mappedPlanName);
+              
+              // Validate the mapped plan exists in database
+              if (!mappedPlanName) {
+                console.error('❌ CRITICAL: Could not map Stripe product to any plan');
+                console.error('❌ Product name:', planName);
+                console.error('❌ Available plans in mapping:', Object.keys(planNameMapping));
+                throw new Error(`Failed to map Stripe product "${planName}" to any plan`);
+              }
               
               const plan = await prisma.plan.findUnique({
                 where: { name: mappedPlanName },
               });
 
-              if (plan) {
-                try {
+                              // Validate plan exists and has correct limits
+                if (plan) {
+                  console.log('✅ Plan found in database:', {
+                    id: plan.id,
+                    name: plan.name,
+                    ugcLimit: plan.ugcLimit,
+                    influencerLimit: plan.influencerLimit,
+                  });
+                  
+                  // Validate plan limits match expected values
+                  const expectedLimits = {
+                    'Pro': { ugcLimit: 300, influencerLimit: 10 },
+                    'Scale': { ugcLimit: 1000, influencerLimit: 50 },
+                    'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
+                    'STARTER': { ugcLimit: 5, influencerLimit: 1 },
+                  };
+                  
+                  const expected = expectedLimits[plan.name as keyof typeof expectedLimits];
+                  if (expected && (plan.ugcLimit !== expected.ugcLimit || plan.influencerLimit !== expected.influencerLimit)) {
+                    console.error('❌ CRITICAL: Plan limits mismatch!');
+                    console.error('❌ Expected:', expected);
+                    console.error('❌ Actual:', { ugcLimit: plan.ugcLimit, influencerLimit: plan.influencerLimit });
+                    throw new Error(`Plan "${plan.name}" has incorrect limits in database`);
+                  }
+                  
+                  try {
                   if (merchant.subscription) {
                     // Update existing subscription
                     await prisma.subscription.update({
@@ -171,6 +237,26 @@ async function processWebhookEvent(event: Stripe.Event) {
                       },
                     });
                     console.log(`✅ Created new subscription for ${merchant.shop} with ${mappedPlanName} (Plan ID: ${plan.id})`);
+                  }
+                  
+                  // 🛡️ PRODUCTION SAFEGUARD: Verify the subscription was created correctly
+                  const verifySubscription = await prisma.subscription.findUnique({
+                    where: { merchantId: merchant.id },
+                    include: { plan: true },
+                  });
+                  
+                  if (verifySubscription && verifySubscription.plan.name !== mappedPlanName) {
+                    console.error('❌ CRITICAL: Subscription created with wrong plan!');
+                    console.error('❌ Expected:', mappedPlanName);
+                    console.error('❌ Actual:', verifySubscription.plan.name);
+                    
+                    // Auto-correct the plan
+                    console.log('🔧 Auto-correcting subscription to correct plan...');
+                    await prisma.subscription.update({
+                      where: { id: verifySubscription.id },
+                      data: { planId: plan.id },
+                    });
+                    console.log('✅ Auto-correction completed');
                   }
                 } catch (error) {
                   console.error(`❌ Failed to update/create subscription for ${merchant.shop}:`, error);
