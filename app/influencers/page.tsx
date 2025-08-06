@@ -116,6 +116,9 @@ export default function InfluencersPage() {
 
   const handleAddInfluencer = async () => {
     try {
+      // Get merchant ID first
+      const merchantId = await getMerchantId();
+      
       // Clean up form data - convert empty strings to undefined for optional fields
       const cleanedFormData: Record<string, unknown> = {
         name: formData.name,
@@ -136,6 +139,7 @@ export default function InfluencersPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
         },
         body: JSON.stringify(cleanedFormData),
       });
@@ -161,12 +165,13 @@ export default function InfluencersPage() {
 
   const handleGenerateDiscountCode = async () => {
     try {
-      await getMerchantId();
+      const merchantId = await getMerchantId();
       
       const response = await fetch('/api/discount-codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
         },
         body: JSON.stringify({
           influencerId: selectedInfluencer?.id,
@@ -198,10 +203,13 @@ export default function InfluencersPage() {
   const handleAutomatedCodeGeneration = async () => {
     setIsProcessingAutomated(true);
     try {
+      const merchantId = await getMerchantId();
+      
       const response = await fetch('/api/influencers/automated-codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
         },
         body: JSON.stringify({
           options: automatedOptions,
@@ -240,6 +248,9 @@ export default function InfluencersPage() {
     try {
       if (!selectedInfluencer) return;
 
+      // Get merchant ID first
+      const merchantId = await getMerchantId();
+
       const cleanedFormData: Record<string, unknown> = {
         name: editFormData.name,
         commissionRate: editFormData.commissionRate,
@@ -259,6 +270,7 @@ export default function InfluencersPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
         },
         body: JSON.stringify(cleanedFormData),
       });
