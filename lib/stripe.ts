@@ -154,18 +154,25 @@ export async function createConnectedAccount(influencerId: string): Promise<stri
 
     console.log('Creating Stripe Connect account for influencer:', influencer.name, influencer.email);
 
-    // Create Stripe Connect account
+    // Create Stripe Connect account with more compatible settings
     const account = await stripe.accounts.create({
       type: 'express',
-      country: 'US', // Default, can be made configurable
+      country: 'US',
       email: influencer.email || 'influencer@example.com',
       capabilities: {
         transfers: { requested: true },
+        card_payments: { requested: true },
       },
       business_type: 'individual',
       business_profile: {
         url: 'https://socialboost.com',
-        mcc: '5734', // Computer Software Stores
+        mcc: '5734',
+        product_description: 'Influencer marketing services',
+      },
+      individual: {
+        email: influencer.email || 'influencer@example.com',
+        first_name: influencer.name.split(' ')[0] || 'Influencer',
+        last_name: influencer.name.split(' ').slice(1).join(' ') || 'User',
       },
     });
 
