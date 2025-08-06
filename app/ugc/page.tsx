@@ -6,6 +6,7 @@ import { Hash, Instagram, Eye, CheckCircle, Send, Filter, Youtube, Twitter, Mess
 import React from 'react';
 import { UgcWorkflow } from '@/components/UgcWorkflow';
 import { UgcAnalytics } from '@/components/UgcAnalytics';
+import { LoadingButton } from '@/components/LoadingButton';
 import { apiFetch } from '@/utils/api';
 
 interface UgcPost {
@@ -369,19 +370,20 @@ export default function UgcPage() {
                       </div>
                       {!post.isApproved && !post.isRejected && (
                         <div title="Approve this UGC post">
-                          <Button
+                          <LoadingButton
                             size="slim"
                             variant="secondary"
                             onClick={() => handleApprovePost(post.id, { autoReward: true })}
                             icon={() => React.createElement(CheckCircle, { className: "w-4 h-4" })}
+                            loadingText="Approving..."
                           >
                             Approve
-                          </Button>
+                          </LoadingButton>
                         </div>
                       )}
                       {post.isApproved && !post.isRewarded && (
                         <div title="Send discount code via social media DM">
-                          <Button
+                          <LoadingButton
                             size="slim"
                             variant="secondary"
                             onClick={() => {
@@ -389,9 +391,10 @@ export default function UgcPage() {
                               setShowSendModal(true);
                             }}
                             icon={() => React.createElement(Send, { className: "w-4 h-4" })}
+                            loadingText="Sending..."
                           >
                             Send DM
-                          </Button>
+                          </LoadingButton>
                         </div>
                       )}
                     </InlineStack>
@@ -415,16 +418,6 @@ export default function UgcPage() {
           open={showSendModal}
           onClose={() => setShowSendModal(false)}
           title={`Send Discount Code via ${selectedPost?.platform} DM`}
-          primaryAction={{
-            content: 'Send via DM',
-            onAction: () => selectedPost && handleSendDiscountCode(selectedPost.id),
-          }}
-          secondaryActions={[
-            {
-              content: 'Cancel',
-              onAction: () => setShowSendModal(false),
-            },
-          ]}
         >
           <Modal.Section>
             <BlockStack gap="400">
@@ -653,6 +646,23 @@ export default function UgcPage() {
                 )}
               </BlockStack>
             )}
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSendModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={() => selectedPost && handleSendDiscountCode(selectedPost.id)}
+                loadingText="Sending via DM..."
+              >
+                Send via DM
+              </LoadingButton>
+            </InlineStack>
           </Modal.Section>
         </Modal>
       </Layout>

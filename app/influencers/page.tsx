@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Search, Eye, Gift } from 'lucide-react';
 import { useInfluencers } from '@/hooks/useInfluencers';
 import { InfluencerAnalytics } from '@/components/InfluencerAnalytics';
+import { LoadingButton } from '@/components/LoadingButton';
 import React from 'react';
 
 interface Influencer {
@@ -480,16 +481,6 @@ export default function InfluencersPage() {
           open={showAddModal}
           onClose={() => setShowAddModal(false)}
           title="Add New Influencer"
-          primaryAction={{
-            content: 'Add Influencer',
-            onAction: handleAddInfluencer,
-          }}
-          secondaryActions={[
-            {
-              content: 'Cancel',
-              onAction: () => setShowAddModal(false),
-            },
-          ]}
         >
           <Modal.Section>
             <BlockStack gap="400">
@@ -529,6 +520,23 @@ export default function InfluencersPage() {
               />
             </BlockStack>
           </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={handleAddInfluencer}
+                loadingText="Adding Influencer..."
+              >
+                Add Influencer
+              </LoadingButton>
+            </InlineStack>
+          </Modal.Section>
         </Modal>
 
         {/* Generate Discount Code Modal */}
@@ -536,16 +544,6 @@ export default function InfluencersPage() {
           open={showDiscountModal}
           onClose={() => setShowDiscountModal(false)}
           title={`Generate Discount Code for ${selectedInfluencer?.name}`}
-          primaryAction={{
-            content: 'Generate Code',
-            onAction: handleGenerateDiscountCode,
-          }}
-          secondaryActions={[
-            {
-              content: 'Cancel',
-              onAction: () => setShowDiscountModal(false),
-            },
-          ]}
         >
           <Modal.Section>
             <BlockStack gap="400">
@@ -582,6 +580,23 @@ export default function InfluencersPage() {
               />
             </BlockStack>
           </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDiscountModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={handleGenerateDiscountCode}
+                loadingText="Generating Code..."
+              >
+                Generate Code
+              </LoadingButton>
+            </InlineStack>
+          </Modal.Section>
         </Modal>
 
         {/* Automated Code Generation Modal */}
@@ -589,17 +604,6 @@ export default function InfluencersPage() {
           open={showAutomatedModal}
           onClose={() => setShowAutomatedModal(false)}
           title="AI-Powered Automated Code Generation"
-          primaryAction={{
-            content: 'Generate Codes',
-            onAction: handleAutomatedCodeGeneration,
-            loading: isProcessingAutomated,
-          }}
-          secondaryActions={[
-            {
-              content: 'Cancel',
-              onAction: () => setShowAutomatedModal(false),
-            },
-          ]}
         >
           <Modal.Section>
             <BlockStack gap="400">
@@ -723,6 +727,23 @@ export default function InfluencersPage() {
               )}
             </BlockStack>
           </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowAutomatedModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={handleAutomatedCodeGeneration}
+                loadingText="Generating Codes..."
+              >
+                Generate Codes
+              </LoadingButton>
+            </InlineStack>
+          </Modal.Section>
         </Modal>
 
         {/* Details Modal */}
@@ -730,16 +751,6 @@ export default function InfluencersPage() {
           open={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
           title={`${selectedInfluencer?.name} - Details`}
-          primaryAction={{
-            content: isEditingDetails ? 'Save Changes' : 'Edit',
-            onAction: isEditingDetails ? handleSaveDetails : handleEditDetails,
-          }}
-          secondaryActions={[
-            {
-              content: isEditingDetails ? 'Cancel' : 'Close',
-              onAction: isEditingDetails ? handleCancelEdit : () => setShowDetailsModal(false),
-            },
-          ]}
         >
           <Modal.Section>
             {selectedInfluencer && (
@@ -842,6 +853,32 @@ export default function InfluencersPage() {
                 )}
               </BlockStack>
             )}
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={isEditingDetails ? handleCancelEdit : () => setShowDetailsModal(false)}
+              >
+                {isEditingDetails ? 'Cancel' : 'Close'}
+              </Button>
+              {isEditingDetails ? (
+                <LoadingButton
+                  variant="primary"
+                  onClick={handleSaveDetails}
+                  loadingText="Saving Changes..."
+                >
+                  Save Changes
+                </LoadingButton>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={handleEditDetails}
+                >
+                  Edit
+                </Button>
+              )}
+            </InlineStack>
           </Modal.Section>
         </Modal>
       </Layout>
