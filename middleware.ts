@@ -111,11 +111,15 @@ export function middleware(request: NextRequest) {
   if (isShopifyAdmin) {
     // Allow embedding in Shopify admin
     response.headers.set('X-Frame-Options', 'ALLOW-FROM https://admin.shopify.com');
-    console.log('Shopify admin detected - allowing iframe embedding - v3');
+    // Force cache refresh for Shopify admin requests
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    console.log('Shopify admin detected - allowing iframe embedding - v4');
   } else {
     // Deny embedding for non-Shopify requests
     response.headers.set('X-Frame-Options', 'DENY');
-    console.log('Non-Shopify request - denying iframe embedding - v3');
+    console.log('Non-Shopify request - denying iframe embedding - v4');
   }
   
   response.headers.set('X-XSS-Protection', '1; mode=block');
