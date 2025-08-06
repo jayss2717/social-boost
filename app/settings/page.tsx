@@ -413,21 +413,39 @@ export default function SettingsPage() {
   };
 
   const getMerchantId = async () => {
+    // First try to get merchant ID from localStorage
+    const storedMerchantId = localStorage.getItem('merchantId');
+    if (storedMerchantId) {
+      console.log('Using merchant ID from localStorage:', storedMerchantId);
+      return storedMerchantId;
+    }
+
+    // If not in localStorage, try to get from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const shop = urlParams.get('shop') || localStorage.getItem('shop');
     
     if (!shop) {
-      throw new Error('No shop parameter found');
+      throw new Error('No shop parameter found and no merchant ID in localStorage');
     }
 
+    console.log('Fetching merchant data for shop:', shop);
     const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
-    const merchantData = await merchantResponse.json();
     
-    if (!merchantData.success || !merchantData.merchant) {
+    if (!merchantResponse.ok) {
       throw new Error('Failed to fetch merchant data');
     }
+    
+    const merchantData = await merchantResponse.json();
+    
+    if (!merchantData.id) {
+      throw new Error('No merchant ID in response');
+    }
 
-    return merchantData.merchant.id;
+    // Store the merchant ID in localStorage for future use
+    localStorage.setItem('merchantId', merchantData.id);
+    console.log('Stored merchant ID in localStorage:', merchantData.id);
+
+    return merchantData.id;
   };
 
 
