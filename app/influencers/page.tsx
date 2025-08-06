@@ -442,6 +442,20 @@ export default function InfluencersPage() {
                             Details
                           </Button>
                         </div>
+                        {influencer.discountCodes.length > 0 && (
+                          <div title="View discount codes">
+                            <Button
+                              size="slim"
+                              variant="secondary"
+                              onClick={() => {
+                                setSelectedInfluencer(influencer);
+                                setShowDetailsModal(true);
+                              }}
+                            >
+                              View Codes ({influencer.discountCodes.length.toString()})
+                            </Button>
+                          </div>
+                        )}
                         <div title="Generate discount code">
                           <Button
                             size="slim"
@@ -840,10 +854,86 @@ export default function InfluencersPage() {
                       <Text variant="bodySm" tone="subdued" as="p">
                         Discount Codes
                       </Text>
-                      <Text variant="bodyMd" as="p">
-                        {selectedInfluencer.discountCodes.length} codes
-                        ({selectedInfluencer.discountCodes.filter(code => code.isActive).length} active)
-                      </Text>
+                      {selectedInfluencer.discountCodes.length > 0 ? (
+                        <BlockStack gap="200">
+                          {selectedInfluencer.discountCodes.map((code, index) => (
+                            <Card key={code.id} padding="300">
+                              <BlockStack gap="200">
+                                <InlineStack align="space-between">
+                                  <div>
+                                    <Text variant="bodyMd" fontWeight="semibold" as="p">
+                                      {code.code}
+                                    </Text>
+                                    <Text variant="bodySm" tone="subdued" as="p">
+                                      {code.discountType === 'PERCENTAGE' ? `${code.discountValue}% off` : `$${code.discountValue} off`}
+                                      {code.usageLimit && ` • ${code.usageCount}/${code.usageLimit} uses`}
+                                      {code.expiresAt && ` • Expires ${new Date(code.expiresAt).toLocaleDateString()}`}
+                                    </Text>
+                                  </div>
+                                  <Badge tone={code.isActive ? 'success' : 'critical'}>
+                                    {code.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </InlineStack>
+                                {code.uniqueLink && (
+                                  <div>
+                                    <Text variant="bodySm" tone="subdued" as="p">
+                                      Link: {code.uniqueLink}
+                                    </Text>
+                                  </div>
+                                )}
+                                <InlineStack gap="200">
+                                  <Button
+                                    size="slim"
+                                    variant="secondary"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(code.code);
+                                      // You could add a toast notification here
+                                    }}
+                                  >
+                                    Copy Code
+                                  </Button>
+                                  {code.uniqueLink && (
+                                    <Button
+                                      size="slim"
+                                      variant="secondary"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(code.uniqueLink);
+                                        // You could add a toast notification here
+                                      }}
+                                    >
+                                      Copy Link
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="slim"
+                                    variant="primary"
+                                    onClick={() => {
+                                      // Open email client with pre-filled content
+                                      const subject = encodeURIComponent(`Your Discount Code: ${code.code}`);
+                                      const body = encodeURIComponent(
+                                        `Hi ${selectedInfluencer.name},\n\n` +
+                                        `Here's your exclusive discount code: ${code.code}\n\n` +
+                                        `Discount: ${code.discountType === 'PERCENTAGE' ? `${code.discountValue}% off` : `$${code.discountValue} off`}\n` +
+                                        `${code.uniqueLink ? `Direct link: ${code.uniqueLink}\n\n` : '\n'}` +
+                                        `Thank you for your partnership!\n\n` +
+                                        `Best regards,\n` +
+                                        `Your Brand Team`
+                                      );
+                                      window.open(`mailto:${selectedInfluencer.email}?subject=${subject}&body=${body}`);
+                                    }}
+                                  >
+                                    Send Email
+                                  </Button>
+                                </InlineStack>
+                              </BlockStack>
+                            </Card>
+                          ))}
+                        </BlockStack>
+                      ) : (
+                        <Text variant="bodyMd" as="p">
+                          No discount codes generated yet
+                        </Text>
+                      )}
                     </div>
                   </>
                 )}
