@@ -55,7 +55,6 @@ export default function InfluencersPage() {
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
-  const [isProcessingAutomated, setIsProcessingAutomated] = useState(false);
   const [automatedResults, setAutomatedResults] = useState<AutomatedCodeResult[]>([]);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -202,7 +201,6 @@ export default function InfluencersPage() {
   };
 
   const handleAutomatedCodeGeneration = async () => {
-    setIsProcessingAutomated(true);
     try {
       const merchantId = await getMerchantId();
       
@@ -227,8 +225,6 @@ export default function InfluencersPage() {
       }
     } catch (error) {
       console.error('Failed to generate automated codes:', error);
-    } finally {
-      setIsProcessingAutomated(false);
     }
   };
 
