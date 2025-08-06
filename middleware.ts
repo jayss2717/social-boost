@@ -106,7 +106,12 @@ export function middleware(request: NextRequest) {
     request.nextUrl.searchParams.get('embedded') === '1' ||
     request.nextUrl.searchParams.get('hmac') ||
     request.nextUrl.searchParams.get('shop') ||
-    request.nextUrl.searchParams.get('v'); // Allow cache-busting parameter
+    request.nextUrl.searchParams.get('v') || // Allow cache-busting parameter
+    // Also check for Shopify admin in the hostname or path
+    request.nextUrl.hostname.includes('shopify') ||
+    request.nextUrl.pathname.includes('admin') ||
+    // Check if this is a request from within an iframe
+    request.headers.get('sec-fetch-dest') === 'iframe';
   
   if (isShopifyAdmin) {
     // Allow embedding in Shopify admin
