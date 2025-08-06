@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, Modal, TextField, Select, Badge, InlineStack, DataTable } from '@shopify/polaris';
 import { useState } from 'react';
-import { Search, Eye, Gift } from 'lucide-react';
+import { Search, Eye, Gift, CreditCard } from 'lucide-react';
 import { useInfluencers } from '@/hooks/useInfluencers';
 import { InfluencerAnalytics } from '@/components/InfluencerAnalytics';
 import { LoadingButton } from '@/components/LoadingButton';
@@ -422,6 +422,31 @@ export default function InfluencersPage() {
     setIsEditingDetails(false);
   };
 
+  const handleStripeConnect = async (influencerId: string) => {
+    try {
+      const merchantId = await getMerchantId();
+      
+      const response = await fetch(`/api/influencers/${influencerId}/stripe-connect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Open the onboarding URL in a new window
+        window.open(data.data.onboardingUrl, '_blank', 'width=800,height=600');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to create Stripe Connect account:', errorData);
+      }
+    } catch (error) {
+      console.error('Failed to create Stripe Connect account:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <Page title="Influencers">
@@ -605,6 +630,16 @@ export default function InfluencersPage() {
                             icon={() => React.createElement(Gift, { className: "w-4 h-4" })}
                           >
                             Generate Code
+                          </Button>
+                        </div>
+                        <div title="Setup Stripe Connect for payouts">
+                          <Button
+                            size="slim"
+                            variant="secondary"
+                            onClick={() => handleStripeConnect(influencer.id)}
+                            icon={() => React.createElement(CreditCard, { className: "w-4 h-4" })}
+                          >
+                            Stripe Connect
                           </Button>
                         </div>
                       </InlineStack>
