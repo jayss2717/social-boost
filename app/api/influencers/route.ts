@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (duplicateConditions.length > 0) {
-      console.log('🔍 Checking for duplicate influencers with merchantId:', merchantId);
+      console.log('🔍 Checking for duplicate influencers within this merchant (merchantId):', merchantId);
       console.log('🔍 Duplicate conditions:', duplicateConditions);
       
       const existingInfluencer = await prisma.influencer.findFirst({
@@ -153,27 +153,13 @@ export async function POST(request: NextRequest) {
           instagramHandle: existingInfluencer.instagramHandle,
           tiktokHandle: existingInfluencer.tiktokHandle,
         });
-        return createErrorResponse('Influencer already exists with this email or social media handle', 409);
+        return createErrorResponse('Influencer already exists in your store with this email or social media handle', 409);
       } else {
         console.log('✅ No duplicate influencer found');
       }
       
-      // Additional debug: Check if this email/username exists in ANY merchant (shouldn't happen)
-      if (validatedData.email) {
-        const globalDuplicate = await prisma.influencer.findFirst({
-          where: {
-            email: validatedData.email,
-            merchantId: { not: merchantId }, // Different merchant
-          },
-        });
-        if (globalDuplicate) {
-          console.log('⚠️ Found influencer with same email in different merchant:', {
-            influencerId: globalDuplicate.id,
-            merchantId: globalDuplicate.merchantId,
-            email: globalDuplicate.email,
-          });
-        }
-      }
+      // Note: Multiple merchants can have the same influencer (same email/handles)
+      // This is expected behavior - each merchant manages their own influencer list
     }
 
     // Create influencer
