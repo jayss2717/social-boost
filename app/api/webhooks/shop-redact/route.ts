@@ -13,6 +13,19 @@ export async function POST(request: NextRequest) {
 
     const merchant = await prisma.merchant.findUnique({
       where: { shop: shop_domain },
+      include: { 
+        subscription: true,
+        influencers: true,
+        ugcPosts: true,
+        discountCodes: true,
+        payouts: true,
+        socialMediaAccounts: true,
+        brandMentions: true,
+        orderMetrics: true,
+        ugcRejections: true,
+        ugcWorkflowRules: true,
+        settings: true,
+      },
     });
 
     if (!merchant) {
@@ -20,60 +33,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // For GDPR compliance, we need to delete/anonymize all shop data we have stored
-    // This includes any data we've collected about the shop and its activities
+    console.log(`Starting GDPR data erasure for shop: ${shop_domain} - Merchant ID: ${merchant.id}`);
+    console.log(`Data to be deleted: ${merchant.influencers.length} influencers, ${merchant.ugcPosts.length} UGC posts, ${merchant.discountCodes.length} discount codes, ${merchant.payouts.length} payouts`);
 
-    // Note: You may need to add these fields to your Prisma schema if they don't exist
-    // and you're storing shop-related data
+    // For GDPR compliance, we need to completely delete all shop data
+    // This is more comprehensive than app uninstall as it's for data privacy
 
-    // Example data deletion (adjust based on your actual schema):
-    
-    // 1. Delete all influencer activities for this shop
-    // await prisma.influencerActivity.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
+    // Cancel any active subscriptions first
+    if (merchant.subscription) {
+      await prisma.subscription.update({
+        where: { id: merchant.subscription.id },
+        data: { status: 'CANCELED' },
+      });
+      console.log(`Cancelled subscription for GDPR erasure: ${shop_domain}`);
+    }
 
-    // 2. Delete all UGC posts for this shop
-    // await prisma.ugcPost.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
+    // Delete all related data (this will cascade due to onDelete: Cascade)
+    // The cascade will automatically delete:
+    // - All influencers (and their related data)
+    // - All UGC posts
+    // - All discount codes
+    // - All payouts
+    // - All social media accounts
+    // - All brand mentions
+    // - All order metrics
+    // - All UGC rejections
+    // - All UGC workflow rules
+    // - Merchant settings
 
-    // 3. Delete all discount codes for this shop
-    // await prisma.discountCode.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
-
-    // 4. Delete all payouts for this shop
-    // await prisma.payout.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
-
-    // 5. Delete all brand mentions for this shop
-    // await prisma.brandMention.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
-
-    // 6. Delete all social media accounts for this shop
-    // await prisma.socialMediaAccount.deleteMany({
-    //   where: { merchantId: merchant.id }
-    // });
-
-    // 7. Delete the merchant record itself (or mark as deleted)
-    await prisma.merchant.update({
-      where: { id: merchant.id },
-      data: { 
-        isActive: false,
-        // Add additional fields to mark as deleted if needed
-        // deletedAt: new Date(),
-        // shop: null, // Anonymize the shop domain
-      },
+    // Delete the merchant (this will trigger cascade deletes)
+    await prisma.merchant.delete({
+      where: { shop: shop_domain },
     });
 
-    console.log(`Shop data erasure processed for shop: ${shop_domain}`);
-    
+    console.log(`✅ Successfully deleted merchant and all related data for GDPR erasure: ${shop_domain}`);
+
     return NextResponse.json({
       success: true,
-      message: 'Shop data has been redacted',
+      message: 'Shop data has been completely erased for GDPR compliance',
+      dataDeleted: {
+        merchant: true,
+        subscription: merchant.subscription ? true : false,
+        influencers: merchant.influencers.length,
+        ugcPosts: merchant.ugcPosts.length,
+        discountCodes: merchant.discountCodes.length,
+        payouts: merchant.payouts.length,
+        socialMediaAccounts: merchant.socialMediaAccounts.length,
+        brandMentions: merchant.brandMentions.length,
+        orderMetrics: merchant.orderMetrics.length,
+        ugcRejections: merchant.ugcRejections.length,
+        ugcWorkflowRules: merchant.ugcWorkflowRules.length,
+        settings: merchant.settings ? true : false,
+      }
     });
   } catch (error) {
     console.error('Shop data erasure webhook error:', error);

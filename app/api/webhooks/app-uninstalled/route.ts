@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
         payouts: true,
         socialMediaAccounts: true,
         brandMentions: true,
+        orderMetrics: true,
+        ugcRejections: true,
+        ugcWorkflowRules: true,
+        settings: true,
       },
     });
 
@@ -31,7 +35,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: 'No merchant found' });
     }
 
-    // Cancel any active subscriptions
+    console.log(`Starting data cleanup for shop: ${shop} - Merchant ID: ${merchant.id}`);
+    console.log(`Data to be deleted: ${merchant.influencers.length} influencers, ${merchant.ugcPosts.length} UGC posts, ${merchant.discountCodes.length} discount codes, ${merchant.payouts.length} payouts`);
+
+    // Cancel any active subscriptions first
     if (merchant.subscription) {
       await prisma.subscription.update({
         where: { id: merchant.subscription.id },
@@ -40,29 +47,42 @@ export async function POST(request: NextRequest) {
       console.log(`Cancelled subscription for shop: ${shop}`);
     }
 
-    // Soft delete the merchant (mark as inactive and clear sensitive data)
-    await prisma.merchant.update({
+    // Delete all related data (this will cascade due to onDelete: Cascade)
+    // The cascade will automatically delete:
+    // - All influencers (and their related data)
+    // - All UGC posts
+    // - All discount codes
+    // - All payouts
+    // - All social media accounts
+    // - All brand mentions
+    // - All order metrics
+    // - All UGC rejections
+    // - All UGC workflow rules
+    // - Merchant settings
+
+    // Delete the merchant (this will trigger cascade deletes)
+    await prisma.merchant.delete({
       where: { shop },
-      data: { 
-        isActive: false,
-        accessToken: 'UNINSTALLED', // Clear sensitive OAuth data with placeholder
-        scope: 'UNINSTALLED',
-        shopifyShopId: null, // This field is optional, so null is allowed
-        // Keep basic info for potential reinstallation
-      },
     });
 
-    // Log the uninstallation for analytics
-    console.log(`App uninstalled for shop: ${shop} - Merchant ID: ${merchant.id}`);
-    console.log(`Data summary: ${merchant.influencers.length} influencers, ${merchant.ugcPosts.length} UGC posts, ${merchant.discountCodes.length} discount codes`);
+    console.log(`✅ Successfully deleted merchant and all related data for shop: ${shop}`);
 
     return NextResponse.json({ 
       success: true, 
-      message: 'App uninstalled successfully',
-      dataCleared: {
-        accessToken: true,
-        scope: true,
-        shopifyShopId: true,
+      message: 'App uninstalled and all data deleted successfully',
+      dataDeleted: {
+        merchant: true,
+        subscription: merchant.subscription ? true : false,
+        influencers: merchant.influencers.length,
+        ugcPosts: merchant.ugcPosts.length,
+        discountCodes: merchant.discountCodes.length,
+        payouts: merchant.payouts.length,
+        socialMediaAccounts: merchant.socialMediaAccounts.length,
+        brandMentions: merchant.brandMentions.length,
+        orderMetrics: merchant.orderMetrics.length,
+        ugcRejections: merchant.ugcRejections.length,
+        ugcWorkflowRules: merchant.ugcWorkflowRules.length,
+        settings: merchant.settings ? true : false,
       }
     });
   } catch (error) {
