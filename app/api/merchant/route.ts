@@ -8,13 +8,25 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shop = searchParams.get('shop');
+    const host = searchParams.get('host');
 
-    if (!shop) {
-      return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 });
+    console.log(`🔍 Merchant API called with shop: ${shop}, host: ${host}`);
+
+    if (!shop && !host) {
+      return NextResponse.json({ error: 'Missing shop or host parameter' }, { status: 400 });
     }
 
+    // Use shop parameter if available, otherwise try to extract from host
+    const shopDomain = shop || (host ? `${host.replace('.myshopify.com', '')}.myshopify.com` : null);
+    
+    if (!shopDomain) {
+      return NextResponse.json({ error: 'Could not determine shop domain' }, { status: 400 });
+    }
+
+    console.log(`🔍 Looking for merchant with shop: ${shopDomain}`);
+
     let merchant = await prisma.merchant.findUnique({
-      where: { shop },
+      where: { shop: shopDomain },
       include: {
         settings: true,
       },
@@ -22,18 +34,18 @@ export async function GET(request: NextRequest) {
 
     // If merchant doesn't exist, create a new one for fresh installations
     if (!merchant) {
-      console.log(`🔄 Creating new merchant for shop: ${shop}`);
+      console.log(`🔄 Creating new merchant for shop: ${shopDomain}`);
       
       try {
         merchant = await prisma.merchant.create({
           data: {
-            shop,
+            shop: shopDomain,
             accessToken: 'pending', // Will be updated during OAuth
             scope: 'read_products,write_products',
             shopifyShopId: null, // Will be updated during OAuth
-            shopName: shop.replace('.myshopify.com', ''),
-            shopEmail: `admin@${shop}`,
-            shopDomain: shop,
+            shopName: shopDomain.replace('.myshopify.com', ''),
+            shopEmail: `admin@${shopDomain}`,
+            shopDomain: shopDomain,
             shopCurrency: 'USD',
             shopTimezone: 'America/New_York',
             shopLocale: 'en',

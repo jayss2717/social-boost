@@ -65,41 +65,23 @@ export function MerchantInitializer({ children }: MerchantInitializerProps) {
           return;
         }
 
-        // Try to get merchant by shop
-        if (shop) {
-          console.log('MerchantInitializer: Fetching merchant for shop:', shop);
+        // Try to get merchant by shop or host (prefer shop)
+        const shopOrHost = shop || host;
+        if (shopOrHost) {
+          console.log('MerchantInitializer: Fetching merchant for:', shopOrHost);
           try {
-            const response = await fetch(`/api/merchant?shop=${shop}`);
+            const response = await fetch(`/api/merchant?shop=${shopOrHost}`);
             if (response.ok) {
               const merchant = await response.json();
               if (merchant && merchant.id) {
                 localStorage.setItem('merchantId', merchant.id);
-                console.log('MerchantInitializer: Set merchantId from shop:', merchant.id);
+                console.log('MerchantInitializer: Set merchantId:', merchant.id);
                 setIsInitialized(true);
                 return;
               }
             }
           } catch (error) {
-            console.error('MerchantInitializer: Failed to fetch merchant by shop:', error);
-          }
-        }
-
-        // Try to get merchant by host
-        if (host) {
-          console.log('MerchantInitializer: Fetching merchant for host:', host);
-          try {
-            const response = await fetch(`/api/merchant?host=${host}`);
-            if (response.ok) {
-              const merchant = await response.json();
-              if (merchant && merchant.id) {
-                localStorage.setItem('merchantId', merchant.id);
-                console.log('MerchantInitializer: Set merchantId from host:', merchant.id);
-                setIsInitialized(true);
-                return;
-              }
-            }
-          } catch (error) {
-            console.error('MerchantInitializer: Failed to fetch merchant by host:', error);
+            console.error('MerchantInitializer: Failed to fetch merchant:', error);
           }
         }
 
