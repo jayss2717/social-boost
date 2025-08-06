@@ -87,6 +87,7 @@ enum SubStatus {
   PAST_DUE
   CANCELED
   CANCELING
+  PENDING
 }
 
 model Influencer {

@@ -74,13 +74,14 @@ export const withSubscriptionGate = (
       include: { plan: true },
     });
 
-    // Allow access if subscription is active OR canceled but still within period
+    // Allow access if subscription is active OR canceled but still within period OR pending (Enterprise)
     const now = new Date();
     const isActive = subscription?.status === 'ACTIVE';
     const isCanceledButValid = subscription?.status === 'CANCELED' && 
                                subscription?.currentPeriodEnd > now;
+    const isPending = subscription?.status === 'PENDING'; // Enterprise contact submitted
 
-    if (!subscription || (!isActive && !isCanceledButValid)) {
+    if (!subscription || (!isActive && !isCanceledButValid && !isPending)) {
       return Response.json({ error: 'No active subscription' }, { status: 403 });
     }
 
