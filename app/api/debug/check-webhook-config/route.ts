@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const shop = searchParams.get('shop') || 'teststorev103.myshopify.com';
+    const shop = searchParams.get('shop') || 'storev101.myshopify.com';
 
     console.log(`🔍 Checking webhook configuration for ${shop}`);
 

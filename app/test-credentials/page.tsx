@@ -22,7 +22,7 @@ interface ResultType {
 }
 
 export default function TestCredentialsPage() {
-  const [shop, setShop] = useState('teststorev102.myshopify.com');
+  const [shop, setShop] = useState('storev101.myshopify.com');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResultType | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export default function TestCredentialsPage() {
                     border: '1px solid #ccc',
                     borderRadius: '4px'
                   }}
-                  placeholder="e.g., teststorev102.myshopify.com"
+                  placeholder="e.g., storev101.myshopify.com"
                 />
               </div>
 
