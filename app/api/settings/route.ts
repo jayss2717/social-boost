@@ -50,6 +50,13 @@ export async function GET(request: NextRequest) {
           minEngagement: 100,
           requiredHashtags: [],
           excludedWords: [],
+          codeDelayHours: 2,
+          codeDelayMinutes: 0,
+          maxCodesPerDay: 50,
+          maxCodesPerInfluencer: 1,
+          discountType: 'PERCENTAGE' as 'PERCENTAGE' | 'FIXED_AMOUNT',
+          discountValue: 20,
+          discountUsageLimit: 100,
         },
         payoutSettings: {
           autoPayout: false,

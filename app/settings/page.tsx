@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge, Banner, Avatar, Tag } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Settings, Users, Hash, Instagram, Save, MessageCircle, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
+import { Settings, Users, Hash, Instagram, Save, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanSelectionModal } from '@/components/PlanSelectionModal';
@@ -64,7 +64,7 @@ export default function SettingsPage() {
   // Edit mode states
   const [merchantEditMode, setMerchantEditMode] = useState(false);
   const [influencerEditMode, setInfluencerEditMode] = useState(false);
-  const [ugcEditMode, setUgcEditMode] = useState(false);
+
   const [teamEditMode, setTeamEditMode] = useState(false);
   const [domainEditMode, setDomainEditMode] = useState(false);
   const [legalEditMode, setLegalEditMode] = useState(false);
@@ -467,40 +467,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveUgcSettings = async () => {
-    setIsSaving(true);
-    setSaveMessage('');
 
-    try {
-      const merchantId = await getMerchantId();
-      
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-merchant-id': merchantId
-        },
-        body: JSON.stringify({
-          ugcSettings: formData.ugcSettings,
-        }),
-      });
-
-      if (response.ok) {
-        setSaveMessage('UGC settings saved successfully!');
-        setUgcEditMode(false);
-        setTimeout(() => setSaveMessage(''), 3000);
-      } else {
-        setSaveMessage('Failed to save UGC settings. Please try again.');
-        setTimeout(() => setSaveMessage(''), 3000);
-      }
-    } catch (error) {
-      console.error('Error saving UGC settings:', error);
-      setSaveMessage('Error saving UGC settings. Please try again.');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleSaveTeamSettings = async () => {
     setIsSaving(true);
@@ -928,37 +895,7 @@ export default function SettingsPage() {
     }
   };
 
-  const addHashtag = () => {
-    setFormData(prev => ({
-      ...prev,
-      ugcSettings: {
-        ...prev.ugcSettings,
-        requiredHashtags: [...prev.ugcSettings.requiredHashtags, ''],
-      },
-    }));
-  };
 
-  const updateHashtag = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      ugcSettings: {
-        ...prev.ugcSettings,
-        requiredHashtags: prev.ugcSettings.requiredHashtags.map((tag, i) => 
-          i === index ? value : tag
-        ),
-      },
-    }));
-  };
-
-  const removeHashtag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      ugcSettings: {
-        ...prev.ugcSettings,
-        requiredHashtags: prev.ugcSettings.requiredHashtags.filter((_, i) => i !== index),
-      },
-    }));
-  };
 
   if (isLoading) {
     return (
@@ -1562,213 +1499,7 @@ export default function SettingsPage() {
           </Card>
         </Layout.Section>
 
-        {/* UGC Settings */}
-        <Layout.Section>
-          <Card>
-            <div className="p-6">
-              <BlockStack gap="400">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <MessageCircle className="w-5 h-5" />
-                    <Text variant="headingMd" as="h2">
-                      UGC Settings
-                    </Text>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      size="slim"
-                      variant="secondary"
-                      onClick={() => setUgcEditMode(!ugcEditMode)}
-                    >
-                      {ugcEditMode ? 'Cancel' : 'Edit'}
-                    </Button>
-                    {ugcEditMode && (
-                      <Button
-                        size="slim"
-                        onClick={handleSaveUgcSettings}
-                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
-                      >
-                        Save
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TextField
-                    label="Minimum Engagement"
-                    type="number"
-                    value={String(formData.ugcSettings.minEngagement)}
-                    onChange={(value) => setFormData({
-                      ...formData,
-                      ugcSettings: { ...formData.ugcSettings, minEngagement: parseInt(value) }
-                    })}
-                    min="0"
-                    autoComplete="off"
-                  />
-                  <Select
-                    label="Auto-Approve Posts"
-                    options={[
-                      { label: 'Yes', value: 'true' },
-                      { label: 'No', value: 'false' },
-                    ]}
-                    value={formData.ugcSettings.autoApprove ? 'true' : 'false'}
-                    onChange={(value) => setFormData({
-                      ...formData,
-                      ugcSettings: { ...formData.ugcSettings, autoApprove: value === 'true' }
-                    })}
-                  />
-                </div>
 
-                <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold">
-                    UGC Discount Code Settings
-                  </Text>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Select
-                      label="Discount Type"
-                      options={[
-                        { label: 'Percentage Discount', value: 'PERCENTAGE' },
-                        { label: 'Fixed Amount', value: 'FIXED_AMOUNT' },
-                      ]}
-                      value={formData.ugcSettings.discountType || 'PERCENTAGE'}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, discountType: value as 'PERCENTAGE' | 'FIXED_AMOUNT' }
-                      })}
-                    />
-                    <TextField
-                      label={formData.ugcSettings.discountType === 'PERCENTAGE' ? "Discount Percentage (%)" : "Fixed Amount ($)"}
-                      type="number"
-                      value={String(formData.ugcSettings.discountValue || 20)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, discountValue: parseFloat(value) }
-                      })}
-                      min={formData.ugcSettings.discountType === 'PERCENTAGE' ? "1" : "1"}
-                      max={formData.ugcSettings.discountType === 'PERCENTAGE' ? "100" : "1000"}
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="Usage Limit"
-                      type="number"
-                      value={String(formData.ugcSettings.discountUsageLimit || 100)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, discountUsageLimit: parseInt(value) }
-                      })}
-                      min="1"
-                      max="10000"
-                      autoComplete="off"
-                    />
-                  </div>
-                  <div className="mt-2">
-                    <Text variant="bodySm" tone="subdued" as="p">
-                      {formData.ugcSettings.discountType === 'PERCENTAGE' 
-                        ? `${formData.ugcSettings.discountValue || 20}% discount codes will be sent to UGC creators`
-                        : `$${formData.ugcSettings.discountValue || 20} fixed discount codes will be sent to UGC creators`
-                      }. Each code can be used up to {formData.ugcSettings.discountUsageLimit || 100} times.
-                    </Text>
-                  </div>
-                </div>
-
-                <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold">
-                    Code Delivery Timer Settings
-                  </Text>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <TextField
-                      label="Delay Hours"
-                      type="number"
-                      value={String(formData.ugcSettings.codeDelayHours)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, codeDelayHours: parseInt(value) }
-                      })}
-                      min="0"
-                      max="24"
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="Delay Minutes"
-                      type="number"
-                      value={String(formData.ugcSettings.codeDelayMinutes)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, codeDelayMinutes: parseInt(value) }
-                      })}
-                      min="0"
-                      max="59"
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="Max Codes Per Day"
-                      type="number"
-                      value={String(formData.ugcSettings.maxCodesPerDay)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, maxCodesPerDay: parseInt(value) }
-                      })}
-                      min="1"
-                      max="1000"
-                      autoComplete="off"
-                    />
-                    <TextField
-                      label="Max Codes Per Influencer (24h)"
-                      type="number"
-                      value={String(formData.ugcSettings.maxCodesPerInfluencer)}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        ugcSettings: { ...formData.ugcSettings, maxCodesPerInfluencer: parseInt(value) }
-                      })}
-                      min="1"
-                      max="10"
-                      autoComplete="off"
-                    />
-                  </div>
-                  <div className="mt-2">
-                    <Text variant="bodySm" tone="subdued" as="p">
-                      Code will be sent {formData.ugcSettings.codeDelayHours}h {formData.ugcSettings.codeDelayMinutes}m after post approval. 
-                      Maximum {formData.ugcSettings.maxCodesPerDay} codes per day, {formData.ugcSettings.maxCodesPerInfluencer} per influencer in 24 hours.
-                    </Text>
-                  </div>
-                </div>
-
-                <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold">
-                    Required Hashtags
-                  </Text>
-                  <div className="mt-2 space-y-2">
-                    {formData.ugcSettings.requiredHashtags.map((hashtag, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <TextField
-                          label="Hashtag"
-                          value={hashtag}
-                          onChange={(value) => updateHashtag(index, value)}
-                          placeholder="#yourbrand"
-                          autoComplete="off"
-                        />
-                        <Button
-                          size="slim"
-                          variant="secondary"
-                          onClick={() => removeHashtag(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      size="slim"
-                      onClick={addHashtag}
-                    >
-                      Add Hashtag
-                    </Button>
-                  </div>
-                </div>
-              </BlockStack>
-            </div>
-          </Card>
-        </Layout.Section>
 
         {/* Team & Permissions */}
         <Layout.Section>

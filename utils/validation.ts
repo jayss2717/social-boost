@@ -76,6 +76,13 @@ export const settingsSchema = z.object({
     minEngagement: z.number().min(0),
     requiredHashtags: z.array(z.string()),
     excludedWords: z.array(z.string()),
+    codeDelayHours: z.number().min(0).max(24),
+    codeDelayMinutes: z.number().min(0).max(59),
+    maxCodesPerDay: z.number().min(0),
+    maxCodesPerInfluencer: z.number().min(0),
+    discountType: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
+    discountValue: z.number().min(0),
+    discountUsageLimit: z.number().min(0),
   }),
   payoutSettings: z.object({
     autoPayout: z.boolean(),

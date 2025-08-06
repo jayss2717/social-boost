@@ -132,6 +132,13 @@ export interface UgcSettings {
   minEngagement: number;
   requiredHashtags: string[];
   excludedWords: string[];
+  codeDelayHours: number;
+  codeDelayMinutes: number;
+  maxCodesPerDay: number;
+  maxCodesPerInfluencer: number;
+  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT';
+  discountValue: number;
+  discountUsageLimit: number;
 }
 
 export interface PayoutSettings {

@@ -49,9 +49,25 @@ export default function UgcPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showWorkflow, setShowWorkflow] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [ugcSettings, setUgcSettings] = useState({
+    autoApprove: false,
+    minEngagement: 100,
+    requiredHashtags: [''],
+    excludedWords: [''],
+    codeDelayHours: 2,
+    codeDelayMinutes: 0,
+    maxCodesPerDay: 50,
+    maxCodesPerInfluencer: 1,
+    discountType: 'PERCENTAGE' as 'PERCENTAGE' | 'FIXED_AMOUNT',
+    discountValue: 20,
+    discountUsageLimit: 100,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   useEffect(() => {
     fetchPosts();
+    fetchUgSettings();
   }, []);
 
   useEffect(() => {
@@ -196,6 +212,86 @@ export default function UgcPage() {
     return { level: 'Low', color: 'attention' };
   };
 
+  const fetchUgSettings = async () => {
+    try {
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.error('No merchant ID found');
+        return;
+      }
+
+      const response = await apiFetch('/api/settings');
+      if (response && response.ugcSettings) {
+        setUgcSettings({
+          autoApprove: response.ugcSettings.autoApprove || false,
+          minEngagement: response.ugcSettings.minEngagement || 100,
+          requiredHashtags: response.ugcSettings.requiredHashtags || [''],
+          excludedWords: response.ugcSettings.excludedWords || [''],
+          codeDelayHours: response.ugcSettings.codeDelayHours || 2,
+          codeDelayMinutes: response.ugcSettings.codeDelayMinutes || 0,
+          maxCodesPerDay: response.ugcSettings.maxCodesPerDay || 50,
+          maxCodesPerInfluencer: response.ugcSettings.maxCodesPerInfluencer || 1,
+          discountType: response.ugcSettings.discountType || 'PERCENTAGE',
+          discountValue: response.ugcSettings.discountValue || 20,
+          discountUsageLimit: response.ugcSettings.discountUsageLimit || 100,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch UGC settings:', error);
+    }
+  };
+
+  const saveUgSettings = async () => {
+    try {
+      setIsSavingSettings(true);
+      const merchantId = localStorage.getItem('merchantId');
+      if (!merchantId) {
+        console.error('No merchant ID found');
+        return;
+      }
+
+      // Get current settings first
+      const currentSettings = await apiFetch('/api/settings');
+      
+      const updatedSettings = {
+        ...currentSettings,
+        ugcSettings: {
+          autoApprove: ugcSettings.autoApprove,
+          minEngagement: ugcSettings.minEngagement,
+          requiredHashtags: ugcSettings.requiredHashtags.filter(tag => tag.trim() !== ''),
+          excludedWords: ugcSettings.excludedWords.filter(word => word.trim() !== ''),
+          codeDelayHours: ugcSettings.codeDelayHours,
+          codeDelayMinutes: ugcSettings.codeDelayMinutes,
+          maxCodesPerDay: ugcSettings.maxCodesPerDay,
+          maxCodesPerInfluencer: ugcSettings.maxCodesPerInfluencer,
+          discountType: ugcSettings.discountType,
+          discountValue: ugcSettings.discountValue,
+          discountUsageLimit: ugcSettings.discountUsageLimit,
+        }
+      };
+
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
+        },
+        body: JSON.stringify(updatedSettings),
+      });
+
+      if (response.ok) {
+        console.log('✅ UGC settings saved successfully');
+        setShowSettingsModal(false);
+      } else {
+        console.error('Failed to save UGC settings');
+      }
+    } catch (error) {
+      console.error('Error saving UGC settings:', error);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Page title="UGC Content">
@@ -232,6 +328,10 @@ export default function UgcPage() {
         {
           content: 'Analytics',
           onAction: () => setShowAnalytics(!showAnalytics),
+        },
+        {
+          content: 'Settings',
+          onAction: () => setShowSettingsModal(true),
         },
       ]}
     >
@@ -657,10 +757,288 @@ export default function UgcPage() {
               </Button>
               <LoadingButton
                 variant="primary"
-                onClick={() => selectedPost && handleSendDiscountCode(selectedPost.id)}
+                onClick={() => {
+                  if (selectedPost) {
+                    handleSendDiscountCode(selectedPost.id);
+                  }
+                }}
                 loadingText="Sending via DM..."
               >
                 Send via DM
+              </LoadingButton>
+            </InlineStack>
+          </Modal.Section>
+        </Modal>
+
+        {/* UGC Settings Modal */}
+        <Modal
+          open={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          title="UGC Settings"
+        >
+          <Modal.Section>
+            <BlockStack gap="400">
+              {/* UGC Settings Section */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  UGC Settings
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <TextField
+                    label="Minimum Engagement"
+                    type="number"
+                    value={String(ugcSettings.minEngagement)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      minEngagement: parseInt(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                  <Select
+                    label="Auto-Approve Posts"
+                    options={[
+                      { label: 'Yes', value: 'true' },
+                      { label: 'No', value: 'false' },
+                    ]}
+                    value={ugcSettings.autoApprove ? 'true' : 'false'}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      autoApprove: value === 'true'
+                    })}
+                  />
+                </div>
+              </div>
+
+              {/* UGC Discount Code Settings Section */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  UGC Discount Code Settings
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <Select
+                    label="Discount Type"
+                    options={[
+                      { label: 'Percentage Discount', value: 'PERCENTAGE' },
+                      { label: 'Fixed Amount', value: 'FIXED_AMOUNT' },
+                    ]}
+                    value={ugcSettings.discountType}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      discountType: value as 'PERCENTAGE' | 'FIXED_AMOUNT'
+                    })}
+                  />
+                  <TextField
+                    label={ugcSettings.discountType === 'PERCENTAGE' ? 'Discount Percentage (%)' : 'Discount Amount ($)'}
+                    type="number"
+                    value={String(ugcSettings.discountValue)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      discountValue: parseFloat(value) || 0
+                    })}
+                    min="0"
+                    max={ugcSettings.discountType === 'PERCENTAGE' ? "100" : undefined}
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Usage Limit"
+                    type="number"
+                    value={String(ugcSettings.discountUsageLimit)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      discountUsageLimit: parseInt(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    {ugcSettings.discountValue}{ugcSettings.discountType === 'PERCENTAGE' ? '%' : '$'} discount codes will be sent to UGC creators. Each code can be used up to {ugcSettings.discountUsageLimit} times.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Code Delivery Timer Settings Section */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Code Delivery Timer Settings
+                </Text>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <TextField
+                    label="Delay Hours"
+                    type="number"
+                    value={String(ugcSettings.codeDelayHours)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      codeDelayHours: parseInt(value) || 0
+                    })}
+                    min="0"
+                    max="24"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Delay Minutes"
+                    type="number"
+                    value={String(ugcSettings.codeDelayMinutes)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      codeDelayMinutes: parseInt(value) || 0
+                    })}
+                    min="0"
+                    max="59"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Max Codes Per Day"
+                    type="number"
+                    value={String(ugcSettings.maxCodesPerDay)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      maxCodesPerDay: parseInt(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                  <TextField
+                    label="Max Codes Per Influencer (24h)"
+                    type="number"
+                    value={String(ugcSettings.maxCodesPerInfluencer)}
+                    onChange={(value) => setUgcSettings({
+                      ...ugcSettings,
+                      maxCodesPerInfluencer: parseInt(value) || 0
+                    })}
+                    min="0"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="mt-2">
+                  <Text variant="bodySm" tone="subdued" as="p">
+                    Code will be sent {ugcSettings.codeDelayHours}h {ugcSettings.codeDelayMinutes}m after post approval. Maximum {ugcSettings.maxCodesPerDay} codes per day, {ugcSettings.maxCodesPerInfluencer} per influencer in 24 hours.
+                  </Text>
+                </div>
+              </div>
+
+              {/* Required Hashtags Section */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Required Hashtags
+                </Text>
+                <div className="mt-3 space-y-2">
+                  {ugcSettings.requiredHashtags.map((hashtag, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <TextField
+                        label={`Hashtag ${index + 1}`}
+                        value={hashtag}
+                        onChange={(value) => {
+                          const newHashtags = [...ugcSettings.requiredHashtags];
+                          newHashtags[index] = value;
+                          setUgcSettings({
+                            ...ugcSettings,
+                            requiredHashtags: newHashtags
+                          });
+                        }}
+                        placeholder="#yourbrand"
+                        autoComplete="off"
+                      />
+                      {ugcSettings.requiredHashtags.length > 1 && (
+                        <Button
+                          size="slim"
+                          variant="secondary"
+                          onClick={() => {
+                            const newHashtags = ugcSettings.requiredHashtags.filter((_, i) => i !== index);
+                            setUgcSettings({
+                              ...ugcSettings,
+                              requiredHashtags: newHashtags
+                            });
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    size="slim"
+                    variant="secondary"
+                    onClick={() => setUgcSettings({
+                      ...ugcSettings,
+                      requiredHashtags: [...ugcSettings.requiredHashtags, '']
+                    })}
+                  >
+                    Add Hashtag
+                  </Button>
+                </div>
+              </div>
+
+              {/* Excluded Words Section */}
+              <div>
+                <Text variant="headingMd" as="h3">
+                  Excluded Words
+                </Text>
+                <div className="mt-3 space-y-2">
+                  {ugcSettings.excludedWords.map((word, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <TextField
+                        label={`Excluded Word ${index + 1}`}
+                        value={word}
+                        onChange={(value) => {
+                          const newWords = [...ugcSettings.excludedWords];
+                          newWords[index] = value;
+                          setUgcSettings({
+                            ...ugcSettings,
+                            excludedWords: newWords
+                          });
+                        }}
+                        placeholder="spam"
+                        autoComplete="off"
+                      />
+                      {ugcSettings.excludedWords.length > 1 && (
+                        <Button
+                          size="slim"
+                          variant="secondary"
+                          onClick={() => {
+                            const newWords = ugcSettings.excludedWords.filter((_, i) => i !== index);
+                            setUgcSettings({
+                              ...ugcSettings,
+                              excludedWords: newWords
+                            });
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    size="slim"
+                    variant="secondary"
+                    onClick={() => setUgcSettings({
+                      ...ugcSettings,
+                      excludedWords: [...ugcSettings.excludedWords, '']
+                    })}
+                  >
+                    Add Excluded Word
+                  </Button>
+                </div>
+              </div>
+            </BlockStack>
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                Cancel
+              </Button>
+              <LoadingButton
+                variant="primary"
+                onClick={saveUgSettings}
+                loadingText="Saving Settings..."
+                loading={isSavingSettings}
+              >
+                Save Settings
               </LoadingButton>
             </InlineStack>
           </Modal.Section>
