@@ -14,17 +14,37 @@ const fetcher = async (url: string) => {
     // Return default subscription structure to prevent React errors
     return {
       subscription: null,
+      plan: {
+        name: 'STARTER',
+        ugcLimit: 5,
+        influencerLimit: 1,
+      },
       usage: {
         influencerCount: 0,
         ugcCount: 0,
-        influencerLimit: 1, // Updated to match Starter plan
-        ugcLimit: 5,        // Updated to match Starter plan
+        ugcLimit: 5,
+        influencerLimit: 1,
       },
-      plans: [],
     };
   }
   
   console.log('✅ Subscription data fetched successfully:', result);
+  
+  // Ensure we have proper plan data
+  if (result.plan) {
+    console.log('📋 Plan details:', {
+      name: result.plan.name,
+      ugcLimit: result.plan.ugcLimit,
+      influencerLimit: result.plan.influencerLimit,
+    });
+  }
+  
+  // Ensure usage data uses plan limits
+  if (result.usage && result.plan) {
+    result.usage.ugcLimit = result.plan.ugcLimit;
+    result.usage.influencerLimit = result.plan.influencerLimit;
+  }
+  
   return result;
 };
 
@@ -81,9 +101,10 @@ export function useSubscription() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentSuccess = urlParams.get('payment_success');
+    const plan = urlParams.get('plan');
     
     if (paymentSuccess === 'true' && merchantId && !paymentSuccessProcessed) {
-      console.log('Payment success detected, refreshing subscription data...');
+      console.log('Payment success detected, refreshing subscription data...', { plan });
       setPaymentSuccessProcessed(true);
       mutate();
     }
@@ -98,8 +119,41 @@ export function useSubscription() {
     error: error ? 'present' : 'missing',
   });
 
+  // Enhanced data processing to ensure correct limits
+  const processedData = useCallback(() => {
+    if (!data) return null;
+    
+    // Ensure we have proper plan data
+    const plan = data.plan || {
+      name: 'STARTER',
+      ugcLimit: 5,
+      influencerLimit: 1,
+    };
+    
+    // Ensure usage data uses plan limits
+    const usage = {
+      ...data.usage,
+      ugcLimit: plan.ugcLimit,
+      influencerLimit: plan.influencerLimit,
+    };
+    
+    console.log('📊 Processed subscription data:', {
+      plan: plan.name,
+      ugcLimit: usage.ugcLimit,
+      influencerLimit: usage.influencerLimit,
+      ugcCount: usage.ugcCount,
+      influencerCount: usage.influencerCount,
+    });
+    
+    return {
+      ...data,
+      plan,
+      usage,
+    };
+  }, [data]);
+
   return {
-    data,
+    data: processedData(),
     error,
     isLoading,
     mutate,
