@@ -2,10 +2,11 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge, Banner, Avatar, Tag } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Settings, Users, Hash, Instagram, Save, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard } from 'lucide-react';
+import { Settings, Users, Hash, Instagram, Save, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard, Trash2 } from 'lucide-react';
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanSelectionModal } from '@/components/PlanSelectionModal';
+import DeleteAccountModal from '@/components/DeleteAccountModal';
 
 interface PaymentMethod {
   id: string;
@@ -43,6 +44,9 @@ export default function SettingsPage() {
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [paymentMethodLoading, setPaymentMethodLoading] = useState(false);
+  
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Handle OAuth results
   useEffect(() => {
@@ -878,7 +882,33 @@ export default function SettingsPage() {
     }
   };
 
+  // Delete account function
+  const handleDeleteAccount = async () => {
+    try {
+      const shop = localStorage.getItem('shop') || window.location.hostname;
+      
+      const response = await fetch(`/api/merchant/delete-account?shop=${shop}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
+      if (response.ok) {
+        // Clear localStorage
+        localStorage.clear();
+        
+        // Redirect to success page
+        window.location.href = '/delete-account-success';
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      throw error;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -1940,7 +1970,40 @@ export default function SettingsPage() {
           </Card>
         </Layout.Section>
 
-
+        {/* Delete Account Section */}
+        <Layout.Section>
+          <Card>
+            <div className="p-6">
+              <BlockStack gap="400">
+                <div>
+                  <Text variant="bodyMd" as="p" fontWeight="bold" tone="critical">
+                    Danger Zone
+                  </Text>
+                  <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Text variant="bodyMd" fontWeight="semibold" as="p" tone="critical">
+                          Delete Account
+                        </Text>
+                        <Text variant="bodySm" tone="subdued" as="p">
+                          Permanently delete your account and all associated data. This action cannot be undone.
+                        </Text>
+                      </div>
+                      <Button
+                        variant="primary"
+                        tone="critical"
+                        icon={() => React.createElement(Trash2, { className: "w-4 h-4" })}
+                        onClick={() => setShowDeleteModal(true)}
+                      >
+                        Delete Account
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </BlockStack>
+            </div>
+          </Card>
+        </Layout.Section>
 
       </Layout>
 
@@ -1951,6 +2014,14 @@ export default function SettingsPage() {
         currentPlan={subscription?.subscription?.plan?.name}
         onPlanChange={handlePlanChange}
         isLoading={isSaving}
+      />
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        shop={localStorage.getItem('shop') || 'your-store.myshopify.com'}
       />
     </Page>
   );
