@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST() {
   try {
-    console.log('🔍 Starting cleanup job for uninstalled apps...');
+    console.log('🔍 Starting aggressive cleanup job for uninstalled apps...');
 
     // Get all active merchants
     const merchants = await prisma.merchant.findMany({
@@ -12,15 +12,20 @@ export async function POST() {
         id: true,
         shop: true,
         accessToken: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     console.log(`Found ${merchants.length} active merchants to check`);
 
     let cleanedUpCount = 0;
+    let validCount = 0;
 
     for (const merchant of merchants) {
       try {
+        console.log(`🔍 Checking merchant: ${merchant.shop} (ID: ${merchant.id})`);
+        
         // Test the access token by making a simple API call
         const response = await fetch(`https://${merchant.shop}/admin/api/2024-01/shop.json`, {
           headers: {
@@ -28,6 +33,8 @@ export async function POST() {
             'Content-Type': 'application/json',
           },
         });
+
+        console.log(`📡 API response for ${merchant.shop}: ${response.status} ${response.statusText}`);
 
         if (!response.ok) {
           console.log(`⚠️ Access token invalid for shop: ${merchant.shop}, cleaning up...`);
@@ -47,9 +54,11 @@ export async function POST() {
           cleanedUpCount++;
         } else {
           console.log(`✅ Access token valid for shop: ${merchant.shop}`);
+          validCount++;
         }
       } catch (error) {
         console.log(`⚠️ Error checking access token for shop: ${merchant.shop}, cleaning up...`);
+        console.log(`Error details:`, error);
         
         // If we can't verify the token, assume the app is uninstalled
         await prisma.subscription.updateMany({
@@ -66,12 +75,13 @@ export async function POST() {
       }
     }
 
-    console.log(`✅ Cleanup job completed. Cleaned up ${cleanedUpCount} uninstalled apps`);
+    console.log(`✅ Cleanup job completed. Valid: ${validCount}, Cleaned up: ${cleanedUpCount}`);
 
     return NextResponse.json({
       success: true,
       message: 'Cleanup job completed',
       merchantsChecked: merchants.length,
+      merchantsValid: validCount,
       merchantsCleanedUp: cleanedUpCount,
     });
   } catch (error) {
