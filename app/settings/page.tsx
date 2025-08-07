@@ -35,6 +35,9 @@ export default function SettingsPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [paymentMethodLoading, setPaymentMethodLoading] = useState(false);
   
+  // Save state
+  const [isSaving, setIsSaving] = useState(false);
+  
   // Delete account state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   
@@ -156,14 +159,21 @@ export default function SettingsPage() {
       const urlParams = new URLSearchParams(window.location.search);
       const shop = urlParams.get('shop') || localStorage.getItem('shop');
       
+      console.log('🔍 Settings: Shop parameter:', shop);
+      console.log('🔍 Settings: URL params:', window.location.search);
+      console.log('🔍 Settings: localStorage shop:', localStorage.getItem('shop'));
+      
       if (!shop) {
         console.error('No shop parameter found');
         return;
       }
 
       // First get the merchant by shop
+      console.log('🔍 Settings: Calling merchant API with shop:', shop);
       const merchantResponse = await fetch(`/api/merchant?shop=${shop}`);
+      console.log('🔍 Settings: Merchant API response status:', merchantResponse.status);
       const merchantData = await merchantResponse.json();
+      console.log('🔍 Settings: Merchant API response data:', merchantData);
       
       if (!merchantData.id) {
         console.error('Failed to fetch merchant data');
