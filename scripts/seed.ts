@@ -54,9 +54,6 @@ async function main() {
   // 🚨 REMOVED: Test merchant creation to prevent duplicate store issues
   // Only create plans, no test merchants
   console.log('✅ Plans created successfully - no test merchants created');
-      },
-    },
-  });
 
   // 🚨 REMOVED: All test data creation to prevent duplicate store issues
   // Only create plans, no test merchants, influencers, UGC posts, payouts, or discount codes
