@@ -1059,7 +1059,9 @@ export default function SettingsPage() {
                       Connected Accounts
                     </Text>
                     <div className="space-y-3">
-                      {socialMediaAccounts?.map((account) => (
+                      {(() => {
+                        const socialMediaAccounts: any[] = [];
+                        return socialMediaAccounts?.map((account) => (
                         <div key={account.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -1091,7 +1093,8 @@ export default function SettingsPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                      ));
+                      })()}
                     </div>
                   </div>
                 </div>
