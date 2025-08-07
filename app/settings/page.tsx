@@ -26,17 +26,7 @@ interface Invoice {
 
 export default function SettingsPage() {
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
-  const [socialMediaAccounts] = useState<Array<{
-    id: string;
-    platform: string;
-    username: string;
-    displayName?: string;
-    isActive: boolean;
-  }>>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isSaving, setIsSaving] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [showInviteModal, setShowInviteModal] = useState(false);
+
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState('');
@@ -56,11 +46,9 @@ export default function SettingsPage() {
     
     if (success) {
       setSaveMessage(`✅ ${success === 'instagram_connected' ? 'Instagram' : 'TikTok'} connected successfully!`);
-      // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (error) {
       setSaveMessage(`❌ Connection failed: ${error}`);
-      // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -332,33 +320,9 @@ export default function SettingsPage() {
     }
   };
 
-  // const handleSaveSettings = async () => {
-  //   setIsSaving(true);
-  //   try {
-  //     const response = await fetch('/api/settings', {
-  //       method: 'PUT',
-  //       headers: { 
-  //         'Content-Type': 'application/json',
-  //         'x-merchant-id': 'cmdooccbt0003vg1wgp7c1mcd' // Demo merchant ID
-  //       },
-  //       body: JSON.stringify(formData),
-  //     });
 
-  //     if (response.ok) {
-  //       setSaveMessage('Settings saved successfully!');
-  //       setTimeout(() => setSaveMessage(''), 3000);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to save settings:', error);
-  //       setSaveMessage('Failed to save settings');
-  //       setTimeout(() => setSaveMessage(''), 3000);
-  //   } finally {
-  //     setIsSaving(false);
-  //   }
-  // };
 
   const handleSaveMerchantSettings = async () => {
-    setIsSaving(true);
     setSaveMessage('');
 
     try {
@@ -411,8 +375,6 @@ export default function SettingsPage() {
       console.error('Error saving merchant settings:', error);
       setSaveMessage('Error saving merchant settings. Please try again.');
       setTimeout(() => setSaveMessage(''), 3000);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -420,7 +382,6 @@ export default function SettingsPage() {
     // First try to get merchant ID from localStorage
     const storedMerchantId = localStorage.getItem('merchantId');
     if (storedMerchantId) {
-      console.log('Using merchant ID from localStorage:', storedMerchantId);
       return storedMerchantId;
     }
 
