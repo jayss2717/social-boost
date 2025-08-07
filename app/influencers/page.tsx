@@ -442,7 +442,14 @@ export default function InfluencersPage() {
     setIsEditingDetails(false);
   };
 
-  const handleStripeConnect = async (influencerId: string) => {
+  const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
+  const [stripeConnectData, setStripeConnectData] = useState<{
+    influencerName: string;
+    onboardingUrl: string;
+    influencerEmail: string;
+  } | null>(null);
+
+  const handleStripeConnect = async (influencerId: string, influencerName: string, influencerEmail: string) => {
     try {
       const merchantId = await getMerchantId();
       
@@ -456,14 +463,64 @@ export default function InfluencersPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Open the onboarding URL in a new window
-        window.open(data.data.onboardingUrl, '_blank', 'width=800,height=600');
+        
+        // Show modal with the link instead of opening it directly
+        setStripeConnectData({
+          influencerName,
+          onboardingUrl: data.data.onboardingUrl,
+          influencerEmail,
+        });
+        setShowStripeConnectModal(true);
       } else {
         const errorData = await response.json();
         console.error('Failed to create Stripe Connect account:', errorData);
+        alert('Failed to create Stripe Connect account. Please try again.');
       }
     } catch (error) {
       console.error('Failed to create Stripe Connect account:', error);
+      alert('Failed to create Stripe Connect account. Please try again.');
+    }
+  };
+
+  const handleEmailStripeConnect = async () => {
+    if (!stripeConnectData) return;
+    
+    try {
+      const merchantId = await getMerchantId();
+      
+      const response = await fetch(`/api/influencers/send-stripe-connect`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-merchant-id': merchantId,
+        },
+        body: JSON.stringify({
+          influencerEmail: stripeConnectData.influencerEmail,
+          influencerName: stripeConnectData.influencerName,
+          onboardingUrl: stripeConnectData.onboardingUrl,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Stripe Connect link sent to influencer successfully!');
+        setShowStripeConnectModal(false);
+        setStripeConnectData(null);
+      } else {
+        alert('Failed to send email. Please copy the link manually.');
+      }
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      alert('Failed to send email. Please copy the link manually.');
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      alert('Failed to copy to clipboard. Please copy manually.');
     }
   };
 
@@ -691,7 +748,7 @@ export default function InfluencersPage() {
                           <Button
                             size="slim"
                             variant="secondary"
-                            onClick={() => handleStripeConnect(influencer.id)}
+                            onClick={() => handleStripeConnect(influencer.id, influencer.name, influencer.email || '')}
                             icon={() => React.createElement(CreditCard, { className: "w-4 h-4" })}
                           >
                             Stripe Connect
@@ -1557,6 +1614,69 @@ Your Brand Team`;
             </InlineStack>
           </Modal.Section>
         </Modal>
+
+      {/* Stripe Connect Modal */}
+      {showStripeConnectModal && stripeConnectData && (
+        <Modal
+          open={showStripeConnectModal}
+          onClose={() => {
+            setShowStripeConnectModal(false);
+            setStripeConnectData(null);
+          }}
+          title="Stripe Connect Setup"
+        >
+          <Modal.Section>
+            <BlockStack gap="400">
+              <Text variant="bodyMd" as="p">
+                To complete Stripe Connect setup for <strong>{stripeConnectData.influencerName}</strong>, 
+                you need to share the onboarding link with them.
+              </Text>
+              
+              <div style={{ padding: '1rem', backgroundColor: '#f6f6f7', borderRadius: '8px' }}>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  <strong>Onboarding Link:</strong>
+                </Text>
+                <div style={{ wordBreak: 'break-all', marginTop: '0.5rem' }}>
+                  <Text variant="bodySm" as="p">
+                    {stripeConnectData.onboardingUrl}
+                  </Text>
+                </div>
+              </div>
+
+              <Text variant="bodySm" as="p" tone="subdued">
+                The influencer will need to complete their Stripe Connect onboarding using this link. 
+                They&apos;ll be asked to provide their business information and banking details.
+              </Text>
+            </BlockStack>
+          </Modal.Section>
+          <Modal.Section>
+            <InlineStack gap="200" align="end">
+              <Button
+                variant="secondary"
+                onClick={() => copyToClipboard(stripeConnectData.onboardingUrl)}
+              >
+                Copy Link
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleEmailStripeConnect}
+                disabled={!stripeConnectData.influencerEmail}
+              >
+                Send Email
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setShowStripeConnectModal(false);
+                  setStripeConnectData(null);
+                }}
+              >
+                Done
+              </Button>
+            </InlineStack>
+          </Modal.Section>
+        </Modal>
+      )}
       </Layout>
     </Page>
   );
