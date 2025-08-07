@@ -79,6 +79,12 @@ export function MerchantInitializer({ children }: MerchantInitializerProps) {
                 setIsInitialized(true);
                 return;
               }
+            } else if (response.status === 404) {
+              // Merchant not found - this is expected for new installations
+              console.log('MerchantInitializer: Merchant not found (new installation)');
+              // Don't set merchantId for new installations - let the main page handle onboarding
+              setIsInitialized(true);
+              return;
             }
           } catch (error) {
             console.error('MerchantInitializer: Failed to fetch merchant:', error);
