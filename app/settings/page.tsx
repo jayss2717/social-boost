@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, TextField, Select, Badge, Banner, Avatar, Tag } from '@shopify/polaris';
 import { useState, useEffect } from 'react';
-import { Settings, Users, Hash, Instagram, Save, Shield, UserPlus, Activity, Globe, FileText, Download, CreditCard, Trash2 } from 'lucide-react';
+import { Settings, Users, Hash, Instagram, Save, Shield, UserPlus, Activity, FileText, Download, CreditCard, Trash2 } from 'lucide-react';
 import React from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanSelectionModal } from '@/components/PlanSelectionModal';
@@ -22,6 +22,14 @@ interface Invoice {
   created?: number;
   amount_paid?: number;
   download_url?: string;
+}
+
+interface SocialMediaAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  platform: 'INSTAGRAM' | 'TIKTOK' | 'TWITTER' | 'YOUTUBE';
+  isActive: boolean;
 }
 
 export default function SettingsPage() {
@@ -1030,7 +1038,7 @@ export default function SettingsPage() {
                     </Text>
                     <div className="space-y-3">
                       {(() => {
-                        const socialMediaAccounts: any[] = [];
+                        const socialMediaAccounts: SocialMediaAccount[] = [];
                         return socialMediaAccounts?.map((account) => (
                         <div key={account.id} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between">
