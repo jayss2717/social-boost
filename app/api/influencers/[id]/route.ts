@@ -81,6 +81,11 @@ export async function DELETE(
 
     console.log('🗑️ Deleting influencer:', { influencerId, merchantId });
 
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Delete operation timed out')), 10000);
+    });
+
     // Verify influencer belongs to merchant
     const influencer = await prisma.influencer.findFirst({
       where: {
@@ -106,11 +111,48 @@ export async function DELETE(
     });
 
     // Delete influencer and all related data (cascade delete)
-    await prisma.influencer.delete({
-      where: {
-        id: influencerId,
-      },
-    });
+    console.log('🗑️ Starting cascade delete for influencer:', influencerId);
+    
+    const deleteOperation = async () => {
+      try {
+        await prisma.influencer.delete({
+          where: {
+            id: influencerId,
+          },
+        });
+        console.log('✅ Cascade delete completed successfully');
+      } catch (deleteError) {
+        console.error('❌ Cascade delete failed:', deleteError);
+        
+        // Fallback: Delete related records manually if cascade fails
+        console.log('🔄 Attempting manual deletion...');
+        
+        await prisma.discountCode.deleteMany({
+          where: { influencerId },
+        });
+        
+        await prisma.payout.deleteMany({
+          where: { influencerId },
+        });
+        
+        await prisma.ugcPost.deleteMany({
+          where: { influencerId },
+        });
+        
+        await prisma.ugcRejection.deleteMany({
+          where: { influencerId },
+        });
+        
+        await prisma.influencer.delete({
+          where: { id: influencerId },
+        });
+        
+        console.log('✅ Manual deletion completed successfully');
+      }
+    };
+
+    // Execute delete operation with timeout
+    await Promise.race([deleteOperation(), timeoutPromise]);
 
     console.log('✅ Influencer deleted successfully');
 
@@ -122,6 +164,9 @@ export async function DELETE(
     console.error('Failed to delete influencer:', error);
     if (error instanceof Error && error.message === 'Merchant ID required') {
       return createErrorResponse('Merchant ID required', 401);
+    }
+    if (error instanceof Error && error.message === 'Delete operation timed out') {
+      return createErrorResponse('Delete operation timed out. Please try again.', 408);
     }
     return createErrorResponse('Failed to delete influencer', 500);
   }
