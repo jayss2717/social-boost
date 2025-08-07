@@ -176,6 +176,13 @@ export default function OnboardingPage() {
         if (response.ok) {
           const data = await response.json();
           console.log('Found merchant data:', data);
+          console.log('Store details:', {
+            shopName: data.shopName,
+            shopEmail: data.shopEmail,
+            shopDomain: data.shopDomain,
+            shopCurrency: data.shopCurrency,
+            shop: data.shop
+          });
           
           // Check if OAuth has been completed
           if (data.accessToken === 'pending' || !data.shopifyShopId) {
@@ -446,7 +453,7 @@ export default function OnboardingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <TextField
                         label="Store Name"
-                        value={merchantData.shopName || ''}
+                        value={merchantData.shopName || merchantData.shop || ''}
                         readOnly
                         autoComplete="off"
                       />
@@ -458,13 +465,13 @@ export default function OnboardingPage() {
                       />
                       <TextField
                         label="Store Domain"
-                        value={merchantData.shopDomain || ''}
+                        value={merchantData.shopDomain || merchantData.shop || ''}
                         readOnly
                         autoComplete="off"
                       />
                       <TextField
                         label="Currency"
-                        value={merchantData.shopCurrency || ''}
+                        value={merchantData.shopCurrency || 'USD'}
                         readOnly
                         autoComplete="off"
                       />

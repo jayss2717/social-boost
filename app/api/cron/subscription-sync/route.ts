@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         // If no subscription exists, create default Starter
         if (!merchant.subscription) {
               const starterPlan = await prisma.plan.findUnique({
-      where: { name: 'STARTER' },
+      where: { name: 'Starter' },
     });
 
           if (starterPlan) {

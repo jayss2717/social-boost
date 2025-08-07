@@ -296,17 +296,18 @@ export async function GET(request: NextRequest) {
       // Continue with onboarding even if Stripe customer creation fails
     }
 
-    // Create default subscription (Free plan) with retry
+    // Create default subscription (Starter plan) with retry
     try {
       await withDatabaseRetry(async () => {
-        const freePlan = await prisma.plan.findUnique({
-          where: { name: 'Free' },
+        const starterPlan = await prisma.plan.findUnique({
+          where: { name: 'Starter' },
         });
 
-        if (!freePlan) {
+        if (!starterPlan) {
+          console.log('⚠️ Starter plan not found, creating it...');
           await prisma.plan.create({
             data: {
-              name: 'Free',
+              name: 'Starter',
               priceCents: 0,
               ugcLimit: 5,
               influencerLimit: 1,
@@ -319,7 +320,7 @@ export async function GET(request: NextRequest) {
           update: {},
           create: {
             merchantId: merchant.id,
-            planId: freePlan?.id || 'free-plan',
+            planId: starterPlan?.id || 'starter-plan',
             status: 'ACTIVE',
             currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },

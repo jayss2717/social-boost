@@ -14,7 +14,7 @@ const fetcher = async (url: string) => {
         influencerLimit: 1,
       },
       plan: {
-        name: 'STARTER',
+        name: 'Starter',
         priceCents: 0,
       },
       subscription: null,

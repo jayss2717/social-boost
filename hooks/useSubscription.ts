@@ -15,7 +15,7 @@ const fetcher = async (url: string) => {
     return {
       subscription: null,
       plan: {
-        name: 'STARTER',
+        name: 'Starter',
         ugcLimit: 5,
         influencerLimit: 1,
       },
@@ -125,7 +125,7 @@ export function useSubscription() {
     
     // Ensure we have proper plan data
     const plan = data.plan || {
-      name: 'STARTER',
+              name: 'Starter',
       ugcLimit: 5,
       influencerLimit: 1,
     };

@@ -22,7 +22,7 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
     }),
   ]);
 
-  const limits = await getPlanLimits(subscription?.plan?.name || 'STARTER');
+  const limits = await getPlanLimits(subscription?.plan?.name || 'Starter');
 
   return {
     ugcCount,
@@ -53,13 +53,13 @@ export const getPlanLimits = async (planName: string): Promise<PlanLimits> => {
     // Fallback to hardcoded limits if plan not found in database
     console.warn(`⚠️ Plan "${planName}" not found in database, using fallback limits`);
     const fallbackLimits = {
-      'STARTER': { ugcLimit: 5, influencerLimit: 1 },
+      'Starter': { ugcLimit: 5, influencerLimit: 1 },
       'Pro': { ugcLimit: 300, influencerLimit: 10 },
       'Scale': { ugcLimit: 1000, influencerLimit: 50 },
-      'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
+      'Enterprise': { ugcLimit: -1, influencerLimit: -1 },
     };
 
-    return fallbackLimits[planName as keyof typeof fallbackLimits] || fallbackLimits['STARTER'];
+    return fallbackLimits[planName as keyof typeof fallbackLimits] || fallbackLimits['Starter'];
   } catch (error) {
     console.error(`❌ Error getting plan limits for "${planName}":`, error);
     
@@ -85,7 +85,7 @@ export const checkUsageLimit = async (
 
 export const withSubscriptionGate = (
   handler: Function,
-  requiredPlan: 'Free' | 'Pro' | 'Scale' = 'Free'
+  requiredPlan: 'Starter' | 'Pro' | 'Scale' = 'Starter'
 ) => {
   return async (request: Request) => {
     const merchantId = request.headers.get('x-merchant-id');
@@ -110,9 +110,9 @@ export const withSubscriptionGate = (
       return Response.json({ error: 'No active subscription' }, { status: 403 });
     }
 
-    const planHierarchy = { STARTER: 0, Pro: 1, Scale: 2, ENTERPRISE: 3 };
+    const planHierarchy = { Starter: 0, Pro: 1, Scale: 2, Enterprise: 3 };
     const currentPlanLevel = planHierarchy[subscription.plan.name as keyof typeof planHierarchy] || 0;
-    const requiredPlanLevel = planHierarchy[requiredPlan === 'Free' ? 'STARTER' : requiredPlan] || 0;
+    const requiredPlanLevel = planHierarchy[requiredPlan] || 0;
 
     if (currentPlanLevel < requiredPlanLevel) {
       return Response.json({ 

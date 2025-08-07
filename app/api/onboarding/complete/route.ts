@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.error('Plan not found for:', selectedPlan);
-        // Fallback to STARTER plan
+        // Fallback to Starter plan
         const starterPlan = await prisma.plan.findUnique({
-          where: { name: 'STARTER' },
+          where: { name: 'Starter' },
         });
 
         if (starterPlan) {

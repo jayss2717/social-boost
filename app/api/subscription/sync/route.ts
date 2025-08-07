@@ -26,10 +26,10 @@ export async function POST() {
       try {
             // Create Starter plan if it doesn't exist
     const starterPlan = await prisma.plan.upsert({
-      where: { name: 'STARTER' },
+      where: { name: 'Starter' },
       update: {},
       create: {
-        name: 'STARTER',
+        name: 'Starter',
         priceCents: 0,
         ugcLimit: 5,
         influencerLimit: 1,
@@ -64,7 +64,7 @@ export async function POST() {
         }
 
         // For paid plans, sync with Stripe
-        if (merchant.subscription.plan.name !== 'STARTER') {
+        if (merchant.subscription.plan.name !== 'Starter') {
           try {
             const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
               apiVersion: '2023-10-16',

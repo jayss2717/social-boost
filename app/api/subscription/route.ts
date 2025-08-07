@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const usage = await getSubscriptionUsage(merchant.id);
 
     if (!merchant.subscription) {
-      console.log('📋 No subscription found, returning STARTER limits');
+      console.log('📋 No subscription found, returning Starter limits');
       return NextResponse.json({
         success: true,
         subscription: null,
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
           influencerLimit: usage.influencerLimit,
         },
         plan: {
-          name: 'STARTER',
+          name: 'Starter',
           ugcLimit: usage.ugcLimit,
           influencerLimit: usage.influencerLimit,
         },
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
     });
 
     // 🛡️ PRODUCTION SAFEGUARD: Auto-correct if wrong plan assigned
-    if (subscription.stripeSubId && plan.name === 'STARTER') {
-      console.log('⚠️ WARNING: Paid subscription has STARTER plan - auto-correcting to Scale');
+    if (subscription.stripeSubId && plan.name === 'Starter') {
+      console.log('⚠️ WARNING: Paid subscription has Starter plan - auto-correcting to Scale');
       
       const scalePlan = await prisma.plan.findUnique({
         where: { name: 'Scale' },
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
     const expectedLimits = {
       'Pro': { ugcLimit: 300, influencerLimit: 10 },
       'Scale': { ugcLimit: 1000, influencerLimit: 50 },
-      'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
-      'STARTER': { ugcLimit: 5, influencerLimit: 1 },
+      'Enterprise': { ugcLimit: -1, influencerLimit: -1 },
+      'Starter': { ugcLimit: 5, influencerLimit: 1 },
     };
 
     const expected = expectedLimits[plan.name as keyof typeof expectedLimits];

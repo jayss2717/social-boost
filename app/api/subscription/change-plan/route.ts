@@ -73,11 +73,11 @@ export async function POST(request: NextRequest) {
     }
 
     // If downgrading to free plan, update immediately
-    if (newPlan === 'STARTER') {
-      // Find the Starter plan (note: database uses "STARTER")
-      const starterPlan = await prisma.plan.findFirst({
-        where: { name: 'STARTER' },
-      });
+    if (newPlan === 'Starter') {
+      // Find the Starter plan (note: database uses "Starter")
+              const starterPlan = await prisma.plan.findFirst({
+          where: { name: 'Starter' },
+        });
 
       if (!starterPlan) {
         return NextResponse.json({ error: 'Starter plan not found' }, { status: 500 });

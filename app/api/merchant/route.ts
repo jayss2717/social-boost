@@ -79,6 +79,55 @@ export async function GET(request: NextRequest) {
 
     // Token is valid, return merchant data
     console.log(`✅ Found merchant for shop: ${shopDomain}`);
+    
+    // If store details are missing, try to fetch them from Shopify
+    let shopName = merchant.shopName;
+    let shopEmail = merchant.shopEmail;
+    let shopDomainFromDB = merchant.shopDomain;
+    let shopCurrency = merchant.shopCurrency;
+    
+    if (!shopName || !shopEmail || !shopDomainFromDB || !shopCurrency) {
+      try {
+        console.log('🔄 Fetching missing store details from Shopify...');
+        const shopResponse = await fetch(`https://${shopDomain}/admin/api/2024-01/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': merchant.accessToken,
+          },
+        });
+        
+        if (shopResponse.ok) {
+          const shopData = await shopResponse.json();
+          const shopInfo = shopData.shop;
+          
+          console.log('✅ Fetched shop data from Shopify:', {
+            name: shopInfo.name,
+            email: shopInfo.email,
+            domain: shopInfo.domain,
+            currency: shopInfo.currency
+          });
+          
+          // Update the database with the fetched data
+          await prisma.merchant.update({
+            where: { id: merchant.id },
+            data: {
+              shopName: shopInfo.name,
+              shopEmail: shopInfo.email,
+              shopDomain: shopInfo.domain,
+              shopCurrency: shopInfo.currency,
+            },
+          });
+          
+          // Use the fetched data
+          shopName = shopInfo.name;
+          shopEmail = shopInfo.email;
+          shopDomainFromDB = shopInfo.domain;
+          shopCurrency = shopInfo.currency;
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch shop data from Shopify:', error);
+      }
+    }
+    
     return NextResponse.json({
       id: merchant.id,
       shop: merchant.shop,
@@ -90,6 +139,11 @@ export async function GET(request: NextRequest) {
       updatedAt: merchant.updatedAt,
       subscription: merchant.subscription,
       settings: merchant.settings,
+      // Include store details
+      shopName,
+      shopEmail,
+      shopDomain: shopDomainFromDB,
+      shopCurrency,
     });
   } catch (error) {
     console.error('Error fetching merchant:', error);
