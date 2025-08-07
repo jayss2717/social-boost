@@ -22,7 +22,7 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
     }),
   ]);
 
-  const limits = getPlanLimits(subscription?.plan?.name || 'STARTER');
+  const limits = await getPlanLimits(subscription?.plan?.name || 'STARTER');
 
   return {
     ugcCount,
@@ -32,15 +32,40 @@ export const getSubscriptionUsage = async (merchantId: string): Promise<Subscrip
   };
 };
 
-export const getPlanLimits = (planName: string): PlanLimits => {
-  const limits = {
-    'STARTER': { ugcLimit: 5, influencerLimit: 1 }, // Free plan: 1 Influencer, 5 DMs/month
-    'Pro': { ugcLimit: 300, influencerLimit: 10 }, // 10 Influencers, 300 DMs/month
-    'Scale': { ugcLimit: 1000, influencerLimit: 50 }, // 50 Influencers, 1000 DMs/month
-    'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 }, // Unlimited
-  };
+export const getPlanLimits = async (planName: string): Promise<PlanLimits> => {
+  try {
+    // Try to get plan from database first
+    const plan = await prisma.plan.findUnique({
+      where: { name: planName },
+    });
 
-  return limits[planName as keyof typeof limits] || limits['STARTER'];
+    if (plan) {
+      console.log(`✅ Found plan "${planName}" in database with limits:`, {
+        ugcLimit: plan.ugcLimit,
+        influencerLimit: plan.influencerLimit,
+      });
+      return {
+        ugcLimit: plan.ugcLimit,
+        influencerLimit: plan.influencerLimit,
+      };
+    }
+
+    // Fallback to hardcoded limits if plan not found in database
+    console.warn(`⚠️ Plan "${planName}" not found in database, using fallback limits`);
+    const fallbackLimits = {
+      'STARTER': { ugcLimit: 5, influencerLimit: 1 },
+      'Pro': { ugcLimit: 300, influencerLimit: 10 },
+      'Scale': { ugcLimit: 1000, influencerLimit: 50 },
+      'ENTERPRISE': { ugcLimit: -1, influencerLimit: -1 },
+    };
+
+    return fallbackLimits[planName as keyof typeof fallbackLimits] || fallbackLimits['STARTER'];
+  } catch (error) {
+    console.error(`❌ Error getting plan limits for "${planName}":`, error);
+    
+    // Emergency fallback
+    return { ugcLimit: 5, influencerLimit: 1 };
+  }
 };
 
 export const checkUsageLimit = async (
