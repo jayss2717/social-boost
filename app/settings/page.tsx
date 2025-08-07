@@ -61,7 +61,6 @@ export default function SettingsPage() {
 
 
   const [teamEditMode, setTeamEditMode] = useState(false);
-  const [domainEditMode, setDomainEditMode] = useState(false);
   const [legalEditMode, setLegalEditMode] = useState(false);
 
   // Form states
@@ -122,9 +121,7 @@ export default function SettingsPage() {
       minimumPayout: 50,
       stripeAccountId: '',
     },
-    domainSettings: {
-      customDomain: '',
-    },
+
     legalSettings: {
       termsUrl: '',
       privacyUrl: '',
@@ -462,40 +459,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveDomainSettings = async () => {
-    setIsSaving(true);
-    setSaveMessage('');
 
-    try {
-      const merchantId = await getMerchantId();
-      
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-merchant-id': merchantId
-        },
-        body: JSON.stringify({
-          domainSettings: formData.domainSettings,
-        }),
-      });
-
-      if (response.ok) {
-        setSaveMessage('Domain settings saved successfully!');
-        setDomainEditMode(false);
-        setTimeout(() => setSaveMessage(''), 3000);
-      } else {
-        setSaveMessage('Failed to save domain settings. Please try again.');
-        setTimeout(() => setSaveMessage(''), 3000);
-      }
-    } catch (error) {
-      console.error('Error saving domain settings:', error);
-      setSaveMessage('Error saving domain settings. Please try again.');
-      setTimeout(() => setSaveMessage(''), 3000);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleSaveLegalSettings = async () => {
     setIsSaving(true);
@@ -562,11 +526,7 @@ export default function SettingsPage() {
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
-  const handleVerifyDomain = () => {
-    console.log('Verifying domain...');
-    setSaveMessage('Domain verification in progress...');
-    setTimeout(() => setSaveMessage(''), 3000);
-  };
+
 
   const handleUploadDocument = (type: string) => {
     console.log(`Uploading ${type} document...`);
@@ -1480,91 +1440,7 @@ export default function SettingsPage() {
           </Card>
         </Layout.Section>
 
-        {/* Custom Domain */}
-        <Layout.Section>
-          <Card>
-            <div className="p-6">
-              <BlockStack gap="400">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Globe className="w-5 h-5" />
-                    <Text variant="headingMd" as="h2">
-                      Custom Domain
-                    </Text>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      size="slim"
-                      variant="secondary"
-                      onClick={() => setDomainEditMode(!domainEditMode)}
-                    >
-                      {domainEditMode ? 'Cancel' : 'Edit'}
-                    </Button>
-                    {domainEditMode && (
-                      <Button
-                        size="slim"
-                        onClick={handleSaveDomainSettings}
-                        icon={() => React.createElement(Save, { className: "w-4 h-4" })}
-                      >
-                        Save
-                      </Button>
-                    )}
-                  </div>
-                </div>
 
-                <div>
-                  <Text variant="bodyMd" as="p" fontWeight="bold">
-                    Domain Configuration
-                  </Text>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <TextField
-                      label="Custom Domain"
-                      value={formData.domainSettings?.customDomain || ''}
-                      onChange={(value) => setFormData({
-                        ...formData,
-                        domainSettings: { ...formData.domainSettings, customDomain: value }
-                      })}
-                      placeholder="influencers.yourstore.com"
-                      autoComplete="off"
-                    />
-                    <div className="flex items-end">
-                      <Button 
-                        size="slim" 
-                        variant="secondary"
-                        onClick={handleVerifyDomain}
-                      >
-                        Verify Domain
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Text variant="bodySm" tone="subdued" as="p">
-                      Your influencer links will use: {formData.domainSettings?.customDomain || 'socialboost.app/yourstore'}
-                    </Text>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {React.createElement(Globe, { className: "w-4 h-4 text-blue-600" })}
-                    <Text variant="bodyMd" fontWeight="semibold" as="p">
-                      Premium Feature
-                    </Text>
-                  </div>
-                  <Text variant="bodySm" as="p">
-                    Custom domains are available on Pro and Enterprise plans. Upgrade to get branded influencer links.
-                  </Text>
-                  <Button 
-                    size="slim" 
-                    onClick={handleUpgradeToPro}
-                  >
-                    Upgrade to Pro
-                  </Button>
-                </div>
-              </BlockStack>
-            </div>
-          </Card>
-        </Layout.Section>
 
         {/* Legal & Compliance */}
         <Layout.Section>
