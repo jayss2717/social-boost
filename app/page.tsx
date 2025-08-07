@@ -140,6 +140,10 @@ export default function DashboardPage() {
               console.log('Redirecting to onboarding...');
               window.location.href = `/onboarding?shop=${shop}`;
             }
+          } else if (response.status === 404) {
+            // Merchant not found - this is a new installation, redirect to onboarding
+            console.log('Merchant not found (new installation), redirecting to onboarding...');
+            window.location.href = `/onboarding?shop=${shop}`;
           } else {
             console.error('Failed to fetch merchant data:', response.status);
           }
