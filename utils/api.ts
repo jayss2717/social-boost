@@ -119,3 +119,20 @@ export async function apiDelete(url: string) {
     method: 'DELETE',
   });
 }
+
+// Response utility functions for API routes
+export function createSuccessResponse(data: any, message: string = 'Success') {
+  return {
+    success: true,
+    data,
+    message,
+  };
+}
+
+export function createErrorResponse(message: string, status: number = 400) {
+  return {
+    success: false,
+    error: message,
+    status,
+  };
+}
