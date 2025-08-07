@@ -108,26 +108,120 @@ export async function GET(request: NextRequest) {
         // First, try to find existing merchant
         const existingMerchant = await prisma.merchant.findUnique({
           where: { shop },
+          include: {
+            subscription: true,
+            influencers: true,
+            ugcPosts: true,
+            discountCodes: true,
+            payouts: true,
+            socialMediaAccounts: true,
+            brandMentions: true,
+            orderMetrics: true,
+            ugcRejections: true,
+            ugcWorkflowRules: true,
+            settings: true,
+          },
         });
 
         console.log('🔄 Existing merchant found:', !!existingMerchant);
 
         if (existingMerchant) {
-          // Update existing merchant with OAuth data
-          return await prisma.merchant.update({
-            where: { shop },
-            data: {
-              accessToken,
-              scope,
-              shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
-              shopName: shopInfo.name,
-              shopEmail: shopInfo.email,
-              shopDomain: shopInfo.domain,
-              shopCurrency: shopInfo.currency,
-              shopTimezone: shopInfo.timezone,
-              isActive: true,
-            },
-          });
+          // Check if the existing merchant's access token is still valid
+          try {
+            const tokenValidationResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
+              headers: {
+                'X-Shopify-Access-Token': existingMerchant.accessToken,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!tokenValidationResponse.ok) {
+              console.log('⚠️ Existing merchant has invalid token, cleaning up old data before reinstall...');
+              
+              // Clean up all old data (subscription, influencers, etc.)
+              if (existingMerchant.subscription) {
+                await prisma.subscription.update({
+                  where: { id: existingMerchant.subscription.id },
+                  data: { status: 'CANCELED' },
+                });
+              }
+
+              // Delete the old merchant (this will cascade delete all related data)
+              await prisma.merchant.delete({
+                where: { shop },
+              });
+
+              console.log('✅ Cleaned up old merchant data for reinstall');
+              
+              // Create fresh merchant record
+              return await prisma.merchant.create({
+                data: {
+                  shop,
+                  accessToken,
+                  scope,
+                  shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
+                  shopName: shopInfo.name,
+                  shopEmail: shopInfo.email,
+                  shopDomain: shopInfo.domain,
+                  shopCurrency: shopInfo.currency,
+                  shopTimezone: shopInfo.timezone,
+                  isActive: true,
+                  onboardingCompleted: false,
+                },
+              });
+            } else {
+              console.log('✅ Existing merchant has valid token, updating with new OAuth data...');
+              
+              // Update existing merchant with new OAuth data
+              return await prisma.merchant.update({
+                where: { shop },
+                data: {
+                  accessToken,
+                  scope,
+                  shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
+                  shopName: shopInfo.name,
+                  shopEmail: shopInfo.email,
+                  shopDomain: shopInfo.domain,
+                  shopCurrency: shopInfo.currency,
+                  shopTimezone: shopInfo.timezone,
+                  isActive: true,
+                },
+              });
+            }
+          } catch (error) {
+            console.log('⚠️ Error validating existing merchant token, assuming uninstalled and cleaning up...');
+            
+            // If we can't validate the token, assume the app was uninstalled
+            if (existingMerchant.subscription) {
+              await prisma.subscription.update({
+                where: { id: existingMerchant.subscription.id },
+                data: { status: 'CANCELED' },
+              });
+            }
+
+            await prisma.merchant.delete({
+              where: { shop },
+            });
+
+            console.log('✅ Cleaned up old merchant data for reinstall');
+            
+            // Create fresh merchant record
+            return await prisma.merchant.create({
+              data: {
+                shop,
+                accessToken,
+                scope,
+                shopifyShopId: shopInfo.id?.toString() || shopInfo.domain || shop,
+                shopName: shopInfo.name,
+                shopEmail: shopInfo.email,
+                shopDomain: shopInfo.domain,
+                shopCurrency: shopInfo.currency,
+                shopTimezone: shopInfo.timezone,
+                isActive: true,
+                onboardingCompleted: false,
+              },
+            });
+          }
         } else {
           // Create new merchant
           return await prisma.merchant.create({
