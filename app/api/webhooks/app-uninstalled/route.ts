@@ -1,10 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Get the raw body for signature verification
+    const rawBody = await request.text();
+    const body = JSON.parse(rawBody);
     const { shop } = body;
+
+    // Verify Shopify webhook signature
+    const hmacHeader = request.headers.get('x-shopify-hmac-sha256');
+    const topicHeader = request.headers.get('x-shopify-topic');
+    const shopHeader = request.headers.get('x-shopify-shop-domain');
+
+    console.log('Webhook headers:', {
+      hmac: hmacHeader ? 'present' : 'missing',
+      topic: topicHeader,
+      shop: shopHeader,
+    });
+
+    // Verify webhook signature if HMAC is present
+    if (hmacHeader && process.env.SHOPIFY_API_SECRET) {
+      const expectedHmac = crypto
+        .createHmac('sha256', process.env.SHOPIFY_API_SECRET)
+        .update(rawBody, 'utf8')
+        .digest('base64');
+
+      if (hmacHeader !== expectedHmac) {
+        console.error('Webhook signature verification failed');
+        return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+      }
+      console.log('✅ Webhook signature verified');
+    } else {
+      console.log('⚠️ Skipping webhook signature verification (HMAC or secret not present)');
+    }
 
     if (!shop) {
       return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 });
