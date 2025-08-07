@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { createErrorResponse, createSuccessResponse } from '@/utils/api';
 import { requireMerchantId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';

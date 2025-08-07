@@ -41,6 +41,13 @@ export default function StripeConnectCompletePage() {
 
         const data = await response.json();
         setStatus(data.data);
+        
+        // Auto-redirect after successful completion
+        if (data.data?.status === 'ACTIVE') {
+          setTimeout(() => {
+            window.location.href = '/influencers';
+          }, 3000); // Redirect after 3 seconds
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -61,17 +68,17 @@ export default function StripeConnectCompletePage() {
   };
 
   const getStatusTitle = () => {
-    if (loading) return 'Completing Stripe Connect...';
+    if (loading) return 'Setting up your Stripe Connect account...';
     if (error) return 'Connection Failed';
     if (status?.status === 'ACTIVE') return 'Stripe Connect Successful!';
     return 'Verification in Progress';
   };
 
   const getStatusDescription = () => {
-    if (loading) return 'Please wait while we complete your Stripe Connect setup.';
+    if (loading) return 'We\'re configuring your Stripe Connect account. This will just take a moment.';
     if (error) return error;
-    if (status?.status === 'ACTIVE') return 'Your Stripe account is now connected and ready for payouts.';
-    return 'Your account is being verified by Stripe. This usually takes 1-2 business days.';
+    if (status?.status === 'ACTIVE') return 'Your Stripe account is now connected and ready for payouts. You can now receive payments from merchants.';
+    return 'Your account is being verified by Stripe. This usually takes 1-2 business days. You\'ll receive an email when verification is complete.';
   };
 
   const getBannerTone = () => {
@@ -120,12 +127,33 @@ export default function StripeConnectCompletePage() {
               )}
 
               <div style={{ marginTop: '2rem' }}>
-                <Button
-                  primary
-                  url="/influencers"
-                >
-                  Back to Influencers
-                </Button>
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    <Text variant="bodyMd" as="span" tone="subdued">
+                      Processing...
+                    </Text>
+                  </div>
+                ) : status?.status === 'ACTIVE' ? (
+                  <div className="space-y-2">
+                    <Text variant="bodyMd" as="p" tone="subdued">
+                      Redirecting to Influencers page in 3 seconds...
+                    </Text>
+                    <Button
+                      primary
+                      url="/influencers"
+                    >
+                      Go to Influencers Now
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    primary
+                    url="/influencers"
+                  >
+                    Back to Influencers
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
