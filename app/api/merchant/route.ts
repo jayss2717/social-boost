@@ -10,44 +10,89 @@ export async function GET(request: NextRequest) {
     const shop = searchParams.get('shop');
     const host = searchParams.get('host');
 
-    console.log(`🔍 Merchant API called with shop: ${shop}, host: ${host}`);
-    console.log(`🔍 Request URL: ${request.url}`);
-    console.log(`🔍 User Agent: ${request.headers.get('user-agent')}`);
-    console.log(`🔍 Referer: ${request.headers.get('referer')}`);
+    // Use shop parameter, fallback to host
+    const shopDomain = shop || host;
 
-    if (!shop && !host) {
-      console.log(`❌ Missing shop and host parameters`);
-      return NextResponse.json({ error: 'Missing shop or host parameter' }, { status: 400 });
-    }
-
-    // Use shop parameter if available, otherwise try to extract from host
-    const shopDomain = shop || (host ? `${host.replace('.myshopify.com', '')}.myshopify.com` : null);
-    
     if (!shopDomain) {
-      console.log(`❌ Could not determine shop domain from shop: ${shop}, host: ${host}`);
-      return NextResponse.json({ error: 'Could not determine shop domain' }, { status: 400 });
+      return NextResponse.json({ error: 'Shop or host parameter required' }, { status: 400 });
     }
 
-    console.log(`🔍 Looking for merchant with shop: ${shopDomain}`);
+    console.log(`🔍 Fetching merchant for shop: ${shopDomain}`);
 
-    let merchant = await prisma.merchant.findUnique({
+    const merchant = await prisma.merchant.findUnique({
       where: { shop: shopDomain },
       include: {
+        subscription: true,
         settings: true,
       },
     });
 
-    if (merchant) {
-      console.log(`✅ Found existing merchant: ${merchant.id} for shop: ${shopDomain}`);
-      return NextResponse.json(merchant);
+    if (!merchant) {
+      // Don't create merchant automatically - only during OAuth installation
+      console.log(`❌ No merchant found for shop: ${shopDomain}`);
+      console.log(`❌ This could be an uninstalled app or invalid request`);
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // Don't create merchant automatically - only during OAuth installation
-    console.log(`❌ No merchant found for shop: ${shopDomain}`);
-    console.log(`❌ This could be an uninstalled app or invalid request`);
-    return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    // Check if the access token is still valid by making a test API call
+    try {
+      const response = await fetch(`https://${shopDomain}/admin/api/2024-01/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': merchant.accessToken,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.log(`⚠️ Access token invalid for shop: ${shopDomain}, triggering cleanup`);
+        
+        // Token is invalid - app has been uninstalled
+        // Trigger the same cleanup logic as the webhook
+        await prisma.subscription.updateMany({
+          where: { merchantId: merchant.id },
+          data: { status: 'CANCELED' },
+        });
+
+        await prisma.merchant.delete({
+          where: { id: merchant.id },
+        });
+
+        console.log(`✅ Cleaned up uninstalled app data for shop: ${shopDomain}`);
+        return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+      }
+    } catch (error) {
+      console.log(`⚠️ Error checking access token for shop: ${shopDomain}, assuming app uninstalled`);
+      
+      // If we can't verify the token, assume the app is uninstalled
+      await prisma.subscription.updateMany({
+        where: { merchantId: merchant.id },
+        data: { status: 'CANCELED' },
+      });
+
+      await prisma.merchant.delete({
+        where: { id: merchant.id },
+      });
+
+      console.log(`✅ Cleaned up uninstalled app data for shop: ${shopDomain}`);
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    }
+
+    // Token is valid, return merchant data
+    console.log(`✅ Found merchant for shop: ${shopDomain}`);
+    return NextResponse.json({
+      id: merchant.id,
+      shop: merchant.shop,
+      onboardingCompleted: merchant.onboardingCompleted,
+      accessToken: 'SET', // Don't expose the actual token
+      shopifyShopId: merchant.shopifyShopId,
+      isActive: merchant.isActive,
+      createdAt: merchant.createdAt,
+      updatedAt: merchant.updatedAt,
+      subscription: merchant.subscription,
+      settings: merchant.settings,
+    });
   } catch (error) {
-    console.error('❌ Merchant API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching merchant:', error);
+    return NextResponse.json({ error: 'Failed to fetch merchant' }, { status: 500 });
   }
 } 
