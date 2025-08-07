@@ -11,7 +11,7 @@ interface StripeConnectStatus {
   status: 'ACTIVE' | 'PENDING_VERIFICATION' | 'ERROR';
   chargesEnabled: boolean;
   payoutsEnabled: boolean;
-  requirements?: any;
+  requirements?: Record<string, unknown>;
 }
 
 export default function StripeConnectCompletePage() {

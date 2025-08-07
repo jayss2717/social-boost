@@ -39,13 +39,6 @@ export async function POST(request: NextRequest) {
     console.log('Simulating app uninstall webhook...');
     
     const webhookBody = { shop };
-    const webhookRequest = new Request('http://localhost:3000/api/webhooks/app-uninstalled', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookBody),
-    });
 
     // Call the actual webhook handler
     const webhookResponse = await fetch('/api/webhooks/app-uninstalled', {
