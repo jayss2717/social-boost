@@ -55,9 +55,8 @@ jobs:
         
     - name: Verify production endpoints
       run: |
-        # Test key production endpoints
+        # Test health endpoint (no auth required)
         curl -f http://localhost:3000/api/health || exit 1
-        curl -f http://localhost:3000/api/merchant || exit 1
       
 
         
