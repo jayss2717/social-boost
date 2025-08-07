@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { influencerSchema, createErrorResponse, createSuccessResponse } from '@/utils/validation';
+import { influencerSchema } from '@/utils/validation';
 import { requireMerchantId } from '@/lib/auth';
+import { createErrorResponse, createSuccessResponse } from '@/utils/api';
 
 export async function PUT(
   request: NextRequest,
@@ -76,41 +77,47 @@ export async function DELETE(
 ) {
   try {
     const merchantId = requireMerchantId(request);
-    const influencerId = params.id;
+    const { id: influencerId } = params;
 
-    // Check if influencer exists and belongs to this merchant
-    const existingInfluencer = await prisma.influencer.findFirst({
+    console.log('🗑️ Deleting influencer:', { influencerId, merchantId });
+
+    // Verify influencer belongs to merchant
+    const influencer = await prisma.influencer.findFirst({
       where: {
         id: influencerId,
         merchantId,
       },
+      include: {
+        discountCodes: true,
+        payouts: true,
+      },
     });
 
-    if (!existingInfluencer) {
+    if (!influencer) {
+      console.log('❌ Influencer not found');
       return createErrorResponse('Influencer not found', 404);
     }
 
-    // Delete related records first
-    await prisma.discountCode.deleteMany({
-      where: {
-        influencerId: influencerId,
-      },
+    console.log('🔍 Found influencer to delete:', {
+      name: influencer.name,
+      email: influencer.email,
+      discountCodesCount: influencer.discountCodes.length,
+      payoutsCount: influencer.payouts.length,
     });
 
-    await prisma.payout.deleteMany({
-      where: {
-        influencerId: influencerId,
-      },
-    });
-
-    // Delete the influencer
+    // Delete influencer and all related data (cascade delete)
     await prisma.influencer.delete({
       where: {
         id: influencerId,
       },
     });
 
-    return createSuccessResponse(null, 'Influencer deleted successfully');
+    console.log('✅ Influencer deleted successfully');
+
+    return createSuccessResponse(
+      { influencerId },
+      'Influencer deleted successfully'
+    );
   } catch (error) {
     console.error('Failed to delete influencer:', error);
     if (error instanceof Error && error.message === 'Merchant ID required') {

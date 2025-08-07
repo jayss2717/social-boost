@@ -2,7 +2,7 @@
 
 import { Page, Layout, Card, Text, Button, BlockStack, Modal, TextField, Select, Badge, InlineStack, DataTable } from '@shopify/polaris';
 import { useState } from 'react';
-import { Search, Eye, Gift, CreditCard } from 'lucide-react';
+import { Search, Eye, Gift, CreditCard, Trash2 } from 'lucide-react';
 import { useInfluencers } from '@/hooks/useInfluencers';
 import { InfluencerAnalytics } from '@/components/InfluencerAnalytics';
 import { LoadingButton } from '@/components/LoadingButton';
@@ -467,6 +467,41 @@ export default function InfluencersPage() {
     }
   };
 
+  const handleDeleteInfluencer = async (influencerId: string, influencerName: string) => {
+    try {
+      const merchantId = await getMerchantId();
+      
+      // Show confirmation dialog
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${influencerName}"? This will permanently remove the influencer and all their discount codes. This action cannot be undone.`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      const response = await fetch(`/api/influencers/${influencerId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-merchant-id': merchantId,
+        },
+      });
+
+      if (response.ok) {
+        console.log('✅ Influencer deleted successfully');
+        // Refresh the influencers list
+        await mutate();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete influencer:', errorData);
+        alert('Failed to delete influencer. Please try again.');
+      }
+    } catch (error) {
+      console.error('Failed to delete influencer:', error);
+      alert('Failed to delete influencer. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <Page title="Influencers">
@@ -660,6 +695,17 @@ export default function InfluencersPage() {
                             icon={() => React.createElement(CreditCard, { className: "w-4 h-4" })}
                           >
                             Stripe Connect
+                          </Button>
+                        </div>
+                        <div title="Delete influencer">
+                          <Button
+                            size="slim"
+                            variant="secondary"
+                            tone="critical"
+                            onClick={() => handleDeleteInfluencer(influencer.id, influencer.name)}
+                            icon={() => React.createElement(Trash2, { className: "w-4 h-4" })}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </InlineStack>
